@@ -1,0 +1,41 @@
+#
+
+msc {
+	
+	hscale = "2";
+
+	Browser, Server, Session, Lexer, Parser, Form_Handler;
+
+	Browser      box Browser [label="\nStandard Web Browser\n", textbgcolour="yellow"];
+	Server       box Server  [label="\nElixir/Phoenix\n",       textbgcolour="yellow"];
+	Session      box Session  [label="\nGen Server\n",          textbgcolour="aqua"];
+	Lexer        box Lexer  [label="\nModule\n",                textbgcolour="olive"];
+	Parser       box Parser  [label="\nModule\n",               textbgcolour="olive"];
+	Form_Handler box Form_Handler  [label="\nModule\n",         textbgcolour="olive"];
+
+	|||;
+
+	Browser => Server  [label="connect"];
+	Server  => Session [label="Spawn Server"];
+	Server  => Browser [label="Return Session Name"];
+
+	|||;
+	...;
+	|||;
+
+	Browser      =>  Server [label="send expression"];
+	Server       =>  Session;
+	Session      =>  Lexer;
+	Lexer        =>  Parser;
+	Parser       =>  Form_Handler;
+	Form_Handler =>  Form_Handler [label="Extract AST Fragment as Liffey"];
+	Form_Handler =>  Form_Handler [label="Convert To LFE"];
+	Form_Handler =>  Form_Handler [label="Compile LFE into pseudo module named after session name and load it"];
+	Form_Handler box Form_Handler [label="\nEvery RHS is an exported module\nEveryvariable invoked is in the arg list\n"];
+	Form_Handler => Session [label="{ok, function_name}"];
+	Session      => Session [label="invoke function_name on session module and stash value in state against variable name of RHS"];
+	Session      => Server  [label="print result of evaluation"];
+	Server       => Browser [label="return result"];
+
+
+}
