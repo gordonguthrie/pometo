@@ -31,6 +31,7 @@ RUN export uid=501 gid=20 && \
     chown ${uid}:${gid} -R /home/developer/.mix && \
 	  mix local.hex --force && \
 	  mix archive.install hex phx_new 1.4.12 --force
+RUN usermod -aG sudo developer
 
 USER developer
 
