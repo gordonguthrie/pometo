@@ -32,4 +32,6 @@ The normal developer of `Erlang`, `Elixir` and `LFE` applications should now kno
 
 If you wish to help develop `Pometo` you should install `rappel`.
 
+The `rappel` github repository has instructions for how to get up and running with `rappel` and `Pometo` and start contributing code.
+
 http://github.com/gordonguthrie/rappel
