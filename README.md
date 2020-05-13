@@ -18,6 +18,10 @@ Writing supervision trees and gen servers are not problems in that category.
 
 `Pometo` is an auxiliary language - used to write library functions which are consumed in applications not written in `Pometo`.
 
+Read more about the rational and thinking in this article:
+
+https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d
+
 # Design Considerations
 
 The normal developer of `Erlang`, `Elixir` and `LFE` applications should now know they are calling `Pometo` without reading the source code.
