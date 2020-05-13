@@ -29,9 +29,9 @@ Rules.
 {VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenChars}}.
 
 \+ : {token, {scalar_fn, TokenLine, TokenChars, "+"}}.
-\- : {token, {scalar_fn, TokenLine, TokenChars, "-"}}.
-\* : {token, {scalar_fn, TokenLine, TokenChars, "*"}}.
-\/ : {token, {scalar_fn, TokenLine, TokenChars, "/"}}.
+¯  : {token, {scalar_fn, TokenLine, TokenChars, "¯"}}.
+×  : {token, {scalar_fn, TokenLine, TokenChars, "×"}}.
+÷  : {token, {scalar_fn, TokenLine, TokenChars, "÷"}}.
 
 ← : {token, {let_op, TokenLine, TokenChars, "←"}}. % let is a reserved word in Erlang
 
@@ -40,7 +40,7 @@ Rules.
 \n : {end_token, {'$end'}}.
 
 %% Anything not covered by rules above is invalid.
-.  : {token, {invalid_token, TokenLine, TokenChars}}.
+.  : {token, {invalid_token, TokenLine, TokenChars, TokenChars}}.
 
 Erlang code.
 -compile([export_all]).
