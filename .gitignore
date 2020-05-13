@@ -1,3 +1,6 @@
+rebar.lock
+.rebar3/
+ebin/
 _build/
 pometo_parser.erl
 pometo_lexer.erl
