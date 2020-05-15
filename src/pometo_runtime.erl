@@ -60,7 +60,7 @@ apply([H | T], V, right, Fn, Acc) ->
 
 
 execute_dyadic("+", L, R) -> L + R;
-execute_dyadic("¯", L, R) -> L - R;
+execute_dyadic("-", L, R) -> L - R;
 execute_dyadic("×", L, R) -> L * R;
 execute_dyadic("÷", L, R) -> L / R.
 
@@ -73,4 +73,7 @@ rho(List) when is_list(List) ->
 	         dimensions = [Len],
 	         vals       = List}.
 
-format(	#'__⍴__'{vals = V}) -> string:join([io_lib:format("~p", [X]) || X <- V], [" "]).
+format(	#'__⍴__'{vals = V}) -> string:join([format2(X) || X <- V], [" "]).
+
+format2(N) when is_number(N) andalso N < 0 -> io_lib:format("¯~p", [abs(N)]);
+format2(X)                                 -> io_lib:format("~p",  [X]).
