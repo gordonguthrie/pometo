@@ -17,8 +17,8 @@ scalar_fn
 Rootsymbol Expression.
 Endsymbol  '$end'.
 
-Expression -> Vector scalar_fn Vector : extract('$2', ['$1', '$3']).
-Expression -> scalar_fn Vector        : extract('$1', ['$2']).
+Expression -> Vector scalar_fn Vector : extract(dyadic, '$2', ['$1', '$3']).
+Expression -> scalar_fn Vector        : extract(monadic, '$1', ['$2']).
 
 Vector -> Vector Scalar : append_scalar('$1', '$2').
 Vector -> Scalar        : '$1'.

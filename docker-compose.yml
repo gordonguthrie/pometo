@@ -7,19 +7,11 @@ services:
       dockerfile: ./docker/pometo.dockerfile
       context: ./
     environment:
-      # Variables to connect to our Postgres server
       DISPLAY: host.docker.internal:0
-    ports:
-      # Mapping the port to make the Phoenix app accessible outside of the container
-      - "4000:4000"
     volumes:
       - type: bind
         source: ./
         target: /pometo
-      # when you are developing and you want to local mount the radiko parsing library
-      #- type: bind
-      #  source: ../radikigo
-      #  target: /radikigo
         # for xwindows
       - type: bind
         source: /tmp/.X11-unix
