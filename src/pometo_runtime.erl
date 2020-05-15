@@ -12,30 +12,31 @@
 -define(SPACE, 32).
 
 
+run_ast(#let_op{vals = Vals}, []) -> Vals;
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
-			  			     #'__⍴__'{dimensions = D, vals = V1},
-			                 #'__⍴__'{dimensions = D, vals = V2}
+			  			     #'¯¯⍴¯¯'{dimensions = D, vals = V1},
+			                 #'¯¯⍴¯¯'{dimensions = D, vals = V2}
 			                ]}, _Dict) ->
-	#'__⍴__'{dimensions = D, vals = zip(V1, V2, Fn, ?EMPTY_ACCUMULATOR)};
+	#'¯¯⍴¯¯'{dimensions = D, vals = zip(V1, V2, Fn, ?EMPTY_ACCUMULATOR)};
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
-			  			     #'__⍴__'{dimensions = [1], vals = [V1]},
-			                 #'__⍴__'{dimensions = D,   vals = V2}
+			  			     #'¯¯⍴¯¯'{dimensions = [1], vals = [V1]},
+			                 #'¯¯⍴¯¯'{dimensions = D,   vals = V2}
 			                ]}, _Dict) ->
-	#'__⍴__'{dimensions = D, vals = apply(V2, V1, left, Fn, ?EMPTY_ACCUMULATOR)};
+	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V2, V1, left, Fn, ?EMPTY_ACCUMULATOR)};
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
-			  			     #'__⍴__'{dimensions = D,   vals = V1},
-			                 #'__⍴__'{dimensions = [1], vals = [V2]}
+			  			     #'¯¯⍴¯¯'{dimensions = D,   vals = V1},
+			                 #'¯¯⍴¯¯'{dimensions = [1], vals = [V2]}
 			                ]}, _Dict) ->
-	#'__⍴__'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)}.
+	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)}.
 % run_ast(#expr{type        = scalar,
 %			  application = monadic,
 %	          fn_name     = Fn,
@@ -68,9 +69,10 @@ execute_dyadic("÷", L, R) -> L / R.
 
 rho(List) when is_list(List) ->
 	Len = length(List),
-	#'__⍴__'{style      = eager,
+	#'¯¯⍴¯¯'{style      = eager,
 	         indexed    = false,
 	         dimensions = [Len],
 	         vals       = List}.
 
-format(	#'__⍴__'{vals = V}) -> string:join([io_lib:format("~p", [X]) || X <- V], [" "]).
+format(	#'¯¯⍴¯¯'{vals = V}) ->
+	string:join([io_lib:format("~p", [X]) || X <- V], [" "]).
