@@ -1,27 +1,37 @@
-# The Minus Operator ¯
+# The Minus Operator -
 
-`¯` is a diadic operator that works in two ways.
+`-` is a dyadic operator that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise subtraction
 
-If either side has a `rho` of [1] it adds the value to every value in the other.
+If either side has a `rho` of [1] it subtracts the value from every value in the other.
 
-Here are a couple of examples:
+Here are some examples:
 
 ```pometo
-1 2 ¯ 3 4
+1 2 - 3 4
 ```
 
 ```pometo_results
--2 -2
+¯2 ¯2
 ```
 
 and
 
 ```pometo
-1 2 3 4 5 ¯ 33
+ 1 2 3 4 5 - 33
 ```
 
 ```pometo_results
 ¯32 ¯31 ¯30 ¯29 ¯28
+```
+
+and
+
+```pometo
+1 - 22 33 44 55
+```
+
+```pometo_results
+¯21 ¯32 ¯43 ¯54
 ```

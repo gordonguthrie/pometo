@@ -29,7 +29,7 @@ Rules.
 {VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenChars}}.
 
 \+ : {token, {scalar_fn, TokenLine, TokenChars, "+"}}.
-¯  : {token, {scalar_fn, TokenLine, TokenChars, "¯"}}.
+-  : {token, {scalar_fn, TokenLine, TokenChars, "-"}}.
 ×  : {token, {scalar_fn, TokenLine, TokenChars, "×"}}.
 ÷  : {token, {scalar_fn, TokenLine, TokenChars, "÷"}}.
 
