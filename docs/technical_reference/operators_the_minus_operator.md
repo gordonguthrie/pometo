@@ -1,6 +1,6 @@
 # The Minus Operator -
 
-`-` is a diadic operator that works in two ways.
+`-` is a dyadic operator that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise subtraction
 
