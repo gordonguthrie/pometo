@@ -53,6 +53,26 @@ These were written for gnu apl, but nowadays dyalog is the most prominent implem
 
 I have written them in the DFN style (see https://en.wikipedia.org/wiki/Direct_function). There is also tradfns (https://aplwiki.com/wiki/Tradfn).
 
+Gordon sed:
+```
+We will have both TradFns and DFNs - TradFns will correspond to Erlang and Elixir Fns and will be contained in modules (like Erlang Elixir) they will be declared private and public (like etc, etc).
+
+The scope of TradFns will be function level (ie no global variables). DFNs will be closures over immutable values (like Funs in Erlang/Elixir).
+
+I also intend that Pometo fns will be pure functions and side effect free so they will have to ability to call out to other languages or read data from external state.
+
+The REPL in rappel will therefore be different to other APL REPLs.
+
+It can be thought of as an Erlang function that calls out to Pometo ones.
+
+You will be able to declare variables and bind them to the result of arbritary {module, function, argument} evals in Erlang/Elixir and then invoke your Pometo fns with those variables.
+
+Rappel will be implemented in a gen server and the persistence of that gen servers state to the Binary Erlang Term Format means you will be able to persist and hydrate sessions, and email them to people.
+
+We could potentially dump them to other formats that are more git friendly, lets see.
+
+```
+
 I am also asking people who have written FOSS implementations in the APL family about what weaknesses and possible changes they interpret in the language. I will compile these and fwd them.
 
 ```apl
