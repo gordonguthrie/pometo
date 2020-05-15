@@ -5,3 +5,4 @@ _build/
 pometo_parser.erl
 pometo_lexer.erl
 .DS_Store
+erl_crash.dump
