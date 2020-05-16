@@ -61,7 +61,7 @@ apply([H | T], V, right, Fn, Acc) ->
 
 
 execute_dyadic("+", L, R) -> L + R;
-execute_dyadic("¯", L, R) -> L - R;
+execute_dyadic("-", L, R) -> L - R;
 execute_dyadic("×", L, R) -> L * R;
 execute_dyadic("÷", L, R) -> L / R.
 
