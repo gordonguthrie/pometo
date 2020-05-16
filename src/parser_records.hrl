@@ -1,4 +1,4 @@
--record('__⍴__', {
+-record('¯¯⍴¯¯', {
                   style      = eager, % [eager | lazy]
                   indexed    = false,
                   type,               % scalar_fn
@@ -11,4 +11,9 @@
     application,      % [monadic | dyadic]
     fn_name,
     args         = []
+  }).
+
+-record(let_op, {
+     var,
+     vals
   }).
