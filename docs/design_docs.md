@@ -182,3 +182,87 @@ This way reduces work dramatically ;-)
 
 Rather than explain the toolchain I will demo it.
 
+## Gordon's working notes on `rho`/shape
+
+We have a number of approaches to manage `rho`/shape, particularly in light of passing in data in native `Erlang`/`Elixir` data structures.
+
+There are two core aspects - which can be combined.
+
+The first is eager/lazy
+
+* an eager data structure knows it shape up front
+* a lazy data structure is just a list (or a structure binary) of undefined length
+
+When shape-dependent actions are taken on eager data structures the shape is checked before execution (this is only partial tho - if the top-level shape is 2 2 and the third element is a shape then that shape will only be checked at run-time.
+
+When shape-dependent actions are taken on lazy data structures the shape is implicitly checked by the runtime.
+
+We can see that in the runtime function that executes dyadics of the same shape:
+
+```erlang
+zip([], [], _, Acc) -> lists:reverse(Acc);
+zip([H1 | T1], [H2 | T2], Fn, Acc) ->
+	NewAcc = execute_dyadic(Fn, H1, H2),
+	zip(T1, T2, Fn, [NewAcc | Acc]).
+```
+
+The terminal clause has an implicit assumption that the lazy lists being consumed in the 2nd clause have the same length.
+
+(by default any lazy data structure can be made eager on the first traverse, this needs to be baked in, but isn't currently.)
+
+The second is indexed/not-indexed.
+
+A lot of operations don't require knowledge of indexing.
+
+In these cases the core vals are stored in the `#'¯¯⍴¯¯'%{}` record as lists (or a structured binary).
+
+If indexing is required the list needs to be converted into an indexed map so that:
+
+```
+[1.1, 2.2, 3.3]
+```
+
+becomes
+```
+%{1 => 1.1, 2 => 2.2, 3 => 3.3}
+```
+
+Again the compiler knows when this has to be done, and needs to insert the conversion.
+
+The basic performance premise of `Pometo` is that you bring the data to the programme - `Pometo` code only runs inside a `BEAM` process - all the `list` and `map` data structures are on the process heap and GC happens in-process.
+
+This gives you a naturally horizontally scaling architectures.
+
+The downside of this is that if you distribute data around between processes you have to send a message with a complete copy of that data structure - which can be expensive - in pipeline processing this might be problematic.
+
+There is another non-indexed, lazy data primitive - the structured binary.
+
+In this the data is stored in a format like a C struct - a type/length indicator and then a binary, and you walk down the binary snipping off and converting bits of data:
+
+```
+...
+<<Type:16/little-unsigned-integer,Length:16/little-unsigned-integer, Rest>> = Bin,
+<<RawData:16* Length/binary, Rest2>> = Rest,
+Data = convert(Type, RawData),
+...
+```
+
+Structured binary data has the characteristics that it is stored in a global heap and can be passed between processes using a pointer.
+
+The global head is reference counted and when processes that hold a reference are GCed they, if the pointer is out of scope, delete the reference. When it hits 0 the binary is deallocated.
+
+Because the `BEAM` uses immutable data structures this also means that any variables that are pattern-matched out of the binary are also pointers and not allocated on the process heap.
+
+If any fragment in any process is stored in state, then the whole binary will not be GCed.
+
+This can be tricky to manage - so structured binary data is slightly more difficult.
+
+We can manage this at an interface level.
+
+`Pometo` code will be arranged in modules with private and public functions (like other `BEAM` languages) and we can decorate function export, so we can declare functions as:
+
+* public (lazy, accepts data in lists)
+* eager (only accepts dataconverted into `#'¯¯⍴¯¯'{}` using an exported conversion function)
+* binary (accepts lists converted into structured data, again using a conversion function)
+
+The compiler then needs to put a shim between the function definition and the declared code to enfore this.
