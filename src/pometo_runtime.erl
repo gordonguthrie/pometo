@@ -36,14 +36,14 @@ run_ast(#expr{type        = scalar,
 			  			     #'¯¯⍴¯¯'{dimensions = D,   vals = V1},
 			                 #'¯¯⍴¯¯'{dimensions = [1], vals = [V2]}
 			                ]}, _Dict) ->
-	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)}.
-% run_ast(#expr{type        = scalar,
-%			  application = monadic,
-%	          fn_name     = Fn,
-%			  args        = [
-%			                 #'__⍴__'{dimensions = D, vals = V}
-%			                ]}, _Dict) ->
-%	#'__⍴__'{dimensions = D, vals = [execute_monadic(Fn, X) || X <- V]}.
+	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)};
+run_ast(#expr{type        = scalar,
+			  application = monadic,
+	          fn_name     = Fn,
+			  args        = [
+			                 #'¯¯⍴¯¯'{dimensions = D, vals = V}
+			                ]}, _Dict) ->
+	#'¯¯⍴¯¯'{dimensions = D, vals = [execute_monadic(Fn, X) || X <- V]}.
 
 
 zip([], [], _, Acc) -> lists:reverse(Acc);
@@ -65,7 +65,17 @@ execute_dyadic("-", L, R) -> L - R;
 execute_dyadic("×", L, R) -> L * R;
 execute_dyadic("÷", L, R) -> L / R.
 
-% execute_monadic(_, V) -> V.
+execute_monadic("+", V) -> V; % complex conjugate stub. return identity.
+execute_monadic("-", V) -> -1 * V;
+execute_monadic("×", V) -> signum(V); % when complex numbers are introduced, this becomes {⍵÷|⍵}.
+execute_monadic("÷", V) -> 1 / V.
+
+signum(V) when V < 0 ->
+    -1;
+signum(V) when V == 0 ->
+    0;
+signum(V) when V > 0 ->
+    1.
 
 rho(List) when is_list(List) ->
 	Len = length(List),
