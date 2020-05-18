@@ -12,31 +12,34 @@
 -define(SPACE, 32).
 
 
-run_ast(#let_op{vals = Vals}, []) -> Vals;
+run_ast(#let_op{vals = Vals} = Binding, Bindings) -> {Vals, [Binding | Bindings]};
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
 			  			     #'¯¯⍴¯¯'{dimensions = D, vals = V1},
 			                 #'¯¯⍴¯¯'{dimensions = D, vals = V2}
-			                ]}, _Dict) ->
-	#'¯¯⍴¯¯'{dimensions = D, vals = zip(V1, V2, Fn, ?EMPTY_ACCUMULATOR)};
+			                ]}, Bindings) ->
+	Shape = #'¯¯⍴¯¯'{dimensions = D, vals = zip(V1, V2, Fn, ?EMPTY_ACCUMULATOR)},
+	{Shape, Bindings};
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
 			  			     #'¯¯⍴¯¯'{dimensions = [1], vals = [V1]},
 			                 #'¯¯⍴¯¯'{dimensions = D,   vals = V2}
-			                ]}, _Dict) ->
-	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V2, V1, left, Fn, ?EMPTY_ACCUMULATOR)};
+			                ]}, Bindings) ->
+	Shape = #'¯¯⍴¯¯'{dimensions = D, vals = apply(V2, V1, left, Fn, ?EMPTY_ACCUMULATOR)},
+	{Shape, Bindings};
 run_ast(#expr{type        = scalar,
 			  application = dyadic,
 	          fn_name     = Fn,
 			  args        = [
 			  			     #'¯¯⍴¯¯'{dimensions = D,   vals = V1},
 			                 #'¯¯⍴¯¯'{dimensions = [1], vals = [V2]}
-			                ]}, _Dict) ->
-	#'¯¯⍴¯¯'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)}.
+			                ]}, Bindings) ->
+	Shape = #'¯¯⍴¯¯'{dimensions = D, vals = apply(V1, V2, right, Fn, ?EMPTY_ACCUMULATOR)},
+	{Shape, Bindings}.
 % run_ast(#expr{type        = scalar,
 %			  application = monadic,
 %	          fn_name     = Fn,
@@ -75,4 +78,7 @@ rho(List) when is_list(List) ->
 	         vals       = List}.
 
 format(	#'¯¯⍴¯¯'{vals = V}) ->
-	string:join([io_lib:format("~p", [X]) || X <- V], [" "]).
+	string:join([fmt(X) || X <- V], [" "]).
+
+fmt(X) when X < 0 -> io_lib:format("¯~p", [abs(X)]);
+fmt(X)            -> io_lib:format("~p",  [X]).
