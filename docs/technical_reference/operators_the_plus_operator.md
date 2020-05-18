@@ -1,5 +1,17 @@
 # The Plus Operator +
 
+## Monadic Use
+
+`+` is a monadic operator that returns the complex conjugate of the argument.
+
+```pometo
++ 0 1 2 ¯1
+```
+
+```pometo_results
+0 1 2 ¯1
+```
+
 ## Dyadic Use
 
 `+` is a dyadic operator that works in two ways.

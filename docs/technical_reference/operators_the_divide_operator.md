@@ -1,5 +1,16 @@
 # The Plus Operator ÷
 
+## Monadic Use
+`÷` is a monadic operator that returns the reciprocal of the argument.
+
+```pometo
+÷ 4 5 10
+```
+
+```pometo_results
+0.25 0.2 0.1
+```
+
 ## Dyadic Use
 
 `÷` is a dyadic operator that works in two ways.
