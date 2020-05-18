@@ -1,5 +1,18 @@
 # The Mulitply Operator ×
 
+## Monadic Use
+`×` is a monadic operator that returns the signum, or sign of the argument.
+
+When the argument is complex, `×` returns the argument divided by its magnitude.
+
+```pometo
+× 0 1 ¯2 3
+```
+
+```pometo_results
+0 1 ¯1 1
+```
+
 ## Dyadic Use
 
 `×` is a dyadic operator that works in two ways.

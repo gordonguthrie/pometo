@@ -1,5 +1,27 @@
 # The Minus Operator -
 
+## Monadic Use
+
+`-` is a monadic operator that returns the negation of the argument.
+
+```pometo
+- 1 3 5
+```
+
+```pometo_results
+¯1 ¯3 ¯5
+```
+
+```pometo
+- ¯2 4 ¯6
+```
+
+```pometo_results
+2 ¯4 6
+```
+
+## Dyadic Use
+
 `-` is a dyadic operator that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise subtraction
