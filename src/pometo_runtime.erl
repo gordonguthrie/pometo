@@ -47,7 +47,7 @@ run_ast(#expr{type        = scalar,
 			                 #'¯¯⍴¯¯'{dimensions = D, vals = V}
 			                ]}, Bindings) ->
 	Shape =#'¯¯⍴¯¯'{dimensions = D, vals = [execute_monadic(Fn, X) || X <- V]},
-	{Shape, Bindings};
+	{Shape, Bindings}.
 
 zip([], [], _, Acc) -> lists:reverse(Acc);
 zip([H1 | T1], [H2 | T2], Fn, Acc) ->
