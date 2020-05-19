@@ -1,46 +1,27 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("parser_records.hrl").
 
-append_scalar({Expr1, #'¯¯⍴¯¯'{dimensions = [D1], vals = V1, type = Type}},
-              {Expr2, #'¯¯⍴¯¯'{dimensions = [D2], vals = V2, type = Type}}) ->
-  % ?debugFmt("Rho1 is ~p~nRho2 is ~p~n", [Rho1, Rho2]),
-  NewE = string:join([Expr1, Expr2], " "),
-  io:format("Expr1 is ~p Expr2 is ~p NewE is ~p~n", [Expr1, Expr2, NewE]),
-  Rho = #'¯¯⍴¯¯'{dimensions = [D1 + D2], vals = V1 ++ V2, type = Type},
-  {NewE, Rho}.
+append(#liffey{op = #'¯¯⍴¯¯'{dimensions = [D1]} = R1, args = Args1},
+       #liffey{op = #'¯¯⍴¯¯'{dimensions = [D2]},      args = Args2}) ->
+  #liffey{op = R1#'¯¯⍴¯¯'{dimensions = [D1 + D2]},
+          args = Args1 ++ Args2}.
 
-tag_scalar(Type, positive, {_, _, _, _, Val}) ->
-  Rho = #'¯¯⍴¯¯'{dimensions = [1],
-                 type = Type,
-                 vals = [Val]},
-  Expr = format(Val),
-  io:format("in tag scalar Val is ~p Expr is ~p~n", [Val, Expr]),
-  {Expr, Rho};
-tag_scalar(Type, negative, {_, _, _, _, Val}) ->
-  Rho = #'¯¯⍴¯¯'{dimensions = [1],
-                 type = Type,
-                 vals = [-Val]},
-  Expr = "¯" ++ format(Val),
-  {Expr, Rho}.
+handle_value(Sign, {_, _, _, _, Val}) ->
+  Rho = #'¯¯⍴¯¯'{style      = eager,
+                 indexed    = false,
+                 dimensions = [1]},
+  SignedVal = case Sign of
+    positive ->  Val;
+    negative -> -Val
+  end,
+  #liffey{op = Rho, args = [SignedVal]}.
 
-extract(monadic, {scalar_fn, _, _, _, Fnname}, [{Expr, Args}]) ->
-  #expr{type        = scalar,
-        application = monadic,
-        expression  = Fnname ++ " " ++ Expr,
-        fn_name     = Fnname,
-        args        = [Args]}; % args oughta be a list her
+extract(monadic, {scalar_fn, _, _, _, Fnname}, Args) ->
+  {#liffey{op = {monadic, Fnname}, args = Args}, []};
 extract(dyadic, {scalar_fn, _, _, _, Fnname}, Args) ->
-  {[Expr1, Expr2], Args2} = lists:unzip(Args),
-  #expr{type        = scalar,
-	      application = dyadic,
-        expression  = Expr1 ++ " " ++ Fnname ++ " " ++ Expr2,
-        fn_name     = Fnname,
-        args        = Args2}.
+  {#liffey{op = {dyadic, Fnname}, args = Args}, []}.
 
-make_let({var, _, _, _, Var} = Let, {Exprs, Vals}) ->
-  io:format("in make_let for ~p~n- with ~p~n- and ~p~n", [Let, Exprs, Vals]),
-  #let_op{var        = Var,
-          expression = Var ++ " ← " ++ Exprs,
-          vals       = Vals}.
+make_let({var, _, _, _, Var}, Liffey) ->
+  {Liffey, [#var{name = Var, expr = Liffey}]}.
 
 format(X) -> lists:flatten(io_lib:format("~p", [X])).

@@ -1,21 +1,20 @@
+%% basic AST record
+-record(liffey, {
+                 op,
+                 args = []
+                }).
+
+%% special operator record
 -record('¯¯⍴¯¯', {
                   style      = eager, % [eager | lazy]
                   indexed    = false,
-                  type,               % int | float
-                  dimensions = [],
-                  vals       = []
+                  dimensions = []
                  }).
 
--record(expr, {
-    type,
-    expression,
-    application,      % [monadic | dyadic]
-    fn_name,
-    args         = []
-  }).
+% leaf records
+-record(var, {
+              name,
+              expr
+             }).
 
--record(let_op, {
-     var,
-     expression,
-     vals
-  }).
+% complex number record TBD
