@@ -87,8 +87,10 @@ rho(List) when is_list(List) ->
 	         dimensions = [Len],
 	         vals       = List}.
 
-format(	#'¯¯⍴¯¯'{vals = V}) ->
+format(#'¯¯⍴¯¯'{vals = V}) ->
 	string:join([fmt(X) || X <- V], [" "]).
+
+% get_variable(#let_op{var = V}) -> V.
 
 fmt(X) when X < 0 -> io_lib:format("¯~p", [abs(X)]);
 fmt(X)            -> io_lib:format("~p",  [X]).
