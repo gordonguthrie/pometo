@@ -182,7 +182,7 @@ This way reduces work dramatically ;-)
 
 Rather than explain the toolchain I will demo it.
 
-## Gordon's working notes on `rho`/shape
+## Gordon's working notes on `rho`/shape 2020/05/18
 
 We have a number of approaches to manage `rho`/shape, particularly in light of passing in data in native `Erlang`/`Elixir` data structures.
 
@@ -266,3 +266,64 @@ We can manage this at an interface level.
 * binary (accepts lists converted into structured data, again using a conversion function)
 
 The compiler then needs to put a shim between the function definition and the declared code to enfore this.
+
+## Gordon's working notes on AST 2020/05/19
+
+### Background
+
+The Data Structure in the compiler is a guddle - it has become a `yasl` (Yet Another Shitty Lisp) - and needs to be made a realer `lisp` - a proper data structure that can unambigously be traversed in a homegenous fashion.
+
+At the moment the records are congested:
+
+This is how expressions like `1 2 + 3 4` are stored:
+```
+-record(expr, {
+    type,
+    expression,
+    application,      % [monadic | dyadic]
+    fn_name,
+    args         = []
+  }).
+```
+
+and this is a `let`
+
+```
+-record(let_op, {
+     var,
+     expression,
+     vals
+  }).
+```
+
+We need to have a unifying `ast` record that represents a realer `lisp` and it needs to support a common set of actions:
+
+* it is executable recursively
+* we can reconstruct the source expression by traversing it
+* we can rewrite it
+* branch nodes are operators
+* leaf nodes are one of:
+   * constant
+   * variable
+   * `⋄` statement seperator
+   * `⍝` comment
+
+### Proposed New Structure
+
+Top level record:
+
+```
+-record(ast, {
+          op,     [dyadic_+, monadic_+, dyadic_-, monadic_-, ←       etc, etc],
+          op_str, [" + ",    " + ",     " - ",    " _" ,     "  ←  " etc, etc],
+          args,   []
+    }).
+```
+
+Special operators:
+
+* `rho` contains multitudes - unlike other operators `rho` is key at execution time
+* brackets need to be transformed into an operator
+
+
+
