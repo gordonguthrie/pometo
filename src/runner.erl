@@ -1,3 +1,5 @@
+%% coding: UTF-8\n
+
 -module(runner).
 
 -export([
@@ -6,7 +8,9 @@
 
 run() ->
 	Codes = [
-	         "A ← 1 2 3"
+	         "Z🤣🤣😀😃😄😁😆😂😅🐜+K😑[&^😐¯P😍÷I😍×E😍😍😍😍 ← 1 2 3"
+%	         "Z😍 ← 1 2 3"
+%			 "KORYTNAČKA ← 1 2 3"
 	         ],
 	[run(X) || X <- Codes],
 	exit(1).

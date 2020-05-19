@@ -28,6 +28,8 @@ Rules.
 {BOOL}     : {token, {bool,  TokenLine, TokenChars, string:to_upper(TokenChars) == "TRUE"}}.
 {VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenChars}}.
 
+¯ : {token, {unary_negate, TokenLine, TokenChars, "¯"}}.
+
 \+ : {token, {scalar_fn, TokenLine, TokenChars, "+"}}.
 -  : {token, {scalar_fn, TokenLine, TokenChars, "-"}}.
 ×  : {token, {scalar_fn, TokenLine, TokenChars, "×"}}.

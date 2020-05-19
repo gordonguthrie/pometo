@@ -1,7 +1,7 @@
 -record('¯¯⍴¯¯', {
                   style      = eager, % [eager | lazy]
                   indexed    = false,
-                  type,               % scalar_fn
+                  type,               % int | float
                   dimensions = [],
                   vals       = []
                  }).
