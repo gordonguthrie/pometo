@@ -6,10 +6,14 @@ append_scalar(#'¯¯⍴¯¯'{dimensions = [D1], vals = V1, type = Type},
   % ?debugFmt("Rho1 is ~p~nRho2 is ~p~n", [Rho1, Rho2]),
   #'¯¯⍴¯¯'{dimensions = [D1 + D2], vals = V1 ++ V2, type = Type}.
 
-tag_scalar(Type, {_, _, _, _, Val}) ->
+tag_scalar(Type, positive, {_, _, _, _, Val}) ->
   #'¯¯⍴¯¯'{dimensions = [1],
            type = Type,
-           vals = [Val]}.
+           vals = [Val]};
+tag_scalar(Type, negative, {_, _, _, _, Val}) ->
+  #'¯¯⍴¯¯'{dimensions = [1],
+           type = Type,
+           vals = [-Val]}.
 
 extract(Application, {scalar_fn, _, _, _, Fnname}, Args) ->
 	#expr{type        = scalar,
