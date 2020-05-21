@@ -8,15 +8,23 @@
 		  format/1
 		]).
 
+% exported for inclusion in LFE modules
+% when I work out how to write LFE forms properly this will be a scoosh I hope
+-export([
+		dyadic/1,
+		monadic/1
+		]).
+
 -define(EMPTY_ACCUMULATOR, []).
 -define(SPACE, 32).
+
 
 run_ast({#liffey{op = #'¯¯⍴¯¯'{}} = L, Bindings}) ->
 	{L, Bindings};
 run_ast({#liffey{op = {dyadic, Op}, args = [A1, A2]}, Bindings}) ->
-	dyadic(Op, A1, A2, Bindings);
+	dyadic([Op, A1, A2, Bindings]);
 run_ast({#liffey{op = {monadic, Op}, args = [A]}, Bindings}) ->
-	monadic(Op, A, Bindings).
+	monadic([Op, A, Bindings]).
 
 rho(List) when is_list(List) ->
 	Len = length(List),
@@ -24,21 +32,21 @@ rho(List) when is_list(List) ->
 	         indexed    = false,
 	         dimensions = [Len]}.
 
-dyadic(Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A1} = L1,
-	       #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A2}, Bindings) ->
+dyadic([Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A1} = L1,
+	        #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A2}, Bindings]) ->
 		Vals = zip(A1, A2, Op, ?EMPTY_ACCUMULATOR),
 		{L1#liffey{args = Vals}, Bindings};
-dyadic(Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A1]},
-	       #liffey{                                 args = A2} = L2, Bindings) ->
+dyadic([Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A1]},
+	        #liffey{                                 args = A2} = L2, Bindings]) ->
 		% order of A2 and A1 swapped and return record based on 2nd rho
 		Vals = apply(A2, A1, left, Op, ?EMPTY_ACCUMULATOR),
 		{L2#liffey{args = Vals}, Bindings};
-dyadic(Op, #liffey{                                 args = A1} = L1,
-	       #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A2]}, Bindings) ->
+dyadic([Op, #liffey{                                 args = A1} = L1,
+	        #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A2]}, Bindings]) ->
 		Vals = apply(A1, A2, right, Op, ?EMPTY_ACCUMULATOR),
 		{L1#liffey{args = Vals}, Bindings}.
 
-monadic(Op, #liffey{args = A} = L, Bindings) ->
+monadic([Op, #liffey{args = A} = L, Bindings]) ->
 	NewA = [execute_monadic(Op, X) || X <- A],
 	{L#liffey{args = NewA}, Bindings}.
 
