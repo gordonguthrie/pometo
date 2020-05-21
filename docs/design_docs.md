@@ -315,7 +315,7 @@ Top level record:
 ```
 -record(ast, {
           op,     [dyadic_+, monadic_+, dyadic_-, monadic_-, ←       etc, etc],
-          op_str, [" + ",    " + ",     " - ",    " _" ,     "  ←  " etc, etc],
+etc, etc],
           args,   []
     }).
 ```
