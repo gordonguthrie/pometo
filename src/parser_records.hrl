@@ -13,8 +13,7 @@
 
 % leaf records
 -record(var, {
-              name,
-              expr
+              name
              }).
 
 % complex number record TBD

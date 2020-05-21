@@ -17,11 +17,17 @@ handle_value(Sign, {_, _, _, _, Val}) ->
   #liffey{op = Rho, args = [SignedVal]}.
 
 extract(monadic, {scalar_fn, _, _, _, Fnname}, Args) ->
-  {#liffey{op = {monadic, Fnname}, args = Args}, []};
+  {#liffey{op = {monadic, Fnname}, args = Args}, #{}};
 extract(dyadic, {scalar_fn, _, _, _, Fnname}, Args) ->
-  {#liffey{op = {dyadic, Fnname}, args = Args}, []}.
+  {#liffey{op = {dyadic, Fnname}, args = Args}, #{}}.
 
-make_let({var, _, _, _, Var}, Liffey) ->
-  {Liffey, [#var{name = Var, expr = Liffey}]}.
+make_let({var, _, _, _, Var}, #liffey{} = Expr, Bindings) ->
+  {Expr, bind(Var, Expr, Bindings)}.
 
 format(X) -> lists:flatten(io_lib:format("~p", [X])).
+
+bind(Var, Expr, Bindings) ->
+  case maps:is_key(Var, Bindings) of
+    true  -> throw("binding should be immutable");
+    false -> maps:put(Var, Expr, Bindings)
+  end.

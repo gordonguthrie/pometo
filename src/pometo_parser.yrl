@@ -26,7 +26,7 @@ Expression -> Let                     : '$1'.
 Expression -> Vector scalar_fn Vector : extract(dyadic, '$2', ['$1', '$3']).
 Expression -> scalar_fn Vector        : extract(monadic, '$1', ['$2']).
 
-Let -> var let_op Vector : make_let('$1', '$3').
+Let -> var let_op Vector : make_let('$1', '$3', #{}).
 
 Vector -> Vector Scalar : append('$1', '$2').
 Vector -> Scalar        : '$1'.
