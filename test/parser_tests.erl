@@ -14,7 +14,7 @@ basic_dyadic_plus_test_() ->
 	                [
                      {liffey, {'¯¯⍴¯¯', eager, false, [2]}, [1.1, 2.2]},
                      {liffey, {'¯¯⍴¯¯', eager, false, [2]}, [3.3, 4.4]}
-                    ]}, []},
+                    ]}, #{}},
 	?_assertEqual(Exp, Got).
 
 basic_monadic_plus_test_() ->
@@ -24,5 +24,5 @@ basic_monadic_plus_test_() ->
 	Exp = {{liffey, {monadic, "+"},
 	                [
                      {liffey, {'¯¯⍴¯¯', eager, false, [2]}, [3.3, 4.4]}
-                    ]}, []},
+                    ]}, #{}},
 	?_assertEqual(Exp, Got).
