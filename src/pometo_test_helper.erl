@@ -1,19 +1,36 @@
 -module(pometo_test_helper).
 
--export([run/2]).
+-export([
+            run_interpreter_test/1,
+            run_compiler_test/2
+        ]).
 
 -include_lib("eunit/include/eunit.hrl").
 
-run(Code, Expected) when is_list(Code) andalso is_list(Expected) ->
-    Got = try
-        Tokens               = pometo_lexer:get_tokens(Code),
-        Parsed               = parse(Tokens),
-        {Results, _Bindings} = pometo_runtime:run_ast(Parsed),
+run_interpreter_test(Code) when is_list(Code) ->
+    try
+        Tokens              = pometo_lexer:get_tokens(Code),
+        {Parsed, _Bingings} = parse(Tokens),
+        Results             = pometo_runtime:run_ast(Parsed),
         pometo_runtime:format(Results)
     catch Type:Error -> ?debugFmt("Test failed to run ~p:~p", [Type, Error]),
-                        {error, "test failed to run"}
-    end,
-    ?_assertEqual(Expected, Got).
+                        {error, Error}
+    end.
+
+run_compiler_test(Title, Code) when is_list(Code) ->
+    try
+        Tokens             = pometo_lexer:get_tokens(Code),
+        {Parsed, Bindings} = parse(Tokens),
+        {module, Mod}      = pometo_compiler:compile(Parsed, Title),
+        Results            = Mod:run(),
+        FormattedResults   = pometo_runtime:format(Results),
+        FormattedResults
+    catch Type:Error -> ?debugFmt("Test failed to run ~p:~p", [Type, Error]),
+                        {error, Error}
+    end.
+
+
+
 
 parse(Tokenlist) ->
     Parsed = pometo_parser:parse(Tokenlist),
