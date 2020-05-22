@@ -10,8 +10,8 @@
 run() ->
 	Codes = [
 %	         "Z🤣🤣😀😃😄😁😆😂😅🐜+K😑[&^😐¯P😍÷I😍×E😍😍😍😍 ← 1 2 3"
-			 "1 2 + 3 4"
-%	         "Z ← 1 2 3"r
+%			 "1 2 + 3 4"
+	         "Z ← 1 2 3"
 %			 "KORYTNAČKA ← 1 2 3"
 %			 "1 2 × ¯3 4",
 %			 "1 2 + 3 4",
@@ -29,22 +29,29 @@ run(Code) ->
     Parsed  = parse(Tokens),
 	io:format("Parsed is ~p~n", [Parsed]),
     {Results, Bindings} = pometo_runtime:run_ast(Parsed),
-	%io:format("Results is ~p~n", [Results]),
-	%io:format("Bindings is ~p~n", [Bindings]),
+	io:format("Results is ~p~n", [Results]),
+	io:format("Bindings is ~p~n", [Bindings]),
     FormattedResults = pometo_runtime:format(Results),
-    %io:format("~nFormatted results is ~p~n~n", [FormattedResults]),
-    ok = pometo_compiler:compile(Parsed),
+    io:format("~nFormatted results is ~p~n~n", [FormattedResults]),
+    {module, _} = pometo_compiler:compile(Parsed),
     X = pometo:run(),
     io:format("X is ~p~n", [X]).
 
-noodle() ->
-	make_module(bingo).
+noodle() ->	make_module(bingo).
 
 make_module(Name) ->
 	Mod0 = lfe_gen:new_module(Name),
     Mod1 = lfe_gen:add_exports([[run, 0]], Mod0),
     %Mod2 = make_funcs(Params, Mod1),
-    Mod2 = lfe_gen:add_form([defun, run, [], [':', pometo_runtime, dyadic, [list, '+', [list, 1, 2], [list, 4, 2], 0]]], Mod1),
+    Mod2 = lfe_gen:add_form([defun,run,[],
+           [':',pometo_runtime,monadic,
+            [list,"+",
+             [tuple,
+              [quote,liffey],
+              [tuple,[quote,'¯¯\x{2374}¯¯'],[quote,eager],[quote,false],[4]],
+              [list, 0,1,2,-1]]]]], Mod1),
+
+%    Mod2 = lfe_gen:add_form([defun, run, [], ['let', [[x, [list, 1, -2, 3]]], x]], Mod1),
     Forms = lfe_gen:build_mod(Mod2),
     io:format("Forms is ~p~n", [Forms]),
     {ok, Name, Binary, _} = lfe_gen:compile_mod(Mod2),
