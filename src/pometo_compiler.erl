@@ -17,12 +17,13 @@ compile(#liffey{} = L, ModuleName) ->
     M1 = lfe_gen:add_exports([[run,0]], M0),
     M2 = lfe_gen:add_form([defun, run, [], expand(L)], M1),
     Forms = lfe_gen:build_mod(M2),
+    ?debugFmt("Forms is ~p~n", [Forms]),
     {ok, ModuleName, Binary, _Warnings} = lfe_gen:compile_mod(M2),
     {module, ModuleName} = code:load_binary(ModuleName, "nofile", Binary).
 
 expand(#liffey{op = {Op, Decorator}, args = Args})  ->
 	expand(#liffey{op = Op, args = [Decorator | Args]});
-expand(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = Args} = Liffey) ->
+expand(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = Args}) ->
 	NewRho = make_tuple(Rho),
 	NewArgs = [list | [make_tuple(X) || X <- Args]],
 	liffey_to_tuple(#liffey{op = NewRho, args = NewArgs});
