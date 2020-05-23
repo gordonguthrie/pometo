@@ -3,17 +3,24 @@
 -module(runner).
 
 -export([
-		  run/0
+		  run/0,
+		  noodle/0
 		]).
 
 run() ->
 	Codes = [
-	         "Z🤣🤣😀😃😄😁😆😂😅🐜+K😑[&^😐¯P😍÷I😍×E😍😍😍😍 ← 1 2 3"
-%	         "Z😍 ← 1 2 3"
+%	         "Z🤣🤣😀😃😄😁😆😂😅🐜+K😑[&^😐¯P😍÷I😍×E😍😍😍😍 ← 1 2 3"
+%			 "1 2 + 3 4"
+	         "Z ← 1 2 3"
 %			 "KORYTNAČKA ← 1 2 3"
+%			 "1 2 × ¯3 4",
+%			 "1 2 + 3 4",
+%			 "1 2 3 4 5 + 33",
+%			 "1 + 22 33 44 55",
+%			 "+ 0 1 2 ¯1"
 	         ],
 	[run(X) || X <- Codes],
-	exit(1).
+	exit(98765).
 
 run(Code) ->
 	  io:format("~nCode is ~p~n~n", [Code]),
@@ -49,6 +56,21 @@ make_module(Name) ->
     {ok, Name, Binary, _} = lfe_gen:compile_mod(Mod2),
     {module, Name} = code:load_binary(Name, "nofile", Binary),
     bingo:run().
+
+make_funcs([{Param,Fs}|Ps], Mod) ->
+    %% Define catch-all which generates more explicit exit value.
+    CatchAll = [f,[':',erlang,error,
+                   [tuple,unknown_feature,[quote,Param],f]]],
+    %% Build case clauses
+    Fold = fun ({Feature,Value}, Cls) ->
+               [[[quote,Feature],[quote,Value]]|Cls]
+           end,
+    Cls = lists:foldr(Fold, [CatchAll], Ps),
+    %% Build function.
+    Func = [defun,Param,[f],['case',f,Cls]],
+    make_funcs(Ps, lfe_gen:add_form(Func, Mod));
+    make_funcs([], Mod) -> Mod.                    
+>>>>>>> dc9a6af58303e6aa0583833cbae316a9d91cb769
 
 parse(Tokenlist) ->
     Parsed = pometo_parser:parse(Tokenlist),
