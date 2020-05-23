@@ -22,9 +22,7 @@ extract(dyadic, {scalar_fn, _, _, _, Fnname}, Args) ->
   {#liffey{op = {dyadic, Fnname}, args = Args}, #{}}.
 
 make_let({var, _, _, _, Var}, #liffey{} = Expr, Bindings) ->
-  {Expr, bind(Var, Expr, Bindings)}.
-
-format(X) -> lists:flatten(io_lib:format("~p", [X])).
+  {#liffey{op = 'let', args = [list_to_atom(Var), Expr]}, bind(Var, Expr, Bindings)}.
 
 bind(Var, Expr, Bindings) ->
   case maps:is_key(Var, Bindings) of
