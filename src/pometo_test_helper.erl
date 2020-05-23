@@ -19,11 +19,11 @@ run_interpreter_test(Code) when is_list(Code) ->
 
 run_compiler_test(Title, Code) when is_list(Code) ->
     try
-        Tokens             = pometo_lexer:get_tokens(Code),
-        {Parsed, Bindings} = parse(Tokens),
-        {module, Mod}      = pometo_compiler:compile(Parsed, Title),
-        Results            = Mod:run(),
-        FormattedResults   = pometo_runtime:format(Results),
+        Tokens              = pometo_lexer:get_tokens(Code),
+        {Parsed, _Bindings} = parse(Tokens),
+        {module, Mod}       = pometo_compiler:compile(Parsed, Title),
+        Results             = Mod:run(),
+        FormattedResults    = pometo_runtime:format(Results),
         FormattedResults
     catch Type:Error -> ?debugFmt("Test failed to run ~p:~p", [Type, Error]),
                         {error, Error}
