@@ -16,8 +16,8 @@ compile(#liffey{} = L, ModuleName) ->
 	M0 = lfe_gen:new_module(ModuleName),
     M1 = lfe_gen:add_exports([[run,0]], M0),
     M2 = lfe_gen:add_form([defun, run, [], expand(L)], M1),
-    Forms = lfe_gen:build_mod(M2),
-    ?debugFmt("Forms is ~p~n", [Forms]),
+    % Forms = lfe_gen:build_mod(M2),
+    % ?debugFmt("Forms is ~p~n", [Forms]),
     {ok, ModuleName, Binary, _Warnings} = lfe_gen:compile_mod(M2),
     {module, ModuleName} = code:load_binary(ModuleName, "nofile", Binary).
 

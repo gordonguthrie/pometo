@@ -1,4 +1,7 @@
+%% coding: UTF-8\n
+
 %%% -*- mode: erlang -*-
+
 %%% @doc       Lexer for the Pometo 'the little APL' on the BEAM.
 %%% @author    gordon@hypernumbers.com
 %%% @copyright (C) 2020 Gordon Guthrie
@@ -13,56 +16,72 @@ TRUE = (true)
 FALSE = (false)
 BOOL = ({TRUE}|{FALSE})
 
-VARIABLE = ([A-Z][a-zA-Z_¯∆⍙0-9]*)
+%% is this ugly? yes it is, moving on swiftly
+VARIABLE = ([A-Z]([A-Za-z0-9]|[^][\000-\s⌺¨⌶⍫<⍒≤⍋=⌽≥⍉>⊖≠⍟∨⍱∧⍲×!÷⌹?⍵∊⍴~⍨↑↓⍳⍸○⍥*⍣←⍞→⍬⍺⌈⌊∇∘⍤’⌸⎕⌷⍎≡⍕≢#⊢⊣⊂⊆⊃∩∪⊥⊤\|⍝⍪⍀⌿⍠,.;:'"\[{\]}`~!@£$\%\^&\*\(\)-_=\+])*)
 
-WHITESPACE = ([\000-\s]*)
+
+WHITESPACE = [\000-\s]*
+
 
 %%" % erlang-mode fix
 
 Rules.
 
 %% Basic data types.
-{FLOATDEC} : {token, {float, TokenLine, TokenChars, make_float(TokenChars)}}.
-{FLOATSCI} : {token, {float, TokenLine, TokenChars, make_float(TokenChars)}}.
-{INT}      : {token, {int,   TokenLine, TokenChars, to_i(TokenChars)}}.
-{BOOL}     : {token, {bool,  TokenLine, TokenChars, string:to_upper(TokenChars) == "TRUE"}}.
-{VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenChars}}.
+{FLOATDEC} : {token, {float, TokenLine, TokenChars, TokenLen, make_float(TokenChars)}}.
+{FLOATSCI} : {token, {float, TokenLine, TokenChars, TokenLen, make_float(TokenChars)}}.
+{INT}      : {token, {int,   TokenLine, TokenChars, TokenLen, to_i(TokenChars)}}.
+{BOOL}     : {token, {bool,  TokenLine, TokenChars, TokenLen, string:to_upper(TokenChars) == "TRUE"}}.
+{VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenLen, TokenChars}}.
 
-¯ : {token, {unary_negate, TokenLine, TokenChars, "¯"}}.
+¯ : {token, {unary_negate, TokenLine, TokenChars, TokenLen, "¯"}}.
 
-\+ : {token, {scalar_fn, TokenLine, TokenChars, "+"}}.
--  : {token, {scalar_fn, TokenLine, TokenChars, "-"}}.
-×  : {token, {scalar_fn, TokenLine, TokenChars, "×"}}.
-÷  : {token, {scalar_fn, TokenLine, TokenChars, "÷"}}.
+\+ : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "+"}}.
+-  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "-"}}.
+×  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "×"}}.
+÷  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "÷"}}.
 
-← : {token, {let_op, TokenLine, TokenChars, "←"}}. % let is a reserved word in Erlang
+← : {token, {let_op, TokenLine, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 
-{WHITESPACE} : {token, {whitespace, TokenLine, TokenChars, " "}}.
+{WHITESPACE} : {token, {whitespace, TokenLine, TokenChars, TokenLen, " "}}.
 
 \n : {end_token, {'$end'}}.
 
 %% Anything not covered by rules above is invalid.
-.  : {token, {invalid_token, TokenLine, TokenChars, TokenChars}}.
+.  : {token, {invalid_token, TokenLine, TokenChars, TokenLen, "invalid"}}.
 
 Erlang code.
 -compile([export_all]).
+
+-include_lib("eunit/include/eunit.hrl").
+-include("parser_records.hrl").
+
+-define(EMPTYACC,       []).
+-define(EMPTYERRORLIST, []).
+
 get_tokens(X) ->
     Toks = lex(X),
-    post_process(Toks, 1, []).
+    _Processed = post_process(Toks, 1, X, ?EMPTYERRORLIST, ?EMPTYACC).
 
 lex(String) ->
   {ok, Toks, _} = string(String),
   Toks.
 
-post_process([], _N, Acc) ->
- lists:reverse(Acc);
-post_process([{whitespace, _, Chars, _} | T], N, Acc) ->
-  NewN = N + length(Chars),
-  post_process(T, NewN, Acc);
-post_process([{Type, LineNo, Chars, Op} | T], N, Acc) ->
-  NewN = N + length(Chars),
+post_process([], _N, _Expr, [], Acc) ->
+ {ok, lists:reverse(Acc)};
+post_process([], _N, _Expr, Errors, _Acc) ->
+ {error, lists:reverse(Errors)};
+post_process([{invalid_token, TokenLine, Chars, TokenLen, _} = Tok| T], N, Expr, Errors, Acc) ->
+  NewError = #error{type = 'SYNTAX ERROR', msg1 = "invalid token", msg2 = Chars, expr = Expr, at_line = TokenLine, at_char = N},
+  NewN = N + TokenLen,
+  post_process(T, NewN, Expr, [NewError | Errors], Acc);
+post_process([{whitespace, _, _Chars, TokenLen, _} | T], N, Expr, Errors, Acc) ->
+  NewN = N + TokenLen,
+  post_process(T, NewN, Expr, Errors, Acc);
+post_process([{Type, LineNo, Chars, TokenLen, Op} | T], N, Expr, Errors, Acc) ->
+  NewN = N + TokenLen,
   NewAcc = {Type, LineNo, N, Chars, Op},
-  post_process(T, NewN, [NewAcc | Acc]).
+  post_process(T, NewN, Expr, Errors, [NewAcc | Acc]).
 
 %% Turn .1/0.1/.1e+10/0.1e+10 into a float.
 

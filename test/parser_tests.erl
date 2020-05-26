@@ -8,7 +8,7 @@
 
 basic_dyadic_plus_test_() ->
 	Str = "1.1 2.2 + 3.3 4.4",
-	Tokens = pometo_lexer:get_tokens(Str),
+	{ok, Tokens} = pometo_lexer:get_tokens(Str),
 	{ok, Got} = pometo_parser:parse(Tokens),
 	Exp = {{liffey, {dyadic, "+"},
 	                [
@@ -19,7 +19,7 @@ basic_dyadic_plus_test_() ->
 
 basic_monadic_plus_test_() ->
 	Str = "+ 3.3 4.4",
-	Tokens = pometo_lexer:get_tokens(Str),
+	{ok, Tokens} = pometo_lexer:get_tokens(Str),
 	{ok, Got} = pometo_parser:parse(Tokens),
 	Exp = {{liffey, {monadic, "+"},
 	                [

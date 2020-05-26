@@ -7,7 +7,8 @@
 -export([
 		  rho/1,
 		  run_ast/1,
-		  format/1
+		  format/1,
+		  format_errors/1
 		]).
 
 %% exported for inclusion in compiled modules
@@ -38,6 +39,10 @@ rho(List) when is_list(List) ->
 
 format(#liffey{op = #'¯¯⍴¯¯'{}, args = Args}) ->
 	lists:flatten(string:join([fmt(X) || X <- Args], [" "])).
+
+format_errors(Errors) ->
+	FormattedEs = [format_error(X) || X <- Errors],
+	lists:flatten(string:join(FormattedEs, "\n") ++ "\n").
 
 %%
 %% Exported for use in compiled modules
@@ -97,6 +102,9 @@ signum(V) when V == 0 ->
 signum(V) when V > 0 ->
     1.
 
-
 fmt(X) when X < 0 -> io_lib:format("¯~p", [abs(X)]);
 fmt(X)            -> io_lib:format("~p",  [X]).
+
+format_error(#error{type = T, msg1 = M1, msg2 = M2, expr = E, at_line = AtL, at_char = AtC}) ->
+	Pointer = lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^"),
+	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on ~p at ~p~n", [E, Pointer, T, M1, M2, AtL, AtC]).

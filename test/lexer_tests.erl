@@ -7,7 +7,7 @@
 %% Tests
 basic_int_test_() ->
     Str = "1 2 3 ",
-    Got = pometo_lexer:get_tokens(Str),
+    {ok, Got} = pometo_lexer:get_tokens(Str),
     Exp = [
             {int, 1, 1, "1", 1},
             {int, 1, 3, "2", 2},
@@ -17,7 +17,7 @@ basic_int_test_() ->
 
 basic_float_test_() ->
 Str = "1.1 2.2 3.3 ",
-Got = pometo_lexer:get_tokens(Str),
+{ok, Got} = pometo_lexer:get_tokens(Str),
 Exp = [
         {float, 1, 1, "1.1", 1.1},
         {float, 1, 5, "2.2", 2.2},
@@ -27,7 +27,7 @@ Exp = [
 
 basic_plus_test_() ->
 Str = "1.1 2.2 + 3.3 4.4 ",
-Got = pometo_lexer:get_tokens(Str),
+{ok, Got} = pometo_lexer:get_tokens(Str),
 Exp = [
         {float,     1, 1,  "1.1", 1.1},
         {float,     1, 5,  "2.2", 2.2},
@@ -39,7 +39,7 @@ Exp = [
 
 basic_let_and_variable_test_() ->
     Str = "MyVariable ← 1 2",
-Got = pometo_lexer:get_tokens(Str),
+{ok, Got} = pometo_lexer:get_tokens(Str),
 Exp = [
         {var,    1, 1,  "MyVariable", "MyVariable"},
         {let_op, 1, 12,  "←", "←"},
