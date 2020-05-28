@@ -37,6 +37,7 @@ rho(List) when is_list(List) ->
 	         indexed    = false,
 	         dimensions = [Len]}.
 
+format([]) -> [];
 format(#liffey{op = #'¯¯⍴¯¯'{}, args = Args}) ->
 	lists:flatten(string:join([fmt(X) || X <- Args], [" "])).
 
