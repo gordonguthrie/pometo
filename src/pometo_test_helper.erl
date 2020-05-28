@@ -11,6 +11,8 @@ run_interpreter_test(Code) when is_list(Code) ->
     try
         Lexed = pometo_lexer:get_tokens(Code),
         case Lexed of
+            {ok, []} ->
+                "";
             {ok, Tokens} ->
                 {Parsed, Bindings} = parse(Tokens),
                 Results             = pometo_runtime:run_ast(Parsed),
@@ -28,8 +30,10 @@ run_compiler_test(Title, Code) when is_list(Code) ->
     try
         Lexed = pometo_lexer:get_tokens(Code),
         case Lexed of
+            {ok, []} ->
+                "";
             {ok, Tokens} ->
-                {Parsed, _Bindings} = parse(Tokens),
+                {Parsed, Bindings} = parse(Tokens),
                 {module, Mod}       = pometo_compiler:compile(Parsed, Title),
                 Results             = Mod:run(),
                 FormattedResults    = pometo_runtime:format(Results),
