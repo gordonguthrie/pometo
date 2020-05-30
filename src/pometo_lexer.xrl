@@ -19,9 +19,7 @@ BOOL = ({TRUE}|{FALSE})
 %% is this ugly? yes it is, moving on swiftly
 VARIABLE = ([A-Z]([A-Za-z0-9]|[^][\000-\s⌺¨⌶⍫<⍒≤⍋=⌽≥⍉>⊖≠⍟∨⍱∧⍲×!÷⌹?⍵∊⍴~⍨↑↓⍳⍸○⍥*⍣←⍞→⍬⍺⌈⌊∇∘⍤’⌸⎕⌷⍎≡⍕≢#⊢⊣⊂⊆⊃∩∪⊥⊤\|⍝⍪⍀⌿⍠,.;:'"\[{\]}`~!@£$\%\^&\*\(\)-_=\+])*)
 
-
 WHITESPACE = [\000-\s]*
-
 
 %%" % erlang-mode fix
 
@@ -36,6 +34,7 @@ Rules.
 
 ¯ : {token, {unary_negate, TokenLine, TokenChars, TokenLen, "¯"}}.
 
+
 \+ : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "+"}}.
 -  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "-"}}.
 ×  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "×"}}.
@@ -45,6 +44,8 @@ Rules.
 
 {WHITESPACE} : {token, {whitespace, TokenLine, TokenChars, TokenLen, " "}}.
 
+%% comments are ends
+⍝  : {end_token, {'$end'}}.
 \n : {end_token, {'$end'}}.
 
 %% Anything not covered by rules above is invalid.
@@ -61,17 +62,17 @@ Erlang code.
 
 get_tokens(X) ->
     Toks = lex(X),
-    _Processed = post_process(Toks, 1, X, ?EMPTYERRORLIST, ?EMPTYACC).
+    post_process(Toks, 1, X, ?EMPTYERRORLIST, ?EMPTYACC).
 
 lex(String) ->
   {ok, Toks, _} = string(String),
   Toks.
 
-post_process([], _N, _Expr, [], Acc) ->
- {ok, lists:reverse(Acc)};
-post_process([], _N, _Expr, Errors, _Acc) ->
- {error, lists:reverse(Errors)};
-post_process([{invalid_token, TokenLine, Chars, TokenLen, _} = Tok| T], N, Expr, Errors, Acc) ->
+post_process(List, _N, _Expr, [],      Acc) when List == [] orelse hd(List) == {'$end'} ->
+  {ok, lists:reverse(Acc)};
+post_process(List, _N, _Expr, Errors, _Acc) when List == [] orelse hd(List) == {'$end'} ->
+  {error, lists:reverse(Errors)};
+post_process([{invalid_token, TokenLine, Chars, TokenLen, _}| T], N, Expr, Errors, Acc) ->
   NewError = #error{type = 'SYNTAX ERROR', msg1 = "invalid token", msg2 = Chars, expr = Expr, at_line = TokenLine, at_char = N},
   NewN = N + TokenLen,
   post_process(T, NewN, Expr, [NewError | Errors], Acc);

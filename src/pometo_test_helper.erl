@@ -11,24 +11,29 @@ run_interpreter_test(Code) when is_list(Code) ->
     try
         Lexed = pometo_lexer:get_tokens(Code),
         case Lexed of
+            {ok, []} ->
+                "";
             {ok, Tokens} ->
-                {Parsed, _Bingings} = parse(Tokens),
+                {Parsed, Bindings} = parse(Tokens),
                 Results             = pometo_runtime:run_ast(Parsed),
                 FormattedResults    = pometo_runtime:format(Results),
                 FormattedResults;
             {error, Errors} ->
                 pometo_runtime:format_errors(Errors)
             end
-    catch Type:Error -> ?debugFmt("Test ~ts failed to run in the interpreter~n- with ~p:~p", [Code, Type, Error]),
-                        {error, Error}
+    catch Type:Errs ->
+        ?debugFmt("Test ~ts failed to run in the interpreter~n- with ~p:~p", [Code, Type, Errs]),
+        {errors, Errs}
     end.
 
 run_compiler_test(Title, Code) when is_list(Code) ->
     try
         Lexed = pometo_lexer:get_tokens(Code),
         case Lexed of
+            {ok, []} ->
+                "";
             {ok, Tokens} ->
-                {Parsed, _Bingings} = parse(Tokens),
+                {Parsed, Bindings} = parse(Tokens),
                 {module, Mod}       = pometo_compiler:compile(Parsed, Title),
                 Results             = Mod:run(),
                 FormattedResults    = pometo_runtime:format(Results),
@@ -36,8 +41,9 @@ run_compiler_test(Title, Code) when is_list(Code) ->
             {error, Errors} ->
                 pometo_runtime:format_errors(Errors)
             end
-    catch Type:Error -> ?debugFmt("Test ~ts failed to run in the compiler~n- with ~p:~p", [Code, Type, Error]),
-                        {error, Error}
+    catch Type:Errs ->
+        ?debugFmt("Test ~ts failed to run in the compiler~n- with ~p:~p", [Code, Type, Errs]),
+        {error, Errs}
     end.
 
 parse(Tokenlist) ->

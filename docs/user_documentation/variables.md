@@ -16,7 +16,8 @@ MyVar99 ← 1 2 3
 1 2 3
 ```
 
-Go crazy with your unicode charaters
+Go crazy with your unicode characters
+
 ```pometo
 My🧫🎱🧫😍😚💨🍑🧐🐜 ← 1 2.2 3333
 ```
