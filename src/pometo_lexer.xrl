@@ -1,5 +1,3 @@
-%% coding: UTF-8\n
-
 %%% -*- mode: erlang -*-
 
 %%% @doc       Lexer for the Pometo 'the little APL' on the BEAM.
@@ -26,62 +24,65 @@ WHITESPACE = [\000-\s]*
 Rules.
 
 %% Basic data types.
-{FLOATDEC} : {token, {float, TokenLine, TokenChars, TokenLen, make_float(TokenChars)}}.
-{FLOATSCI} : {token, {float, TokenLine, TokenChars, TokenLen, make_float(TokenChars)}}.
-{INT}      : {token, {int,   TokenLine, TokenChars, TokenLen, to_i(TokenChars)}}.
-{BOOL}     : {token, {bool,  TokenLine, TokenChars, TokenLen, string:to_upper(TokenChars) == "TRUE"}}.
-{VARIABLE} : {token, {var,   TokenLine, TokenChars, TokenLen, TokenChars}}.
+{FLOATDEC} : {token, {float, TokenChars, TokenLen, make_float(TokenChars)}}.
+{FLOATSCI} : {token, {float, TokenChars, TokenLen, make_float(TokenChars)}}.
+{INT}      : {token, {int, TokenChars, TokenLen, to_i(TokenChars)}}.
+{BOOL}     : {token, {bool, TokenChars, TokenLen, string:to_upper(TokenChars) == "TRUE"}}.
+{VARIABLE} : {token, {var, TokenChars, TokenLen, TokenChars}}.
 
-¯ : {token, {unary_negate, TokenLine, TokenChars, TokenLen, "¯"}}.
+¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
 
 
-\+ : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "+"}}.
--  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "-"}}.
-×  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "×"}}.
-÷  : {token, {scalar_fn, TokenLine, TokenChars, TokenLen, "÷"}}.
+\+ : {token, {scalar_fn, TokenChars, TokenLen, "+"}}.
+-  : {token, {scalar_fn, TokenChars, TokenLen, "-"}}.
+×  : {token, {scalar_fn, TokenChars, TokenLen, "×"}}.
+÷  : {token, {scalar_fn, TokenChars, TokenLen, "÷"}}.
 
-← : {token, {let_op, TokenLine, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
+← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 
-{WHITESPACE} : {token, {whitespace, TokenLine, TokenChars, TokenLen, " "}}.
+⋄ : {token, {seperator, TokenChars, TokenLen, "⋄"}}. % statement separator
+
+{WHITESPACE} : {token, {whitespace, TokenChars, TokenLen, " "}}.
 
 %% comments are ends
 ⍝  : {end_token, {'$end'}}.
 \n : {end_token, {'$end'}}.
 
 %% Anything not covered by rules above is invalid.
-.  : {token, {invalid_token, TokenLine, TokenChars, TokenLen, "invalid"}}.
+.  : {token, {invalid_token, TokenChars, TokenLen, "invalid"}}.
 
 Erlang code.
 -compile([export_all]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("parser_records.hrl").
 
--define(EMPTYACC,       []).
--define(EMPTYERRORLIST, []).
+-include("errors.hrl").
+
+-define(EMPTYACC,    []).
+-define(EMPTYERRORS, []).
 
 get_tokens(X) ->
     Toks = lex(X),
-    post_process(Toks, 1, X, ?EMPTYERRORLIST, ?EMPTYACC).
+    post_process(Toks, 1, X, ?EMPTYERRORS, ?EMPTYACC).
 
 lex(String) ->
   {ok, Toks, _} = string(String),
   Toks.
 
-post_process(List, _N, _Expr, [],      Acc) when List == [] orelse hd(List) == {'$end'} ->
+post_process(List, _N, _Expr, [],     Acc) when List == [] orelse hd(List) == {'$end'} ->
   {ok, lists:reverse(Acc)};
 post_process(List, _N, _Expr, Errors, _Acc) when List == [] orelse hd(List) == {'$end'} ->
-  {error, lists:reverse(Errors)};
-post_process([{invalid_token, TokenLine, Chars, TokenLen, _}| T], N, Expr, Errors, Acc) ->
-  NewError = #error{type = 'SYNTAX ERROR', msg1 = "invalid token", msg2 = Chars, expr = Expr, at_line = TokenLine, at_char = N},
+  {error, pometo_runtime:format_errors(lists:reverse(Errors))};
+post_process([{invalid_token, Chars, TokenLen, _}| T], N, Expr, Errors, Acc) ->
+  NewError = #error{type = 'SYNTAX ERROR', msg1 = "invalid token", msg2 = Chars, expr = Expr, at_line = scope_dictionary:get_line_no(), at_char = N},
   NewN = N + TokenLen,
   post_process(T, NewN, Expr, [NewError | Errors], Acc);
-post_process([{whitespace, _, _Chars, TokenLen, _} | T], N, Expr, Errors, Acc) ->
+post_process([{whitespace, _Chars, TokenLen, _} | T], N, Expr, Errors,   Acc) ->
   NewN = N + TokenLen,
   post_process(T, NewN, Expr, Errors, Acc);
-post_process([{Type, LineNo, Chars, TokenLen, Op} | T], N, Expr, Errors, Acc) ->
+post_process([{Type, Chars, TokenLen, Op} | T], N, Expr, Errors, Acc) ->
   NewN = N + TokenLen,
-  NewAcc = {Type, LineNo, N, Chars, Op},
+  NewAcc = {Type, N, Chars, Op},
   post_process(T, NewN, Expr, Errors, [NewAcc | Acc]).
 
 %% Turn .1/0.1/.1e+10/0.1e+10 into a float.

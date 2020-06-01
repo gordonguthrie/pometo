@@ -1,7 +1,9 @@
 -module(pometo_runtime).
 
--include("parser_records.hrl").
 -include_lib("eunit/include/eunit.hrl").
+
+-include("parser_records.hrl").
+-include("errors.hrl").
 
 %% things exported for runtime
 -export([
@@ -9,6 +11,12 @@
 		  run_ast/1,
 		  format/1,
 		  format_errors/1
+		]).
+
+%% exported for the interpreter
+-export([
+		  substitute_bindings/2,
+		  combine_bindings/3
 		]).
 
 %% exported for inclusion in compiled modules
@@ -44,6 +52,33 @@ format(#liffey{op = #'¯¯⍴¯¯'{}, args = Args}) ->
 format_errors(Errors) ->
 	FormattedEs = [format_error(X) || X <- Errors],
 	lists:flatten(string:join(FormattedEs, "\n") ++ "\n").
+
+%%
+%% Binding substition for the interpreter
+%%
+
+substitute_bindings(Ast, Bindings) ->
+	?debugFmt("Ast is ~p~n", [Ast]),
+	?debugFmt("Bindings is ~p~n", [Bindings]),
+	Ast.
+
+combine_bindings(Bindings, NewBindings, Expr) ->
+	?debugFmt("runtime: bindings is ~p~nnewbindings is ~p~n", [Bindings, NewBindings]),
+	MergeFn = fun({K, V}, Bs) ->
+		?debugFmt("in mergefn with ~p-~p for ~p~n", [K, V, Bs]),
+		case maps:is_key(K, Bs) of
+			false ->
+				maps:put(K, #binding{expression = Expr, results = V}, Bs);
+			true ->
+				?debugFmt("runtime: true K is ~p~n-Bs is ~p~n", [K, Bs]),
+				throw(#error{type    = "VARIABLE REDEFINITION",
+					         msg1    = K,
+					         msg2    = "already exists",
+					         at_line = 99,
+					         at_char = 99})
+			end
+		end,
+    lists:foldl(MergeFn, Bindings, NewBindings).
 
 %%
 %% Exported for use in compiled modules
@@ -108,4 +143,4 @@ fmt(X)            -> io_lib:format("~p",  [X]).
 
 format_error(#error{type = T, msg1 = M1, msg2 = M2, expr = E, at_line = AtL, at_char = AtC}) ->
 	Pointer = lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^"),
-	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on ~p at ~p~n", [E, Pointer, T, M1, M2, AtL, AtC]).
+	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on line ~p at character ~p~n", [E, Pointer, T, M1, M2, AtL, AtC]).

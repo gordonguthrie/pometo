@@ -1,31 +1,79 @@
+-export([make_err/1]).
+
 -include_lib("eunit/include/eunit.hrl").
+
 -include("parser_records.hrl").
+-include("errors.hrl").
 
-append(#liffey{op = #'¯¯⍴¯¯'{dimensions = [D1]} = R1, args = Args1},
-       #liffey{op = #'¯¯⍴¯¯'{dimensions = [D2]},      args = Args2}) ->
-  #liffey{op = R1#'¯¯⍴¯¯'{dimensions = [D1 + D2]},
-          args = Args1 ++ Args2}.
+append(#liffey{op     = #'¯¯⍴¯¯'{dimensions = [D1]} = R1,
+              args    = Args1,
+              char_no = CharNo},
+       #liffey{op     = #'¯¯⍴¯¯'{dimensions = [D2]},
+               args   = Args2}) ->
+  #liffey{op      = R1#'¯¯⍴¯¯'{dimensions = [D1 + D2]},
+          args    = Args1 ++ Args2,
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()}.
 
-handle_value(Sign, {_, _, _, _, Val}) ->
+handle_value(Sign, {_, CharNo, _, Val}) ->
   Rho = #'¯¯⍴¯¯'{style      = eager,
                  indexed    = false,
-                 dimensions = [1]},
+                 dimensions = [1],
+                 char_no    = CharNo,
+                 line_no    = scope_dictionary:get_line_no()},
   SignedVal = case Sign of
     positive ->  Val;
     negative -> -Val
   end,
-  #liffey{op = Rho, args = [SignedVal]}.
+  #liffey{op      = Rho,
+          args    = [SignedVal],
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()}.
 
-extract(monadic, {scalar_fn, _, _, _, Fnname}, Args) ->
-  {#liffey{op = {monadic, Fnname}, args = Args}, #{}};
-extract(dyadic, {scalar_fn, _, _, _, Fnname}, Args) ->
-  {#liffey{op = {dyadic, Fnname}, args = Args}, #{}}.
+make_var({var, CharNo, _, Var}) ->
+  Rho = #'¯¯⍴¯¯'{style      = eager,
+                 indexed    = false,
+                 dimensions = [1],
+                 char_no    = CharNo,
+                 line_no    = scope_dictionary:get_line_no()},
+  #liffey{op      = Rho,
+          args    = [#var{name = Var}],
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()}.
 
-make_let({var, _, _, _, Var}, #liffey{} = Expr, Bindings) ->
-  {#liffey{op = 'let', args = [list_to_atom(Var), Expr]}, bind(Var, Expr, Bindings)}.
+extract(monadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
+  L = #liffey{op      = {monadic, Fnname},
+              args    = Args,
+              char_no = CharNo,
+              line_no = scope_dictionary:get_line_no()},
+  {L, #{}};
+extract(dyadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
+  L = #liffey{op      = {dyadic, Fnname},
+              args    = Args,
+              char_no = CharNo,
+              line_no = scope_dictionary:get_line_no()},
+  {L, #{}}.
 
-bind(Var, Expr, Bindings) ->
-  case maps:is_key(Var, Bindings) of
-    true  -> throw("binding should be immutable");
-    false -> maps:put(Var, Expr, Bindings)
-  end.
+make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
+  #var{name     = Var,
+       char_no  = CharNo} = V,
+  ok = scope_dictionary:puts({Var, Expr}),
+  #liffey{op      = 'let',
+          args    = [list_to_atom(Var), Expr],
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()}.
+
+log(X, Label) ->
+  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
+  X.
+
+-define(OPENCURLY, 123).
+-define(COMMA,     44).
+
+make_err({CharNo, pometo_parser, [Error | Body]}) ->
+  #error{type    = "SYNTAX ERROR",
+         msg1    = Error,
+         msg2    = io_lib:format("~ts", [Body]),
+         expr    = "",
+         at_line = scope_dictionary:get_line_no(),
+         at_char = CharNo}.
