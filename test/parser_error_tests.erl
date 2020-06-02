@@ -14,7 +14,7 @@ Str = "MyVar ←← 1 2 3",
 		  "MyVar ←← 1 2 3\n" ++
 		  "-------^\n" ++
           "SYNTAX ERROR (syntax error before: :{let_op,8,[8592],[8592]}) on line 1 at character 8\n\n",
-    ?debugFmt("Got ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("Got ~ts~nExp ~ts~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 two_line_failure_test_() ->
@@ -53,5 +53,5 @@ Str = "+ 333\n¯←⍳1 2 3",
            "--^\n" ++
            "SYNTAX ERROR (invalid token:⍳) on line 2 at character 3\n" ++
            "\n",
-    ?debugFmt("~nGot 1: ~p~n    2: ~ts~nExp 1: ~p~n    2: ~ts~n", [Got1, Got2, Exp1, Exp2]),
+    % ?debugFmt("~nGot 1: ~p~n    2: ~ts~nExp 1: ~p~n    2: ~ts~n", [Got1, Got2, Exp1, Exp2]),
     ?_assertEqual({Exp1, Exp2}, {Got1, Got2}).

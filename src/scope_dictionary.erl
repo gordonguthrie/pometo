@@ -11,6 +11,11 @@
 			get_line_no/0
 		]).
 
+%% debugging export
+-export([
+		  'print_DEBUG'/0
+		]).
+
 -include_lib("eunit/include/eunit.hrl").
 
 %%
@@ -74,3 +79,16 @@ put_line_no(N) ->
 get_line_no() ->
 	#storage{current_line_no = N} = get('$POMETO_DATA'),
 	N.
+
+print_DEBUG() ->
+	S = get('$POMETO_DATA'),
+	case S of
+		undefined ->
+		?debugFmt("there is nothing in the scope dictionary~n", []);
+	#storage{current         = C,
+			 current_line_no = N,
+			 kvs             = KVs} ->
+		?debugFmt("The current accumulator is ~p~n", [C]),
+		?debugFmt("The current line no is ~p~n", [N]),
+		?debugFmt("The KVs are ~p~n", [KVs])
+	end.
