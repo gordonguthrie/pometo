@@ -55,6 +55,7 @@ extract(dyadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
   {L, #{}}.
 
 make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
+  ?debugFmt("in make_let for ~p~n", [V]),
   #var{name     = Var,
        char_no  = CharNo} = V,
   ok = scope_dictionary:puts({Var, Expr}),
