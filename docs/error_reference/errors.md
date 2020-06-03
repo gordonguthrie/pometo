@@ -12,6 +12,8 @@ To that end, don't go mad writing error tests at this stage if your are thinking
 
 However the strategic aim is to have a single point of look up of error codes and where they can be generated and how they can be fixed.
 
+# SYNTAX ERROR
+
 ## Variable Name Errors
 
 If you try and use an invalid character in a Variable declaration you will get an error. Invalid characters are whitespace, any of the APL/Pometo unicode symbols and the normal punctuation you find on your keyboard with the exception of `_` and `-`.
@@ -69,4 +71,21 @@ Error
 myvar ← 1 2 3
 ----^
 SYNTAX ERROR (invalid token:r) on 1 at 5
+```
+
+# VARIABLE REASSIGNED
+
+Like in `Erlang` variables in Erlang are immutable once you have run `A ← 1 2 3` then `A` has the value `1 2 3` as long as it remains in scope.
+
+Redefining a variable will give you a `VARIABLE REASSIGNED` error.
+
+```pometo
+"A ← 4 5 6 ⋄ A ← 6 7 ¯8
+```
+
+```pometo_results
+Error
+A ← 4 5 6 ⋄ A ← 6 7 ¯8
+------------^
+VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13
 ```
