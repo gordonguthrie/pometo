@@ -25,3 +25,26 @@ My🧫🎱🧫😍😚💨🍑🧐🐜 ← 1 2.2 3333
 ```pometo_results
 1 2.2 3333
 ```
+
+Variables can be used in place of values in other `Pometo` functions
+
+```pometo
+A ← 1 2 3
+B ← 4 5 6
+A + B
+```
+
+```pometo_results
+5 7 9
+```
+
+If you try and use an unset variable you will get an error in your code
+
+```pometo
+MyVar ← 1 2 3
+55 66 77 + MYVar
+```
+
+```pometo_results
+Something happens
+```

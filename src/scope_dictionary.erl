@@ -2,9 +2,11 @@
 
 -export([
 			puts/1,
-			are_bindings_valid/0,
-			% transfers/1,
-			%gets/0,
+			are_current_bindings_valid/0,
+			can_bindings_be_consolidated/0,
+			consolidate_bindings/0,
+			get_bindings/0,
+			get_current_bindings/0,
 			%gets/1,
 			%get_keys/1,
 			clear/1,
@@ -15,7 +17,7 @@
 
 %% debugging export
 -export([
-		  'print_DEBUG'/0
+		  'print_DEBUG'/1
 		]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -27,9 +29,9 @@
 %%
 
 -record(storage, {
-				current = [],
+				current         = [],
 				current_line_no = none,
-				kvs     = #{}
+				bindings        = #{}
 			  }).
 
 %% this function appends the term to the PD as a list under a key called `'$POMETO_DATA'`
@@ -38,15 +40,13 @@ puts(Term) ->
 		#storage{current = C} = S ->
 			put('$POMETO_DATA', S#storage{current = [Term | C]});
 	    undefined ->
-			put('$POMETO_DATA', #storage{current = [Term]})
+			put('$POMETO_DATA',  #storage{current = [Term]})
 		end,
 	ok.
 
-are_bindings_valid() ->
+are_current_bindings_valid() ->
 	case get('$POMETO_DATA') of
-		#storage{current = C,
-				 kvs     = KVs} = S ->
-			?debugFmt("current is ~p~n", [C]),
+		#storage{current = C} ->
 			case get_duplicates(C) of
                 []   -> true;
                 Dups -> {false, Dups}
@@ -55,30 +55,63 @@ are_bindings_valid() ->
             true
 		end.
 
-%transfers(Scope) ->
-%	#storage{current = C,
-%	         kvs     = KVs} = S = get('$POMETO_DATA'),
-%	NewKVs = map:put(Scope, C, KVs),
-%	put('$POMETO_DATA', S#storage{current = [],
-%				                  kvs     = NewKVs}),
-%	ok.
+consolidate_bindings() ->
+	case get('$POMETO_DATA') of
+		[] ->
+			true;
+		#storage{current  = C,
+				 bindings = Bindings} = S ->
+			ConsolidateFn = fun({K, V}, Bs) ->
+				maps:put(K, V, Bs)
+			end,
+			NewBs =  lists:foldl(ConsolidateFn, Bindings, C),
+			put('$POMETO_DATA', S#storage{current  = [],
+				                  		  bindings = NewBs})
+	end,
+	ok.
 
-%gets() ->
-%	case get('$POMETO_DATA') of
-%		#storage{current = C} = S -> C;
-%	    undefined                 -> [])
-%	end.
+can_bindings_be_consolidated() ->
+	case get('$POMETO_DATA') of
+		[] ->
+			true;
+		#storage{current  = C,
+				 bindings = Bindings} ->
+			TestKeys = fun(K, Acc) ->
+				case maps:is_key(K, Bindings) of
+					false -> Acc;
+					true  -> [{K, maps:get(K, bindings)} | Acc]
+				end
+			end,
+			Test = lists:foldl(TestKeys, [], C),
+			case Test of
+				[] -> true;
+				_  -> {error, Test}
+			end
+	end.
+
+get_bindings() ->
+	case get('$POMETO_DATA') of
+		#storage{bindings = Bindings} -> Bindings;
+	    undefined           -> #{}
+	end.
+
+get_current_bindings() ->
+	case get('$POMETO_DATA') of
+		#storage{current = C} -> maps:from_list(C);
+	    undefined             -> #{}
+	end.
+
 
 %get_keys() ->
 %	case get('$POMETO_DATA') of
-%		#storage{kvs = KVs} = S -> maps:keys(KVs);
+%		#storage{bindings = Bindings} = S -> maps:keys(Bindings);
 %	    undefined               -> []
 %	end.
 
 %gets(Scope) ->
-%	#storage{kvs = KVs} = get('$POMETO_DATA'),
-%	case maps:is_key(Scope, KVs) of
-%		true  -> {ok,    maps:get(Scope, KVs)};
+%	#storage{bindings = Bindings} = get('$POMETO_DATA'),
+%	case maps:is_key(Scope, Bindings) of
+%		true  -> {ok,    maps:get(Scope, Bindings)};
 %		false -> {error, io_lib:format("no key called ~p", [Scope])}
 %	end.
 
@@ -87,9 +120,9 @@ clear_all() ->
 	ok.
 
 clear(Scope) ->
-	#storage{kvs = KVs} = S = get('$POMETO_DATA'),
-	NewKVs = map:remove(Scope, KVs),
-	put('$POMETO_DATA', S#storage{kvs = NewKVs}),
+	#storage{bindings = Bindings} = S = get('$POMETO_DATA'),
+	NewBindings = map:remove(Scope, Bindings),
+	put('$POMETO_DATA', S#storage{bindings = NewBindings}),
 	ok.
 
 put_line_no(N) ->
@@ -108,20 +141,24 @@ get_line_no() ->
 get_duplicates(Bindings) -> get_dups(lists:sort(Bindings), ?EMPTYDUPS).
 
 get_dups([],                      Dups) -> Dups;
-get_dups([H                | []], Dups) -> Dups;
+get_dups([_H               | []], Dups) -> Dups;
 % three in a row is two errors
 get_dups([{K, V1}, {K, V2} | T],  Dups) -> get_dups([{K, V2} | T], [{K, {V1, V2}} | Dups]);
 get_dups([_H               | T],  Dups) -> get_dups(T, Dups).
 
-print_DEBUG() ->
+print_DEBUG(Label) ->
+	?debugFmt("~n*************************************************~n~n", []),
+	?debugFmt(Label ++ "~n", []),
 	S = get('$POMETO_DATA'),
 	case S of
 		undefined ->
 		?debugFmt("there is nothing in the scope dictionary~n", []);
 	#storage{current         = C,
 			 current_line_no = N,
-			 kvs             = KVs} ->
+			 bindings        = Bindings} ->
 		?debugFmt("The current accumulator is ~p~n", [C]),
 		?debugFmt("The current line no is ~p~n", [N]),
-		?debugFmt("The KVs are ~p~n", [KVs])
-	end.
+		?debugFmt("The Bindings are ~p~n", [Bindings])
+	end,
+	?debugFmt("~n*************************************************~n", []).
+

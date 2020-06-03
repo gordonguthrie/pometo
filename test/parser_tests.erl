@@ -21,11 +21,11 @@ basic_dyadic_plus_test_() ->
                  args    = [3.3, 4.4],
                  char_no = 11,
                  line_no = 1},
-	Exp = [{ok, [{#liffey{op      = {dyadic, "+"},
+	Exp = [{{ok, [#liffey{op      = {dyadic, "+"},
 	                      args    = [Arg1, Arg2],
                         char_no = 9,
-                        line_no = 1},
-                #{}}]
+                        line_no = 1}
+                ]}, #{}
          }],
 	?_assertEqual(Exp, Got).
 
@@ -42,11 +42,11 @@ basic_leading_and_trailing_spaces_test_() ->
                  args    = [3.3, 4.4],
                  char_no = 14,
                  line_no = 1},
-  Exp = [{ok, [{#liffey{op      = {dyadic, "+"},
+  Exp = [{{ok, [#liffey{op      = {dyadic, "+"},
                         args    = [Arg1, Arg2],
                         char_no = 12,
-                        line_no = 1},
-                #{}}]
+                        line_no = 1}
+                ]}, #{}
          }],
   ?_assertEqual(Exp, Got).
 
@@ -81,8 +81,8 @@ basic_blank_lines_test_() ->
                args    = [Arg2a, Arg2b],
                char_no = 3,
                line_no = 3},
-  Exp = [{ok, [{L1, #{}}]},
-         {ok, [{L2, #{}}]}],
+  Exp = [{{ok, [L1]}, #{}},
+         {{ok, [L2]}, #{}}],
   ?_assertEqual(Exp, Got).
 
 basic_monadic_plus_test_() ->
@@ -93,11 +93,11 @@ basic_monadic_plus_test_() ->
                  args    = [3.3, 4.4],
                  char_no = 3,
                  line_no = 1},
-	Exp = [{ok, [{#liffey{op      = {monadic, "+"},
+	Exp = [{{ok, [#liffey{op      = {monadic, "+"},
 	                      args    = [Arg1],
                         char_no = 1,
-                        line_no = 1},
-                #{}}]
+                        line_no = 1}
+                ]}, #{}
           }],
 	?_assertEqual(Exp, Got).
 
@@ -114,16 +114,15 @@ basic_two_statement_one_line_test_() ->
                  args    = [55, 66],
                  char_no = 15,
                  line_no = 1},
-  Exp = [{ok, [{#liffey{op      = {monadic, "+"},
+  Exp = [{{ok, [#liffey{op      = {monadic, "+"},
                         args    = [ArgA],
                         char_no = 1,
                         line_no = 1},
-                #{}},
-               {#liffey{op      = {monadic, "-"},
+                #liffey{op      = {monadic, "-"},
                         args    = [ArgB],
                         char_no = 13,
-                        line_no = 1},
-                #{}}]
+                        line_no = 1}
+                ]}, #{}
          }],
   ?_assertEqual(Exp, Got).
 
@@ -140,17 +139,16 @@ basic_two_statement_two_lines_test_() ->
                  args    = [5.5, 6.6],
                  char_no = 3,
                  line_no = 2},
-  Exp = [{ok, [{#liffey{op      = {monadic, "+"},
+  Exp = [{{ok, [#liffey{op      = {monadic, "+"},
                         args    = [ArgA],
                         char_no = 1,
-                        line_no = 1},
-                #{}}
-          ]},
-         {ok, [{#liffey{op      = {monadic, "-"},
+                        line_no = 1}
+                ]}, #{}},
+         {{ok, [#liffey{op      = {monadic, "-"},
                         args    = [ArgB],
                         char_no = 1,
-                        line_no = 2},
-                #{}}]
+                        line_no = 2}
+                ]}, #{}
           }],
   ?_assertEqual(Exp, Got).
 

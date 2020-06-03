@@ -44,17 +44,15 @@ make_var({var, CharNo, _, Var}) ->
           line_no = scope_dictionary:get_line_no()}.
 
 extract(monadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
-  L = #liffey{op      = {monadic, Fnname},
-              args    = Args,
-              char_no = CharNo,
-              line_no = scope_dictionary:get_line_no()},
-  {L, #{}};
+  #liffey{op      = {monadic, Fnname},
+          args    = Args,
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()};
 extract(dyadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
-  L = #liffey{op      = {dyadic, Fnname},
-              args    = Args,
-              char_no = CharNo,
-              line_no = scope_dictionary:get_line_no()},
-  {L, #{}}.
+  #liffey{op      = {dyadic, Fnname},
+          args    = Args,
+          char_no = CharNo,
+          line_no = scope_dictionary:get_line_no()}.
 
 make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
   #var{name     = Var,

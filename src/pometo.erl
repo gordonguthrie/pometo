@@ -15,12 +15,15 @@
 		 ]).
 
 -define(EMPTYRESULTS, []).
--define(EMPTYERRORS, []).
+-define(EMPTYERRORS,  []).
 
 interpret_TEST(Str) ->
 	RawLexed = lex2(Str),
-	Expressions = parse(RawLexed, 1, ?EMPTYRESULTS),
+	{Expressions, Bindings} = parse(RawLexed, 1, ?EMPTYRESULTS),
+	?debugFmt("Expressions is ~p~n", [Expressions]),
+	?debugFmt("Bindings is ~p~n", [Bindings]),
 	NormalRawExprs = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	?debugFmt("NormalRawExprs is ~p~n", [NormalRawExprs]),
 	case NormalRawExprs of
 		{?EMPTYERRORS, Exprs}  -> interpret(Exprs);
 	    {Errors,       _Exprs} -> lists:flatten(Errors)
@@ -28,7 +31,8 @@ interpret_TEST(Str) ->
 
 parse_TEST(Str) ->
 	RawLexed = lex2(Str),
-	_Expressions = parse(RawLexed, 1, ?EMPTYRESULTS).
+	{Exprs, _Bindings} = parse(RawLexed, 1, ?EMPTYRESULTS),
+	Exprs.
 
 lex_TEST(Str) ->
 	RawLexed = lex2(Str),
@@ -54,8 +58,8 @@ compile_load_and_run_TEST(Str) ->
 %%%
 
 interpret(Exprs) ->
-	RunFn = fun(_Expr, {Results, Bindings}) ->
-		% ?debugFmt("in RunFn Expr is ~p~n- Results is ~p~n- Bindings is ~p~n", [Expr, Results, Bindings]),
+	RunFn = fun(Expr, {Results, Bindings}) ->
+		?debugFmt("in RunFn Expr is ~p~n- Results is ~p~n- Bindings is ~p~n", [Expr, Results, Bindings]),
 		{Results, Bindings}
 	end,
 	lists:foldl(RunFn, {[] , #{}}, Exprs).
@@ -80,12 +84,15 @@ lex(Code, LineNo) ->
     end.
 
 parse([], _LineNo, Results) ->
-	lists:reverse(Results);
+	Bindings = scope_dictionary:get_bindings(),
+	Exprs = lists:reverse(Results),
+	?debugFmt(" in parse terminal Bindings is ~p~n", [Bindings]),
+	{Exprs, Bindings};
 parse([{{error, E}, _Expr} | T], LineNo,  Results) ->
 	parse(T, LineNo + 1, [{error, E} | Results]);
-% might have blank lines which we want to keep for errors
+% might have blank lines which we kept for error reporting purposes
 % so we just skip them
-parse([{{ok, []}, Expr} | T], LineNo, Results) ->
+parse([{{ok, []}, _Expr} | T], LineNo, Results) ->
 	parse(T, LineNo + 1, Results);
 parse([{{ok, Lexed}, Expr} | T], LineNo, Results) ->
 	scope_dictionary:put_line_no(LineNo),
@@ -95,15 +102,34 @@ parse([{{ok, Lexed}, Expr} | T], LineNo, Results) ->
 		    Msg = pometo_runtime:format_errors([Error#error{expr = Expr}]),
 			parse(T, LineNo + 1, [{error, Msg} | Results]);
 		Parsed ->
-			% scope_dictionary:print_DEBUG(),
-			case scope_dictionary:are_bindings_valid() of
-				true ->
-					parse(T, LineNo + 1, [Parsed | Results]);
-				{false, Dups} ->
-					Errs = make_duplicate_errs(Dups, Expr, ?EMPTYERRORS),
-					parse(T, LineNo + 1, Errs ++ Results)
-			end
+			NewRs = validate_parsing(Parsed, Expr),
+			% there might be multiple errors so validate_parsing returns a list
+			parse(T, LineNo + 1, NewRs ++ Results)
 	end.
+
+validate_parsing(Parsed, Expr) ->
+	case scope_dictionary:are_current_bindings_valid() of
+		true ->
+			case scope_dictionary:can_bindings_be_consolidated() of
+				true ->
+					ReturnedBindings = scope_dictionary:get_current_bindings(),
+					BindingsToBeApplied = scope_dictionary:get_bindings(),
+					?debugFmt(" in validate_parsing ReturnedBindings is ~p~n", [ReturnedBindings]),
+					?debugFmt(" in validate_parsing BindingsToBeApplied is ~p~n", [BindingsToBeApplied]),
+					ok = scope_dictionary:consolidate_bindings(),
+					TransformedParsed = apply_bindings(Parsed, BindingsToBeApplied),
+					[{TransformedParsed, ReturnedBindings}];
+				{false, Errors} ->
+					Errs = make_duplicate_errs(Errors, bingo, ?EMPTYERRORS),
+					Errs
+			end;
+		{false, Dups} ->
+			_Errs = make_duplicate_errs(Dups, Expr, ?EMPTYERRORS)
+	end.
+
+apply_bindings(Parsed, _BindingsToBeApplied) ->
+	?debugFmt("FIX UP~n", []),
+	Parsed.
 
 make_duplicate_errs([], _Expr, Errs) ->
 	lists:reverse(Errs);
@@ -112,10 +138,10 @@ make_duplicate_errs([H | T], Expr, Errs) ->
 	Msg = pometo_runtime:format_errors([Err#error{expr = Expr}]),
 	make_duplicate_errs(T, Expr, [{error, Msg} | Errs]).
 
-
 normalise([], Errs, Results) ->
 	{Errs, lists:reverse(Results)};
-normalise([{ok, Lines} | T], Errs, Results) ->
-	normalise(T, Errs, Lines ++ Results);
+normalise([{{ok, Lines}, Bindings} | T], Errs, Results) ->
+	NormalisedLines = [{X, Bindings} || X <- Lines],
+	normalise(T, Errs, NormalisedLines ++ Results);
 normalise([{error, Err} | T], Errs, Results) ->
 	normalise(T, Errs ++ Err, Results).
