@@ -141,6 +141,15 @@ signum(V) when V > 0 ->
 fmt(X) when X < 0 -> io_lib:format("¯~p", [abs(X)]);
 fmt(X)            -> io_lib:format("~p",  [X]).
 
-format_error(#error{type = T, msg1 = M1, msg2 = M2, expr = E, at_line = AtL, at_char = AtC}) ->
-	Pointer = lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^"),
-	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on line ~p at character ~p~n", [E, Pointer, T, M1, M2, AtL, AtC]).
+format_error(#error{type    = T,
+					msg1    = M1,
+					msg2    = M2,
+					expr    = E,
+					at_line = AtL,
+					at_char = AtC}) ->
+	Pointer = case AtC of
+		999999 -> "^";
+		_      -> lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^")
+	end,
+	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on line ~p at character ~p~n",
+				  [E, Pointer, T, M1, M2, AtL, AtC]).

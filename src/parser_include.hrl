@@ -37,7 +37,9 @@ make_var({var, CharNo, _, Var}) ->
                  char_no    = CharNo,
                  line_no    = scope_dictionary:get_line_no()},
   #liffey{op      = Rho,
-          args    = [#var{name = Var}],
+          args    = [#var{name    = Var,
+                          char_no = CharNo,
+                          line_no = scope_dictionary:get_line_no()}],
           char_no = CharNo,
           line_no = scope_dictionary:get_line_no()}.
 
@@ -55,10 +57,9 @@ extract(dyadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
   {L, #{}}.
 
 make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
-  ?debugFmt("in make_let for ~p~n", [V]),
   #var{name     = Var,
        char_no  = CharNo} = V,
-  ok = scope_dictionary:puts({Var, Expr}),
+  ok = scope_dictionary:puts({Var, {V, Expr}}),
   #liffey{op      = 'let',
           args    = [list_to_atom(Var), Expr],
           char_no = CharNo,
@@ -77,4 +78,15 @@ make_err({CharNo, pometo_parser, [Error | Body]}) ->
          msg2    = io_lib:format("~ts", [Body]),
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
-         at_char = CharNo}.
+         at_char = CharNo};
+make_err({duplicates, {Var, {V1, V2}}}) ->
+  {#var{char_no = C1,
+        line_no = L1}, _} = V1,
+  {#var{char_no = C2}, _} = V2,
+  Msg2 = io_lib:format("was previously assigned on line ~p at char ~p", [L1, C1]),
+  #error{type    = "VARIABLE REASSIGNED",
+         msg1    = Var,
+         msg2    = Msg2,
+         expr    = "",
+         at_line = scope_dictionary:get_line_no(),
+         at_char = C2}.

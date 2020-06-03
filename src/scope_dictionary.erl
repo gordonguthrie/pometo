@@ -2,9 +2,11 @@
 
 -export([
 			puts/1,
-			transfers/1,
-			gets/0,
-			gets/1,
+			are_bindings_valid/0,
+			% transfers/1,
+			%gets/0,
+			%gets/1,
+			%get_keys/1,
 			clear/1,
 			clear_all/0,
 			put_line_no/1,
@@ -17,6 +19,8 @@
 		]).
 
 -include_lib("eunit/include/eunit.hrl").
+
+-define(EMPTYDUPS, []).
 
 %%
 %% This module uses the process dictionary for scope
@@ -38,24 +42,45 @@ puts(Term) ->
 		end,
 	ok.
 
-transfers(Scope) ->
-	#storage{current = C,
-	         kvs     = KVs} = S = get('$POMETO_DATA'),
-	NewKVs = map:put(Scope, C, KVs),
-	put('$POMETO_DATA', S#storage{current = [],
-				  kvs     = NewKVs}),
-	ok.
+are_bindings_valid() ->
+	case get('$POMETO_DATA') of
+		#storage{current = C,
+				 kvs     = KVs} = S ->
+			?debugFmt("current is ~p~n", [C]),
+			case get_duplicates(C) of
+                []   -> true;
+                Dups -> {false, Dups}
+			end;
+	    undefined ->
+            true
+		end.
 
-gets() ->
-	#storage{current = C} = get('$POMETO_DATA'),
-	C.
+%transfers(Scope) ->
+%	#storage{current = C,
+%	         kvs     = KVs} = S = get('$POMETO_DATA'),
+%	NewKVs = map:put(Scope, C, KVs),
+%	put('$POMETO_DATA', S#storage{current = [],
+%				                  kvs     = NewKVs}),
+%	ok.
 
-gets(Scope) ->
-	#storage{kvs = KVs} = get('$POMETO_DATA'),
-	case maps:is_key(Scope, KVs) of
-		true  -> {ok,    maps:get(Scope, KVs)};
-		false -> {error, io_lib:format("no key called ~p", [Scope])}
-	end.
+%gets() ->
+%	case get('$POMETO_DATA') of
+%		#storage{current = C} = S -> C;
+%	    undefined                 -> [])
+%	end.
+
+%get_keys() ->
+%	case get('$POMETO_DATA') of
+%		#storage{kvs = KVs} = S -> maps:keys(KVs);
+%	    undefined               -> []
+%	end.
+
+%gets(Scope) ->
+%	#storage{kvs = KVs} = get('$POMETO_DATA'),
+%	case maps:is_key(Scope, KVs) of
+%		true  -> {ok,    maps:get(Scope, KVs)};
+%		false -> {error, io_lib:format("no key called ~p", [Scope])}
+%	end.
 
 clear_all() ->
 	erase(),
@@ -79,6 +104,14 @@ put_line_no(N) ->
 get_line_no() ->
 	#storage{current_line_no = N} = get('$POMETO_DATA'),
 	N.
+
+get_duplicates(Bindings) -> get_dups(lists:sort(Bindings), ?EMPTYDUPS).
+
+get_dups([],                      Dups) -> Dups;
+get_dups([H                | []], Dups) -> Dups;
+% three in a row is two errors
+get_dups([{K, V1}, {K, V2} | T],  Dups) -> get_dups([{K, V2} | T], [{K, {V1, V2}} | Dups]);
+get_dups([_H               | T],  Dups) -> get_dups(T, Dups).
 
 print_DEBUG() ->
 	S = get('$POMETO_DATA'),
