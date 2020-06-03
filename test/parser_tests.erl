@@ -30,7 +30,7 @@ basic_dyadic_plus_test_() ->
 	?_assertEqual(Exp, Got).
 
 basic_leading_and_trailing_spaces_test_() ->
-  Str = "   1.1 2.2 + 3.3 4.4  ",
+  Str = "   1.1 2.2 + 3.3 4.4  \n",
   Got = pometo:parse_TEST(Str),
   Rho1 = #'¯¯⍴¯¯'{dimensions = [2], line_no = 1, char_no = 4},
   Arg1 = #liffey{op      = Rho1,
