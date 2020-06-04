@@ -20,10 +20,10 @@
 interpret_TEST(Str) ->
 	RawLexed = lex2(Str),
 	{Expressions, Bindings} = parse(RawLexed, 1, ?EMPTYRESULTS),
-	?debugFmt("Expressions is ~p~n", [Expressions]),
-	?debugFmt("Bindings is ~p~n", [Bindings]),
+	% ?debugFmt("Expressions is ~p~n", [Expressions]),
+	% ?debugFmt("Bindings is ~p~n", [Bindings]),
 	NormalRawExprs = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
-	?debugFmt("NormalRawExprs is ~p~n", [NormalRawExprs]),
+	% ?debugFmt("NormalRawExprs is ~p~n", [NormalRawExprs]),
 	case NormalRawExprs of
 		{?EMPTYERRORS, Exprs}  -> interpret(Exprs);
 	    {Errors,       _Exprs} -> lists:flatten(Errors)
@@ -59,7 +59,7 @@ compile_load_and_run_TEST(Str) ->
 
 interpret(Exprs) ->
 	RunFn = fun(Expr, {Results, Bindings}) ->
-		?debugFmt("in RunFn Expr is ~p~n- Results is ~p~n- Bindings is ~p~n", [Expr, Results, Bindings]),
+		% ?debugFmt("in RunFn Expr is ~p~n- Results is ~p~n- Bindings is ~p~n", [Expr, Results, Bindings]),
 		{Results, Bindings}
 	end,
 	lists:foldl(RunFn, {[] , #{}}, Exprs).
@@ -86,7 +86,6 @@ lex(Code, LineNo) ->
 parse([], _LineNo, Results) ->
 	Bindings = scope_dictionary:get_bindings(),
 	Exprs = lists:reverse(Results),
-	?debugFmt(" in parse terminal Bindings is ~p~n", [Bindings]),
 	{Exprs, Bindings};
 parse([{{error, E}, _Expr} | T], LineNo,  Results) ->
 	parse(T, LineNo + 1, [{error, E} | Results]);
@@ -120,7 +119,7 @@ validate_parsing(Parsed, Expr) ->
 					TransformedParsed = apply_bindings(Parsed, BindingsToBeApplied),
 					[{TransformedParsed, ReturnedBindings}];
 				{false, Errors} ->
-					Errs = make_duplicate_errs(Errors, bingo, ?EMPTYERRORS),
+					Errs = make_duplicate_errs(Errors, Expr, ?EMPTYERRORS),
 					Errs
 			end;
 		{false, Dups} ->

@@ -76,16 +76,16 @@ can_bindings_be_consolidated() ->
 			true;
 		#storage{current  = C,
 				 bindings = Bindings} ->
-			TestKeys = fun(K, Acc) ->
+			TestKeysFn = fun({K, CurrentBinding}, Acc) ->
 				case maps:is_key(K, Bindings) of
 					false -> Acc;
-					true  -> [{K, maps:get(K, bindings)} | Acc]
+					true  -> [{K, {maps:get(K, Bindings), CurrentBinding}} | Acc]
 				end
 			end,
-			Test = lists:foldl(TestKeys, [], C),
+			Test = lists:foldl(TestKeysFn, ?EMPTYDUPS, C),
 			case Test of
 				[] -> true;
-				_  -> {error, Test}
+				_  -> {false, Test}
 			end
 	end.
 
