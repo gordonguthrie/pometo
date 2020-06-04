@@ -69,8 +69,7 @@ make_funcs([{Param,Fs}|Ps], Mod) ->
     %% Build function.
     Func = [defun,Param,[f],['case',f,Cls]],
     make_funcs(Ps, lfe_gen:add_form(Func, Mod));
-    make_funcs([], Mod) -> Mod.                    
->>>>>>> dc9a6af58303e6aa0583833cbae316a9d91cb769
+    make_funcs([], Mod) -> Mod.
 
 parse(Tokenlist) ->
     Parsed = pometo_parser:parse(Tokenlist),
