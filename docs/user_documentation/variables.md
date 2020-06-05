@@ -35,6 +35,8 @@ A + B
 ```
 
 ```pometo_results
+1 2 3
+4 5 6
 5 7 9
 ```
 
@@ -46,5 +48,8 @@ MyVar ← 1 2 3
 ```
 
 ```pometo_results
-Something happens
+Error
+55 66 77 + MYVar
+-----------^
+VARIABLE NOT DEFINED (MYVar:variable is not defined) on line 2 at character 12
 ```

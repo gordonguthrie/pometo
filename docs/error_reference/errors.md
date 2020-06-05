@@ -28,7 +28,7 @@ MyVar≠99 ← 1 2 3
 Error
 MyVar≠99 ← 1 2 3
 -----^
-SYNTAX ERROR (invalid token:≠) on 1 at 6
+SYNTAX ERROR (invalid token:≠) on line 1 at character 6
 ```
 
 ```pometo
@@ -39,7 +39,7 @@ MyVar~99 ← 1 2 3
 Error
 MyVar~99 ← 1 2 3
 -----^
-SYNTAX ERROR (invalid token:~) on 1 at 6
+SYNTAX ERROR (invalid token:~) on line 1 at character 6
 ```
 
 ```pometo
@@ -50,27 +50,27 @@ myvar ← 1 2 3
 Error
 myvar ← 1 2 3
 ^
-SYNTAX ERROR (invalid token:m) on 1 at 1
+SYNTAX ERROR (invalid token:m) on line 1 at character 1
 
 Error
 myvar ← 1 2 3
 -^
-SYNTAX ERROR (invalid token:y) on 1 at 2
+SYNTAX ERROR (invalid token:y) on line 1 at character 2
 
 Error
 myvar ← 1 2 3
 --^
-SYNTAX ERROR (invalid token:v) on 1 at 3
+SYNTAX ERROR (invalid token:v) on line 1 at character 3
 
 Error
 myvar ← 1 2 3
 ---^
-SYNTAX ERROR (invalid token:a) on 1 at 4
+SYNTAX ERROR (invalid token:a) on line 1 at character 4
 
 Error
 myvar ← 1 2 3
 ----^
-SYNTAX ERROR (invalid token:r) on 1 at 5
+SYNTAX ERROR (invalid token:r) on line 1 at character 5
 ```
 
 # VARIABLE REASSIGNED
@@ -108,5 +108,8 @@ A + C
 will give the following error:
 
 ```pometo_results
-ERROR FIX ME UP
+Error
+A + C
+----^
+VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5
 ```
