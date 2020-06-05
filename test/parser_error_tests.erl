@@ -26,10 +26,10 @@ two_line_failure_test_() ->
                  args    = [333],
                  line_no = 1,
                  char_no = 3},
-    Exp1 = {{ok, [#liffey{op      = {monadic, "+"},
-                          args    = [L1],
-                          line_no = 1,
-                        char_no = 1}]}, #{}},
+    Exp1 = #liffey{op      = {monadic, "+"},
+                   args    = [L1],
+                   line_no = 1,
+                   char_no = 1},
     Exp2 = "Error\n" ++
           "MyVar ←← 1 2 3\n" ++
           "-------^\n" ++
@@ -45,14 +45,14 @@ pass_through_lexer_failure_test_() ->
                  args    = [333],
                  line_no = 1,
                  char_no = 3},
-    Exp1 = {{ok, [#liffey{op      = {monadic, "+"},
-                          args    = [L1],
-                          line_no = 1,
-                          char_no = 1}]}, #{}},
+    Exp1 = #liffey{op      = {monadic, "+"},
+                   args    = [L1],
+                   line_no = 1,
+                  char_no = 1},
     Exp2 = "Error\n" ++
            "¯←⍳1 2 3\n" ++
            "--^\n" ++
            "SYNTAX ERROR (invalid token:⍳) on line 2 at character 3\n" ++
            "\n",
-    ?debugFmt("~nin pass_through_lexer_failure_test_~nGot 1: ~p~n    2: ~ts~nExp 1: ~p~n    2: ~ts~n", [Got1, Got2, Exp1, Exp2]),
+    % ?debugFmt("~nin pass_through_lexer_failure_test_~nGot 1: ~p~n    2: ~ts~nExp 1: ~p~n    2: ~ts~n", [Got1, Got2, Exp1, Exp2]),
     ?_assertEqual({Exp1, Exp2}, {Got1, Got2}).

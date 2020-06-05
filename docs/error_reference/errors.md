@@ -82,7 +82,7 @@ Like in `Erlang` variables in Erlang are immutable once you have run `A ← 1 2 
 Redefining a variable will give you a `VARIABLE REASSIGNED` error.
 
 ```pometo
-"A ← 4 5 6 ⋄ A ← 6 7 ¯8
+A ← 4 5 6 ⋄ A ← 6 7 ¯8
 ```
 
 will give the following error:
