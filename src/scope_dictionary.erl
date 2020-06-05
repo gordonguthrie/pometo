@@ -12,7 +12,9 @@
 			clear/1,
 			clear_all/0,
 			put_line_no/1,
-			get_line_no/0
+			get_line_no/0,
+			get_errors/0,
+			append_error/1
 		]).
 
 %% debugging export
@@ -21,6 +23,8 @@
 		]).
 
 -include_lib("eunit/include/eunit.hrl").
+-include("parser_records.hrl").
+-include("errors.hrl").
 
 -define(EMPTYDUPS, []).
 
@@ -29,10 +33,11 @@
 %%
 
 -record(storage, {
-				current         = [],
-				current_line_no = none,
-				bindings        = #{}
-			  }).
+				  current         = [],
+				  current_line_no = none,
+				  bindings        = #{},
+				  errors          = []
+			     }).
 
 %% this function appends the term to the PD as a list under a key called `'$POMETO_DATA'`
 puts(Term) ->
@@ -89,6 +94,11 @@ can_bindings_be_consolidated() ->
 			end
 	end.
 
+apply_bindings(#liffey{} = L) ->
+	L;
+apply_bindings(X) ->
+	X.
+
 get_bindings() ->
 	case get('$POMETO_DATA') of
 		#storage{bindings = Bindings} -> Bindings;
@@ -131,7 +141,7 @@ put_line_no(N) ->
 			put('$POMETO_DATA', S#storage{current_line_no = N});
 	    undefined ->
 			put('$POMETO_DATA', #storage{current_line_no = N})
-		end,
+	end,
 	ok.
 
 get_line_no() ->
@@ -162,3 +172,19 @@ print_DEBUG(Label) ->
 	end,
 	?debugFmt("~n*************************************************~n", []).
 
+append_error(Err) ->
+	?debugFmt("in append err for ~p~n", [Err]),
+	case get('$POMETO_DATA') of
+		#storage{errors = Errs} = S ->
+		?debugFmt("in append err with errs of ~p~n", [Errs]),
+			put('$POMETO_DATA', S#storage{errors = [Err | Errs]});
+	    undefined ->
+			put('$POMETO_DATA',  #storage{errors = [Err]})
+	end,
+	ok.
+
+get_errors() ->
+	case get('$POMETO_DATA') of
+		#storage{errors = Errs} -> lists:reverse(Errs);
+	    undefined               -> []
+	end.

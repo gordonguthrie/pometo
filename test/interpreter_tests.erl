@@ -11,5 +11,7 @@ basic_interpreter_test_() ->
 	      "A + B",
 	Got = pometo:interpret_TEST(Str),
 	Exp = "10 11 ¯2",
+    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
+
 

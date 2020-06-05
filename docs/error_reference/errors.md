@@ -75,6 +75,8 @@ SYNTAX ERROR (invalid token:r) on 1 at 5
 
 # VARIABLE REASSIGNED
 
+## Variable Reassigment Errors
+
 Like in `Erlang` variables in Erlang are immutable once you have run `A ← 1 2 3` then `A` has the value `1 2 3` as long as it remains in scope.
 
 Redefining a variable will give you a `VARIABLE REASSIGNED` error.
@@ -83,9 +85,28 @@ Redefining a variable will give you a `VARIABLE REASSIGNED` error.
 "A ← 4 5 6 ⋄ A ← 6 7 ¯8
 ```
 
+will give the following error:
+
 ```pometo_results
 Error
 A ← 4 5 6 ⋄ A ← 6 7 ¯8
 ------------^
 VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13
+```
+
+# VARIABLE NOT DEFINED
+
+## Undefined Variable Errors
+
+You can't invoke a variable before it is defined.
+
+```pometo
+A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments
+A + C
+```
+
+will give the following error:
+
+```pometo_results
+ERROR FIX ME UP
 ```

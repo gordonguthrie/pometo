@@ -62,3 +62,15 @@ variable_redefinition_test_() ->
 		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 3 at character 1\n\n",
     % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
+
+%% move to errors
+undefined_variable_failure_test_() ->
+	Str = "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
+	      "A + C",
+	Got = pometo:interpret_TEST(Str),
+	Exp = "Error\n" ++
+		  "A + C\n" ++
+		  "----^\n" ++
+		  "VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5\n\n",
+    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+	?_assertEqual(Exp, Got).
