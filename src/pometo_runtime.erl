@@ -54,33 +54,6 @@ format_errors(Errors) ->
 	lists:flatten(string:join(FormattedEs, "\n") ++ "\n").
 
 %%
-%% Binding substition for the interpreter
-%%
-
-%substitute_bindings(Ast, Bindings) ->
-%	?debugFmt("Ast is ~p~n", [Ast]),
-%	?debugFmt("Bindings is ~p~n", [Bindings]),
-%	Ast.
-
-%combine_bindings(Bindings, NewBindings, Expr) ->
-%	?debugFmt("runtime: bindings is ~p~nnewbindings is ~p~n", [Bindings, NewBindings]),
-%	MergeFn = fun({K, V}, Bs) ->
-%		?debugFmt("in mergefn with ~p-~p for ~p~n", [K, V, Bs]),
-%		case maps:is_key(K, Bs) of
-%			false ->
-%				maps:put(K, #binding{expression = Expr, results = V}, Bs);
-%			true ->
-%				?debugFmt("runtime: true K is ~p~n-Bs is ~p~n", [K, Bs]),
-%				throw(#error{type    = "VARIABLE REDEFINITION",
-%					         msg1    = K,
-%					         msg2    = "already exists",
-%					         at_line = 99,
-%					         at_char = 99})
-%			end
-%		end,
-%   lists:foldl(MergeFn, Bindings, NewBindings).
-
-%%
 %% Exported for use in compiled modules
 %%
 
