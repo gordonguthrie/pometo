@@ -7,14 +7,10 @@
 			consolidate_bindings/0,
 			get_bindings/0,
 			get_current_bindings/0,
-			%gets/1,
-			%get_keys/1,
 			clear/1,
 			clear_all/0,
 			put_line_no/1,
-			get_line_no/0,
-			get_errors/0,
-			append_error/1
+			get_line_no/0
 		]).
 
 %% debugging export
@@ -111,20 +107,6 @@ get_current_bindings() ->
 	    undefined             -> #{}
 	end.
 
-
-%get_keys() ->
-%	case get('$POMETO_DATA') of
-%		#storage{bindings = Bindings} = S -> maps:keys(Bindings);
-%	    undefined               -> []
-%	end.
-
-%gets(Scope) ->
-%	#storage{bindings = Bindings} = get('$POMETO_DATA'),
-%	case maps:is_key(Scope, Bindings) of
-%		true  -> {ok,    maps:get(Scope, Bindings)};
-%		false -> {error, io_lib:format("no key called ~p", [Scope])}
-%	end.
-
 clear_all() ->
 	erase(),
 	ok.
@@ -171,20 +153,3 @@ print_DEBUG(Label) ->
 		?debugFmt("The Bindings are ~p~n", [Bindings])
 	end,
 	?debugFmt("~n*************************************************~n", []).
-
-append_error(Err) ->
-	?debugFmt("in append err for ~p~n", [Err]),
-	case get('$POMETO_DATA') of
-		#storage{errors = Errs} = S ->
-		?debugFmt("in append err with errs of ~p~n", [Errs]),
-			put('$POMETO_DATA', S#storage{errors = [Err | Errs]});
-	    undefined ->
-			put('$POMETO_DATA',  #storage{errors = [Err]})
-	end,
-	ok.
-
-get_errors() ->
-	case get('$POMETO_DATA') of
-		#storage{errors = Errs} -> lists:reverse(Errs);
-	    undefined               -> []
-	end.
