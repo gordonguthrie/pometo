@@ -6,9 +6,9 @@
 
 %% Tests
 
-basic_compiler_test_xx() ->
+basic_compiler_test_() ->
 	Str = "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
 	      "A + B",
-	Got = pometo:compile_load_and_run_TEST(Str),
+	Got = pometo:compile_load_and_run_TEST(Str, "basic_compiler_test_module"),
 	Exp = "10 11 ¯2",
 	?_assertEqual(Exp, Got).
