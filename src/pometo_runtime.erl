@@ -24,7 +24,7 @@
 -export([
 		dyadic/1,
 		monadic/1,
-		'let'/1
+		runtime_let/1
 		]).
 
 -define(EMPTY_ACCUMULATOR, []).
@@ -34,10 +34,12 @@
 %% Runtime API
 %%
 
-run_ast(#liffey{op = #'¯¯⍴¯¯'{}} = L)                          -> L;
-run_ast(#liffey{op = 'let',         args = [_V, _A | []]} = L) -> 'let'([L]);
-run_ast(#liffey{op = {dyadic, Op},  args = [A1, A2]})          -> dyadic([Op, A1, A2]);
-run_ast(#liffey{op = {monadic, Op}, args = [A]})               -> monadic([Op, A]).
+run_ast(#liffey{op = #'¯¯⍴¯¯'{}} = L)                         -> L;
+run_ast(#liffey{op = 'let',         args = [_V, A | []]} = L) -> NewL = L#liffey{op = runtime_let,
+                                                                                 args = A},
+                                                                 runtime_let([NewL]);
+run_ast(#liffey{op = {dyadic, Op},  args = [A1, A2]})         -> dyadic([Op, A1, A2]);
+run_ast(#liffey{op = {monadic, Op}, args = [A]})              -> monadic([Op, A]).
 
 rho(List) when is_list(List) ->
 	Len = length(List),
@@ -46,6 +48,8 @@ rho(List) when is_list(List) ->
 	         dimensions = [Len]}.
 
 format([]) -> [];
+format(List) when is_list(List) ->
+	lists:flatten(string:join([fmt(X) || X <- List], [" "]));
 format(#liffey{op = #'¯¯⍴¯¯'{}, args = Args}) ->
 	lists:flatten(string:join([fmt(X) || X <- Args], [" "])).
 
@@ -57,7 +61,7 @@ format_errors(Errors) ->
 %% Exported for use in compiled modules
 %%
 
-'let'([#liffey{op = 'let', args = [_Var, Arg | []]}]) -> Arg.
+runtime_let([#liffey{op = runtime_let, args = Args}]) -> Args.
 
 dyadic([Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A1} = L1,
 	        #liffey{op = #'¯¯⍴¯¯'{dimensions = N}, args = A2}]) ->

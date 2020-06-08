@@ -160,10 +160,10 @@ I have some very basic APL running, yay!
 Basically:
 
 ```
-1.1 2.2 + 3.3 4.4 
-1.1 2.2 ¯ 3.3 4.4 
-1.1 2.2 × 3.3 4.4 
-1.1 2.2 ÷ 3.3 4.4 
+1.1 2.2 + 3.3 4.4
+1.1 2.2 ¯ 3.3 4.4
+1.1 2.2 × 3.3 4.4
+1.1 2.2 ÷ 3.3 4.4
 ```
 
 The focus is next on getting the continuous integration and testing up.
@@ -325,5 +325,55 @@ Special operators:
 * `rho` contains multitudes - unlike other operators `rho` is key at execution time
 * brackets need to be transformed into an operator
 
+### Source Code Mapping
 
+There is now (commented out normally) a line in `pometo_compiler` that prints out the intermediate Erlang source code for the module under compilation.
 
+At the moment it is only for compiled modules for compiler testing (pending adding functions to the `Pometo` language). The module structure looks like this:
+
+```erlang
+-module(basic_compiler_test_module).
+
+-export([run/0]).
+
+-record(liffey,
+  {op, args = [], line_no = none, char_no = none}).
+
+-record('¯¯⍴¯¯',
+  {style = eager, indexed = false, dimensions = [],
+   line_no = none, char_no = none}).
+
+run() ->
+    do_run_3d224d14a05bc38e76541a3a3b0b6bf35b86abab().
+
+do_run_3d224d14a05bc38e76541a3a3b0b6bf35b86abab() ->
+    A = [4, 5, 6],
+    B = [6, 7, -8],
+    pometo_runtime:dyadic(["+",
+         #liffey{op =
+               #'¯¯⍴¯¯'{style = eager, indexed = false,
+            dimensions = [1], line_no = 2,
+            char_no = 1},
+           args = A, line_no = none, char_no = none},
+         #liffey{op =
+               #'¯¯⍴¯¯'{style = eager, indexed = false,
+            dimensions = [1], line_no = 2,
+            char_no = 5},
+           args = B, line_no = none, char_no = none}]).
+```
+
+In addition a source module data structure is built up:
+
+```
+#{1 => {sourcemap,none,none,"module attribute"},
+  2 => {sourcemap,none,none,"export attribute"},
+  3 => {sourcemap,none,none,"parser records import definition"},
+  5 => {sourcemap,none,none,"public declaration of run/0"},
+  6 => {sourcemap,1,1,"let"},
+  7 => {sourcemap,1,13,"let"},
+  8 => {sourcemap,2,3,"dyadic_+"}}
+```
+
+In the final state the exposed function (here `run`) will contain a `try`/`catch` pair and any runtime errors will be caught. There will be an internal function constructured from the `sourcemap` data and run time errors will be reformatted to express that error in terms of the `line_no`/`character_no` of the original source code.
+
+As the characteristics of `Pometo` functions are better defined in the language the exported function wrapping the `do_` function may or may not be decorated with functions that cast lists into internal `Pometo` data structures before invoking the `do_` and back again after.

@@ -14,8 +14,7 @@ TRUE = (true)
 FALSE = (false)
 BOOL = ({TRUE}|{FALSE})
 
-%% is this ugly? yes it is, moving on swiftly
-VARIABLE = ([A-Z]([A-Za-z0-9]|[^][\000-\s⌺¨⌶⍫<⍒≤⍋=⌽≥⍉>⊖≠⍟∨⍱∧⍲×!÷⌹?⍵∊⍴~⍨↑↓⍳⍸○⍥*⍣←⍞→⍬⍺⌈⌊∇∘⍤’⌸⎕⌷⍎≡⍕≢#⊢⊣⊂⊆⊃∩∪⊥⊤\|⍝⍪⍀⌿⍠,.;:'"\[{\]}`~!@£$\%\^&\*\(\)-_=\+])*)
+VARIABLE = (_?[A-Z][A-Za-z0-9@_]*)
 
 WHITESPACE = [\000-\s]*
 

@@ -19,8 +19,8 @@ run_interpreter_test(Code) when is_list(Code) ->
 run_compiler_test(Title, Code) when is_list(Code) ->
     Code2 = string:join(Code, "\n"),
     try
-        pometo:compile_TEST(Code2, Title)
+        pometo:compile_load_and_run_TEST(Code2, Title)
     catch Type:Errs ->
-        ?debugFmt("Test ~ts failed to run in the interpreter~n- with ~p:~p", [Code, Type, Errs]),
+        ?debugFmt("Test ~ts failed to run in the compiler~n- with ~p:~p", [Code, Type, Errs]),
         {errors, Errs}
     end.

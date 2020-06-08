@@ -2,28 +2,18 @@
 
 ## Variable Naming Conventions
 
-Variables in `pometo` follow the `Erlang` convention - they all start with an uppercase letter and may contain upper and lower case letters, unicode characters (except for `_`, `¯` `∆` and `⍙` and all the punctuation keys you can see on your keyboard) and the digits `0` to `9`.
+Variables in `pometo` follow the `Erlang` convention - they all start with an uppercase letter and may contain upper and lower case letters, the digits `0` to `9` and `_` and `@`.
 
 Like `Erlang` variables they are immutable - once you have bound a variable you cannot change its value.
 
-Variables are bound with the `let` operator ←
+Variables are bound with the `let` operator `←`. (Note in this example we are prefixing the variable with `_` the ***I am not being used*** prefix for operators. You don't need this in the interpreter but if you write `Pometo` modules they won't compile - you will get an error.
 
 ```pometo
-MyVar99 ← 1 2 3
+_MyVar99 ← 1 2 3
 ```
 
 ```pometo_results
 1 2 3
-```
-
-Go crazy with your unicode characters
-
-```pometo
-My🧫🎱🧫😍😚💨🍑🧐🐜 ← 1 2.2 3333
-```
-
-```pometo_results
-1 2.2 3333
 ```
 
 Variables can be used in place of values in other `Pometo` functions
@@ -35,8 +25,6 @@ A + B
 ```
 
 ```pometo_results
-1 2 3
-4 5 6
 5 7 9
 ```
 

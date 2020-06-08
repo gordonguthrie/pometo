@@ -24,7 +24,8 @@ compile_load_and_run_TEST(Str, ModuleName) ->
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
-		{?EMPTYERRORS, Exprs} -> compile2([{{run, 0, []}, Exprs}], ModuleName);
+		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
+		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName);
 	    {Errors,      _Exprs} -> lists:flatten(Errors)
 	end.
 
@@ -33,6 +34,7 @@ interpret_TEST(Str) ->
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
+		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> interpret2(Exprs);
 	    {Errors,      _Exprs} -> lists:flatten(Errors)
 	end.
@@ -51,16 +53,18 @@ lex_TEST(Str) ->
 %%% Helper Functions
 %%%
 
-compile2(Exprs, ModuleName) ->
-	?debugFmt("in compile2 with Exprs of ~p~n", [Exprs]),
-	{module, Mod} = pometo_compiler:compile(Exprs, ModuleName),
-	Results = Mod:run(),
-	pometo_runtime:format(Results).
+compile_and_run2(Exprs, ModuleName) ->
+	case pometo_compiler:compile(Exprs, ModuleName) of
+		{module, Mod} -> Results       = Mod:run(),
+						 pometo_runtime:format(Results);
+		{error, Errs} -> pometo_runtime:format_errors(Errs)
+	end.
 
 interpret2(Exprs) ->
 	Resps          = [pometo_runtime:run_ast(E) || E <- Exprs],
 	FormattedResps = [pometo_runtime:format(R)  || R <- Resps],
-	string:join(FormattedResps, "\n").
+	LastResponse   = hd(lists:reverse(FormattedResps)),
+	LastResponse.
 
 lex2(Str) ->
 	Lines = string:split(Str, "\n", all),
