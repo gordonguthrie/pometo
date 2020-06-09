@@ -6,8 +6,6 @@
 			can_bindings_be_consolidated/0,
 			consolidate_bindings/0,
 			get_bindings/0,
-			get_current_bindings/0,
-			clear/1,
 			clear_all/0,
 			put_line_no/1,
 			get_line_no/0
@@ -101,20 +99,8 @@ get_bindings() ->
 	    undefined           -> #{}
 	end.
 
-get_current_bindings() ->
-	case get('$POMETO_DATA') of
-		#storage{current = C} -> maps:from_list(C);
-	    undefined             -> #{}
-	end.
-
 clear_all() ->
 	erase(),
-	ok.
-
-clear(Scope) ->
-	#storage{bindings = Bindings} = S = get('$POMETO_DATA'),
-	NewBindings = map:remove(Scope, Bindings),
-	put('$POMETO_DATA', S#storage{bindings = NewBindings}),
 	ok.
 
 put_line_no(N) ->
