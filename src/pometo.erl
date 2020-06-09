@@ -6,6 +6,14 @@
 -include("errors.hrl").
 
 %%%
+%%% production exports
+%%%
+
+-export([
+		 interpret/2
+		]).
+
+%%%
 %%% exported for testing only
 %%%
 -export([
@@ -19,7 +27,35 @@
 -define(EMPTYARGS,      []).
 -define(EMPTYERRORS,    []).
 
+%%
+%% Production API
+%%
+
+interpret(Str, ExternalBindings) ->
+    scope_dictionary:clear_all(),
+	% first we need to load the external bindings into the scope dictionary
+	ok = scope_dictionary:persist_bindings(ExternalBindings),
+	BinExpr = unicode:characters_to_binary(Str, utf8),
+	RawLexed = lex2(Str),
+	{Expressions, Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
+	NormalRawExprs          = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	case NormalRawExprs of
+		{?EMPTYERRORS, []} ->
+			{#{},      #{expr => BinExpr, succeeded => true,  results => []}}; % a line with a comment only will parse to an empty list
+		{?EMPTYERRORS, Exprs} ->
+			Results = unicode:characters_to_binary(string:join(interpret2(Exprs), "\n"), utf8),
+			{Bindings, #{expr => BinExpr, succeeded => true, results => Results}};
+	    {Errors,      _Exprs} ->
+            Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
+            {#{},      #{expr => BinExpr, succeeded => false, results => Errs}}
+	end.
+
+%%
+%% Testing API
+%%
+
 compile_load_and_run_TEST(Str, ModuleName) ->
+    scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -30,21 +66,24 @@ compile_load_and_run_TEST(Str, ModuleName) ->
 	end.
 
 interpret_TEST(Str) ->
+    scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> interpret2(Exprs);
+		{?EMPTYERRORS, Exprs} -> interpret_TEST2(Exprs);
 	    {Errors,      _Exprs} -> lists:flatten(Errors)
 	end.
 
 parse_TEST(Str) ->
+    scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Exprs, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	Exprs.
 
 lex_TEST(Str) ->
+    scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Lexed, _Lines} = lists:unzip(RawLexed),
 	Lexed.
@@ -63,6 +102,12 @@ compile_and_run2(Exprs, ModuleName) ->
 interpret2(Exprs) ->
 	Resps          = [pometo_runtime:run_ast(E) || E <- Exprs],
 	FormattedResps = [pometo_runtime:format(R)  || R <- Resps],
+	FormattedResps.
+
+%% in the TEST suite we make the interpreter mimic the compiler and return the last value only
+interpret_TEST2(Exprs) ->
+	Resps          = [pometo_runtime:run_ast(E) || E <- Exprs],
+	FormattedResps = [pometo_runtime:format(R)  || R <- Resps],
 	LastResponse   = hd(lists:reverse(FormattedResps)),
 	LastResponse.
 
@@ -74,7 +119,6 @@ lex2(Str) ->
 
 lex3(Code, LineNo) ->
     % gotta clear the scope dictionary
-    scope_dictionary:clear_all(),
 	scope_dictionary:put_line_no(LineNo),
     try
         Lexed = pometo_lexer:get_tokens(Code),
@@ -166,8 +210,9 @@ substitute_arg(#liffey{args = Args} = L, {Bindings, Errors, Results}) ->
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#var{name = Var, line_no = N, char_no = C}, {Bindings, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
-		true  -> {_, NewL} = maps:get(Var, Bindings),
-				 #liffey{args = NewA} = NewL,
+		true  -> Binding = maps:get(Var, Bindings),
+				 Subst = maps:get(results, Binding),
+				 #liffey{args = NewA} = Subst,
 				 {Bindings, Errors, lists:reverse(NewA) ++ Results};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
                               msg1    = Var,

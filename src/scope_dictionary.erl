@@ -1,5 +1,6 @@
 -module(scope_dictionary).
 
+%% normal exports
 -export([
 			puts/1,
 			are_current_bindings_valid/0,
@@ -11,8 +12,17 @@
 			get_line_no/0
 		]).
 
+% exports for use in the interpreter only
+% in the interpreter the global bindings of Rappel
+% need to be loaded into the scope dictionary at first
+-export([
+			persist_bindings/1
+		]).
+
+
 %% debugging export
 -export([
+		  'print_DEBUG'/0,
 		  'print_DEBUG'/1
 		]).
 
@@ -88,15 +98,10 @@ can_bindings_be_consolidated() ->
 			end
 	end.
 
-apply_bindings(#liffey{} = L) ->
-	L;
-apply_bindings(X) ->
-	X.
-
 get_bindings() ->
 	case get('$POMETO_DATA') of
 		#storage{bindings = Bindings} -> Bindings;
-	    undefined           -> #{}
+	    undefined                     -> #{}
 	end.
 
 clear_all() ->
@@ -116,6 +121,20 @@ get_line_no() ->
 	#storage{current_line_no = N} = get('$POMETO_DATA'),
 	N.
 
+persist_bindings(Bs) ->
+	case get('$POMETO_DATA') of
+		#storage{bindings = OldBs} = S ->
+			MergedBs = maps:merge(OldBs, Bs),
+			put('$POMETO_DATA', S#storage{bindings = MergedBs});
+	    undefined ->
+			put('$POMETO_DATA', #storage{bindings = Bs})
+	end,
+	ok.
+
+%%
+%% private functions
+%%
+
 get_duplicates(Bindings) -> get_dups(lists:sort(Bindings), ?EMPTYDUPS).
 
 get_dups([],                      Dups) -> Dups;
@@ -123,6 +142,8 @@ get_dups([_H               | []], Dups) -> Dups;
 % three in a row is two errors
 get_dups([{K, V1}, {K, V2} | T],  Dups) -> get_dups([{K, V2} | T], [{K, {V1, V2}} | Dups]);
 get_dups([_H               | T],  Dups) -> get_dups(T, Dups).
+
+print_DEBUG() -> print_DEBUG("Scope Dictionary").
 
 print_DEBUG(Label) ->
 	?debugFmt("~n*************************************************~n~n", []),

@@ -102,14 +102,19 @@ You can't invoke a variable before it is defined.
 
 ```pometo
 A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments
-A + C
+D + C
 ```
 
 will give the following error:
 
 ```pometo_results
 Error
-A + C
+D + C
 ----^
 VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5
+
+Error
+D + C
+^
+VARIABLE NOT DEFINED (D:variable is not defined) on line 2 at character 1
 ```

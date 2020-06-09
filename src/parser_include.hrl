@@ -57,7 +57,8 @@ extract(dyadic, {scalar_fn, CharNo, _, Fnname}, Args) ->
 make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
   #var{name     = Var,
        char_no  = CharNo} = V,
-  ok = scope_dictionary:puts({Var, {V, Expr}}),
+  B = #{binding => V, results => Expr},
+  ok = scope_dictionary:puts({Var, B}),
   #liffey{op      = 'let',
           args    = [list_to_atom(Var), Expr],
           char_no = CharNo,
@@ -77,10 +78,10 @@ make_err({CharNo, pometo_parser, [Error | Body]}) ->
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = CharNo};
-make_err({duplicates, {Var, {V1, V2}}}) ->
-  {#var{char_no = C1,
-        line_no = L1}, _} = V1,
-  {#var{char_no = C2}, _} = V2,
+make_err({duplicates, {Var, {B1, B2}}}) ->
+  #var{char_no = C1,
+       line_no = L1} = maps:get(binding, B1),
+  #var{char_no = C2} = maps:get(binding, B2),
   Msg2 = io_lib:format("was previously assigned on line ~p at char ~p", [L1, C1]),
   #error{type    = "VARIABLE REASSIGNED",
          msg1    = Var,
