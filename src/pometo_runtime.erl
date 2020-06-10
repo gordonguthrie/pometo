@@ -35,12 +35,15 @@ run_ast(AST, Str) ->
 		           {error, Err#error{expr = Str}}
 	end.
 
-run_ast2(#liffey{op = #'¯¯⍴¯¯'{}} = L)                         -> L;
-run_ast2(#liffey{op = 'let',         args = [_V, A | []]} = L) -> NewL = L#liffey{op = runtime_let,
-                                                                                  args = A},
-                                                                 runtime_let([NewL]);
-run_ast2(#liffey{op = {dyadic, Op},  args = [A1, A2]})         -> dyadic([Op, A1, A2]);
-run_ast2(#liffey{op = {monadic, Op}, args = [A]})              -> monadic([Op, A]).
+run_ast2(#liffey{op   = #'¯¯⍴¯¯'{}} = L)   -> L;
+run_ast2(#liffey{op   = 'let',
+	             args = [_V, A | []]} = L) -> NewL = L#liffey{op   = runtime_let,
+                                                              args = A},
+                                              runtime_let([NewL]);
+run_ast2(#liffey{op   = {dyadic, Op},
+	             args = [A1, A2]})         -> dyadic([Op, A1, A2]);
+run_ast2(#liffey{op   = {monadic, Op},
+	             args = [A]})              -> monadic([Op, A]).
 
 rho(List) when is_list(List) ->
 	Len = length(List),
