@@ -13,7 +13,7 @@ run_interpreter_test(Code) when is_list(Code) ->
         pometo:interpret_TEST(Code2)
     catch Type:Errs ->
         ?debugFmt("Test ~ts failed to run in the interpreter~n- with ~p:~p", [Code, Type, Errs]),
-        {errors, Errs}
+        io_lib:format("Interpreter failed to run ~ts with ~p:~p~n", [Code, Type, Errs])
     end.
 
 run_compiler_test(Title, Code) when is_list(Code) ->
@@ -22,5 +22,5 @@ run_compiler_test(Title, Code) when is_list(Code) ->
         pometo:compile_load_and_run_TEST(Code2, Title)
     catch Type:Errs ->
         ?debugFmt("Test ~ts failed to run in the compiler~n- with ~p:~p", [Code, Type, Errs]),
-        {errors, Errs}
+        io_lib:format("Compiler failed to run ~ts with ~p:~p~n", [Code, Type, Errs])
     end.

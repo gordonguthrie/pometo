@@ -1,7 +1,7 @@
 -module(pometo_compiler).
 
 -export([
-			compile/2,
+			compile/3,
 			compile/1
 		]).
 
@@ -21,12 +21,12 @@
 
 %% fake compile point until we get full compile syntax
 %% gotta call the damn module something in the meantime
-compile(#liffey{} = L) -> compile(L, pometo).
+compile(#liffey{} = L) -> compile(L, pometo, "").
 
 % copy from https://github.com/basho/riak_ql/blob/develop/src/riak_ql_ddl_compiler.erl
 
-compile(Functions, ModuleName) when is_list(Functions) andalso
-                                    is_list(ModuleName) ->
+compile(Functions, ModuleName, Str) when is_list(Functions) andalso
+                                         is_list(ModuleName) ->
 	SourceMap = #{},
 	{Exports, _FunBodies} = lists:unzip(Functions),
 
@@ -74,7 +74,7 @@ compile(Functions, ModuleName) when is_list(Functions) andalso
 			% print_src(AST),
 			load_BEAM(AST);
         {ok, [{"nofile", Errs}]} ->
-			{error, format_lint_errors(Errs, SourceMap5, ?EMPTY_RESULTS)}
+			{error, format_lint_errors(Errs, SourceMap5, ?EMPTY_RESULTS, Str)}
     end.
 
 %% This function is partially implemented because it will need to
@@ -87,8 +87,10 @@ reset({record_field, _LineNo, Key}, NewLineNo) ->
 reset({record_field, _LineNo, Key, Value}, NewLineNo) ->
 	{record_field, NewLineNo, Key, Value}.
 
-format_lint_errors([], _SM, Errs) -> lists:reverse(Errs);
-format_lint_errors([{_LineNo, erl_lint, {unused_var, V}} | T], SM, Errs) ->
+format_lint_errors([], _SM, Errs, _Str) -> lists:reverse(Errs);
+format_lint_errors([{_LineNo, erl_lint, {unused_var, V}} | T], SM, Errs, Str) ->
+	% FIX ME
+	% at this point LineNo can't be matched upto Str so we can't fix up this error
 	Err = #error{type    = "UNUSED VARIABLE",
                  msg1    = "variable is unused",
                  msg2    = atom_to_list(V),
@@ -96,7 +98,7 @@ format_lint_errors([{_LineNo, erl_lint, {unused_var, V}} | T], SM, Errs) ->
                  at_line = 1,
                  at_char = 1
                 },
-	format_lint_errors(T, SM, [Err | Errs]).
+	format_lint_errors(T, SM, [Err | Errs], Str).
 
 print_src(AST) ->
 	Syntax = erl_syntax:form_list(AST),
@@ -139,19 +141,24 @@ make_public_fns([{Fn, Arity, Args} | T], LineNo, ModuleName, SourceMap, Results)
 		   integer_to_list(Arity),
 	NewSourceMap = SourceMap#{LineNo => #sourcemap{description = Desc}},
 	% we are about to add an extra line so bump the line no
-	Body = make_export_body(ModuleName, Fn, Args),
+	{NewLineNo, Body} = make_export_body(ModuleName, Fn, Args, LineNo),
 	Src = atom_to_list(Fn) ++
 		  make_args(Args)  ++
 		  " ->"           ++
 		  Body,
-	make_public_fns(T, LineNo + 1, ModuleName, NewSourceMap, [?Q(Src) | Results]).
+	make_public_fns(T, NewLineNo + 1, ModuleName, NewSourceMap, [?Q(Src) | Results]).
 
 make_args(Args) -> "(" ++ string:join(Args, ", ") ++ ")".
 
-make_export_body(ModuleName, Fn, Args) ->
-	Body = make_do_fn(ModuleName, Fn, Args) ++
-	       ".",
-	Body.
+make_export_body(ModuleName, Fn, Args, LineNo) ->
+	Body = "try "                            ++
+			make_do_fn(ModuleName, Fn, Args) ++
+			"\n"                             ++
+			"catch\n"                        ++
+			"    throw:E -> io:format(\"throwing ~p~n\", [E]),\n"             ++
+			"               E\n" ++
+			"end.\n",
+	{LineNo + 4, Body}.
 
 make_do_fn(ModuleName, Fn, Args) ->
     Hash = binary:bin_to_list(base16:encode(crypto:hash(sha, [ModuleName, atom_to_list(Fn), Args]))),

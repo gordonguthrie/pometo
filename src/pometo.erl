@@ -43,7 +43,7 @@ interpret(Str, ExternalBindings) ->
 		{?EMPTYERRORS, []} ->
 			{#{},      #{expr => BinExpr, succeeded => true,  results => []}}; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} ->
-			Results = unicode:characters_to_binary(string:join(interpret2(Exprs), "\n"), utf8),
+			Results = unicode:characters_to_binary(string:join(interpret2(Exprs, Str), "\n"), utf8),
 			{Bindings, #{expr => BinExpr, succeeded => true, results => Results}};
 	    {Errors,      _Exprs} ->
             Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
@@ -61,7 +61,7 @@ compile_load_and_run_TEST(Str, ModuleName) ->
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName);
+		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName, Str);
 	    {Errors,      _Exprs} -> lists:flatten(Errors)
 	end.
 
@@ -72,7 +72,7 @@ interpret_TEST(Str) ->
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> interpret_TEST2(Exprs);
+		{?EMPTYERRORS, Exprs} -> interpret_TEST2(Exprs, Str);
 	    {Errors,      _Exprs} -> lists:flatten(Errors)
 	end.
 
@@ -92,22 +92,25 @@ lex_TEST(Str) ->
 %%% Helper Functions
 %%%
 
-compile_and_run2(Exprs, ModuleName) ->
-	case pometo_compiler:compile(Exprs, ModuleName) of
-		{module, Mod} -> Results       = Mod:run(),
-						 pometo_runtime:format(Results);
+compile_and_run2(Exprs, ModuleName, Str) ->
+	case pometo_compiler:compile(Exprs, ModuleName, Str) of
+		{module, Mod} -> case Mod:run() of
+							{error, Err} -> FixedErr = Err#error{expr = Str, at_line = 1, at_char = 1},
+											pometo_runtime:format_errors([FixedErr]);
+							Results      -> pometo_runtime:format(Results)
+						 end;
 		{error, Errs} -> pometo_runtime:format_errors(Errs)
 	end.
 
-interpret2(Exprs) ->
-	Resps          = [pometo_runtime:run_ast(E) || E <- Exprs],
-	FormattedResps = [pometo_runtime:format(R)  || R <- Resps],
+interpret2(Exprs, Str) ->
+	Resps          = [pometo_runtime:run_ast(E, Str) || E <- Exprs],
+	FormattedResps = [pometo_runtime:format(R)       || R <- Resps],
 	FormattedResps.
 
 %% in the TEST suite we make the interpreter mimic the compiler and return the last value only
-interpret_TEST2(Exprs) ->
-	Resps          = [pometo_runtime:run_ast(E) || E <- Exprs],
-	FormattedResps = [pometo_runtime:format(R)  || R <- Resps],
+interpret_TEST2(Exprs, Str) ->
+	Resps          = [pometo_runtime:run_ast(E, Str) || E <- Exprs],
+	FormattedResps = [pometo_runtime:format(R)       || R <- Resps],
 	LastResponse   = hd(lists:reverse(FormattedResps)),
 	LastResponse.
 

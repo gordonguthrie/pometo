@@ -8,16 +8,10 @@
 %% things exported for runtime
 -export([
 		  rho/1,
-		  run_ast/1,
+		  run_ast/2,
 		  format/1,
 		  format_errors/1
 		]).
-
-%% exported for the interpreter
-%-export([
-%		  substitute_bindings/2,
-%		  combine_bindings/3
-%		]).
 
 %% exported for inclusion in compiled modules
 %% should never be called directly
@@ -34,12 +28,19 @@
 %% Runtime API
 %%
 
-run_ast(#liffey{op = #'¯¯⍴¯¯'{}} = L)                         -> L;
-run_ast(#liffey{op = 'let',         args = [_V, A | []]} = L) -> NewL = L#liffey{op = runtime_let,
-                                                                                 args = A},
+run_ast(AST, Str) ->
+	try run_ast2(AST)
+	catch
+		throw:E -> {error, #error{} = Err} = E,
+		           {error, Err#error{expr = Str}}
+	end.
+
+run_ast2(#liffey{op = #'¯¯⍴¯¯'{}} = L)                         -> L;
+run_ast2(#liffey{op = 'let',         args = [_V, A | []]} = L) -> NewL = L#liffey{op = runtime_let,
+                                                                                  args = A},
                                                                  runtime_let([NewL]);
-run_ast(#liffey{op = {dyadic, Op},  args = [A1, A2]})         -> dyadic([Op, A1, A2]);
-run_ast(#liffey{op = {monadic, Op}, args = [A]})              -> monadic([Op, A]).
+run_ast2(#liffey{op = {dyadic, Op},  args = [A1, A2]})         -> dyadic([Op, A1, A2]);
+run_ast2(#liffey{op = {monadic, Op}, args = [A]})              -> monadic([Op, A]).
 
 rho(List) when is_list(List) ->
 	Len = length(List),
@@ -51,7 +52,9 @@ format([]) -> [];
 format(List) when is_list(List) ->
 	lists:flatten(string:join([fmt(X) || X <- List], [" "]));
 format(#liffey{op = #'¯¯⍴¯¯'{}, args = Args}) ->
-	lists:flatten(string:join([fmt(X) || X <- Args], [" "])).
+	lists:flatten(string:join([fmt(X) || X <- Args], [" "]));
+format({error, Err}) ->
+	format_errors([Err]).
 
 format_errors(Errors) ->
 	FormattedEs = [format_error(X) || X <- Errors],
@@ -75,7 +78,20 @@ dyadic([Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A1]},
 dyadic([Op, #liffey{                                 args = A1} = L1,
 	        #liffey{op = #'¯¯⍴¯¯'{dimensions = [1]}, args = [A2]}]) ->
 		Vals = apply(A1, A2, right, Op, ?EMPTY_ACCUMULATOR),
-		L1#liffey{args = Vals}.
+		L1#liffey{args = Vals};
+dyadic([Op, #liffey{op = #'¯¯⍴¯¯'{dimensions = N1}, line_no = LNo, char_no = ChNo},
+	        #liffey{op = #'¯¯⍴¯¯'{dimensions = N2}}]) ->
+		Msg1 = io_lib:format("dimensions mismatch in dyadic ~p", [Op]),
+		Msg2 = io_lib:format("LHS dimensions ~p: RHS dimensions ~p", [N1, N2]),
+		Error = #error{
+		                type = "LENGTH ERROR",
+						msg1 = Msg1,
+						msg2 = Msg2,
+						expr = "",
+						at_line = LNo,
+						at_char = ChNo
+					   },
+		throw({error, Error}).
 
 monadic([Op, #liffey{args = A} = L]) ->
 	NewA = [execute_monadic(Op, X) || X <- A],
@@ -108,12 +124,9 @@ execute_monadic("-", V) -> -1 * V;
 execute_monadic("×", V) -> signum(V); % when complex numbers are introduced, this becomes {⍵÷|⍵}.
 execute_monadic("÷", V) -> 1 / V.
 
-signum(V) when V < 0 ->
-    -1;
-signum(V) when V == 0 ->
-    0;
-signum(V) when V > 0 ->
-    1.
+signum(V) when V <  0 -> -1;
+signum(V) when V == 0 -> 0;
+signum(V) when V >  0 -> 1.
 
 fmt(X) when X < 0 -> io_lib:format("¯~p", [abs(X)]);
 fmt(X)            -> io_lib:format("~p",  [X]).
@@ -125,7 +138,8 @@ format_error(#error{type    = T,
 					at_line = AtL,
 					at_char = AtC}) ->
 	Pointer = case AtC of
-		999999 -> "^";
+		999999 -> "";
+		none   -> "";
 		_      -> lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^")
 	end,
 	io_lib:format("Error~n~ts~n~s~n~s (~s:~ts) on line ~p at character ~p~n",
