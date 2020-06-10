@@ -5,6 +5,10 @@
 -include("parser_records.hrl").
 -include("errors.hrl").
 
+% log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
+-compile([{nowarn_unused_function, [{log, 2}]}]).
+
+
 append(#liffey{op     = #'¯¯⍴¯¯'{dimensions = [D1]} = R1,
               args    = Args1,
               char_no = CharNo},
