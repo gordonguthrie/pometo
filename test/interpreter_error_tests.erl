@@ -20,7 +20,7 @@ basic_interpreter_failure_test_() ->
 		  "Myvr ←×← 1 2 3\n" ++
 		  "------^\n" ++
           "SYNTAX ERROR (syntax error before: :{scalar_fn,7,\"×\",\"×\"}) on line 4 at character 7\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in basic_interpreter_failure_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 variable_redefinition_same_line_test_() ->
@@ -30,7 +30,7 @@ variable_redefinition_same_line_test_() ->
 		  "A ← 4 5 6 ⋄ A ← 6 7 ¯8 ⍝ including comments\n" ++
 		  "------------^\n" ++
 		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in variable_redefinition_same_line_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 variable_triple_redefinition_same_line_test_() ->
@@ -50,7 +50,7 @@ variable_triple_redefinition_same_line_test_() ->
 		  "A ← 4 5 6 ⋄ A ← 6 7 8 ⋄ A ← 1 2 3 ⋄ A ← 9 8 7\n" ++
 		  "------------------------------------^\n" ++
 		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 25) on line 1 at character 37\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in variable_triple_redefinition_same_line_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 variable_redefinition_test_() ->
@@ -60,7 +60,7 @@ variable_redefinition_test_() ->
 		  "A ← 6 7 8\n" ++
 		  "^\n" ++
 		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 3 at character 1\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in variable_redefinition_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 %% move to errors
@@ -72,5 +72,5 @@ undefined_variable_failure_test_() ->
 		  "A + C\n" ++
 		  "----^\n" ++
 		  "VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in undefined_variable_failure_test_Got ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).

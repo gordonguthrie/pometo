@@ -13,5 +13,5 @@ basic_compiler_failure_test_() ->
 		  "dunno? FIXME\n" ++
 		  "^\n"            ++
 		  "UNUSED VARIABLE (variable is unused:A) on line 1 at character 1\n\n",
-    % ?debugFmt("~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in basic_compiler_failure_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
