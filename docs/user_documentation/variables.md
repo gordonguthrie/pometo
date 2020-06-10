@@ -16,7 +16,7 @@ _MyVar99 ← 1 2 3
 1 2 3
 ```
 
-Variables can be used in place of values in other `Pometo` functions
+Variables can be used in place of values in other `Pometo` functions:
 
 ```pometo
 A ← 1 2 3
@@ -26,6 +26,31 @@ A + B
 
 ```pometo_results
 5 7 9
+```
+
+And of course they can be mixed and matched:
+
+```pometo
+A ← 1 2 3
+B ← 5 6 7
+A + 4 5 6
+1 2 3 - B
+```
+
+```pometo_results
+¯4 ¯4 ¯4
+```
+
+```pometo
+A ← 1 2 3
+B ← 5 6 7
+C ← A
+D ← B
+C ÷ D
+```
+
+```pometo_results
+0.2 0.3333333333333333 0.42857142857142855
 ```
 
 If you try and use an unset variable you will get an error in your code

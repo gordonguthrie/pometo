@@ -10,6 +10,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("syntax_tools/include/merl.hrl").
 
+% print_src is super useful but also not normally used, so...
+-compile([{nowarn_unused_function, [{print_src, 1}]}]).
+
 -record(sourcemap, {
 					 pometo_line_no = none,
 					 pometo_char_no = none,
@@ -27,6 +30,7 @@ compile(#liffey{} = L) -> compile(L, pometo, "").
 
 compile(Functions, ModuleName, Str) when is_list(Functions) andalso
                                          is_list(ModuleName) ->
+
 	SourceMap = #{},
 	{Exports, _FunBodies} = lists:unzip(Functions),
 
@@ -68,6 +72,8 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 		  PublicFns  ++
 		  PrivateFns ++
 		  [{eof, LineNo5}],
+
+	% io:format("AST is ~p~n", [AST]),
 
 	case erl_lint:module(AST) of
         {ok, []} ->
@@ -175,22 +181,27 @@ make_exports(Exports, LineNo) ->
 make_modname(ModuleName, LineNo) ->
 	{[{attribute, LineNo, module, list_to_atom(ModuleName)}], LineNo + 1}.
 
-make_line(#liffey{op = {Op, Decorator}, args = Args})  ->
-	make_line(#liffey{op = Op, args = [quote(Decorator) | Args]});
-make_line(#liffey{op = #'¯¯⍴¯¯'{dimensions = [1]} = Rho, args = [{var, Var, _, _}]}) ->
+make_line(#liffey{op = {Op, Decorator}, args = Args} = L)  ->
+	make_line(L#liffey{op = Op, args = [quote(Decorator) | Args]});
+make_line(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = {var, Var, _, _}} = L) ->
 	NewRho = make_record(Rho),
 	NewArgs = list_to_atom(Var),
-	make_record(#liffey{op = NewRho, args = NewArgs});
-make_line(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = Args}) ->
+	make_record(L#liffey{op = NewRho, args = NewArgs});
+make_line(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = Args} = L) ->
 	NewRho = make_record(Rho),
 	NewArgs = [maybe_make_record(X) || X <- Args],
-	make_record(#liffey{op = NewRho, args = NewArgs});
+	make_record(L#liffey{op = NewRho, args = NewArgs});
 make_line(#liffey{op = 'let', args = [Var, #liffey{op = #'¯¯⍴¯¯'{}, args = Args} | []]}) ->
 	% strip the variable name and rename the op
-	Src = atom_to_list(Var)  ++
-	       " = ["            ++
-	       expand_args(Args) ++
-	       "]",
+	Src = case Args of
+		{var, V, _, _} -> atom_to_list(Var)  ++
+	                      " = "            ++
+	                      V;
+		_              -> atom_to_list(Var)  ++
+	                      " = ["            ++
+	                      expand_args(Args) ++
+	                       "]"
+	end,
 	Src;
 make_line(#liffey{op = Op, args = Args}) ->
     ExpFun = fun(A, Acc) ->
@@ -212,7 +223,6 @@ maybe_make_record(A) when is_atom(A)  -> atom_to_list(A);
 maybe_make_record(X)                  -> X.
 
 make_record({liffey, Op, Args, LineNo, CharNo}) ->
-
 	SrcArgs = case is_atom(Args) of
 		true  -> "args = "          ++
 		         atom_to_list(Args) ++

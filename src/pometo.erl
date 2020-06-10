@@ -26,6 +26,7 @@
 -define(EMPTYRESULTS,   []).
 -define(EMPTYARGS,      []).
 -define(EMPTYERRORS,    []).
+-define(NO_DIMENSIONS,  none).
 
 %%
 %% Production API
@@ -126,8 +127,7 @@ lex3(Code, LineNo) ->
     try
         Lexed = pometo_lexer:get_tokens(Code),
         {Lexed, Code}
-    catch Type:Errs ->
-        ?debugFmt("Code ~ts failed to lex~n- with ~p:~p", [Code, Type, Errs]),
+    catch _Type:Errs ->
         {{errors, Errs}, Code}
     end.
 
@@ -146,7 +146,7 @@ parse2([{{ok, Lexed}, Expr} | T], Type, LineNo, Results) ->
 	case pometo_parser:parse(Lexed) of
 		{error, E} ->
 			Error = pometo_parser:make_err(E),
-		    Msg = pometo_runtime:format_errors([Error#error{expr = Expr}]),
+		    Msg   = pometo_runtime:format_errors([Error#error{expr = Expr}]),
 			parse2(T, Type, LineNo + 1, [{error, Msg} | Results]);
 		Parsed ->
 			NewRs = validate_references(Parsed, Type, Expr),
@@ -175,8 +175,8 @@ process_bindings(Parsed, Type, Expr) ->
 		compiled    -> fun check_arg/2
 	end,
 	ProcessFn = fun(#liffey{args = Args} = P, Res) ->
-					Acc = {BindingsToBeApplied, ?EMPTYERRORS, ?EMPTYRESULTS},
-					{_, Errors, NewArgs} = lists:foldl(OpFun, Acc, Args),
+					Acc = {BindingsToBeApplied, ?NO_DIMENSIONS, ?EMPTYERRORS, ?EMPTYRESULTS},
+					{_, _Dims, Errors, NewArgs} = lists:foldl(OpFun, Acc, Args),
 					NewRes = case Errors of
 						[] -> P#liffey{args = lists:reverse(NewArgs)};
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
@@ -186,46 +186,71 @@ process_bindings(Parsed, Type, Expr) ->
 				end,
 	_TransformedParsed = lists:foldl(ProcessFn, [], Parsed).
 
-check_arg(#liffey{args = Args} = L, {Bindings, Errors, Results}) ->
-	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
-	{_, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
-	NewResults = [L#liffey{args = lists:reverse(NewArgs)} | Results],
+check_arg(#liffey{op   = #'¯¯⍴¯¯'{dimensions = D} = Rho,
+	              args = Args} = L, {Bindings, _Dims, Errors, Results}) ->
+	Acc = {Bindings, D, ?EMPTYERRORS, ?EMPTYRESULTS},
+	{_, NewDims, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
+	% if the arguments is a single variable it needs to be hoisted out of the list
+	NewResults = case NewArgs of
+		[{var, _, _, _} = V] -> NewRho = substitute_dims(Rho, NewDims),
+							    NewL = L#liffey{op   = NewRho,
+		                                        args = V},
+		                        [NewL | Results];
+		_                    -> [L    | Results]
+	end,
 	NewErrs = Errs ++ Errors,
-	{Bindings, NewErrs, NewResults};
-check_arg(#var{name = Var, line_no = N, char_no = C} = V, {Bindings, Errors, Results}) ->
-	case maps:is_key(Var, Bindings) of
-		true  -> {Bindings, Errors, [V | Results]};
-		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-                              msg1    = Var,
-                              msg2    = "variable is not defined",
-                              at_line = N,
-                              at_char = C},
-				 {Bindings, [Err | Errors], Results}
-	end;
-check_arg(V, {Bindings, Errors, Results}) ->
-	{Bindings, Errors, [V | Results]}.
-
-substitute_arg(#liffey{args = Args} = L, {Bindings, Errors, Results}) ->
-	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
-	{_, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
-	NewResults = [L#liffey{args = lists:reverse(NewArgs)} | Results],
-	NewErrs = Errs ++ Errors,
-	{Bindings, NewErrs, NewResults};
-substitute_arg(#var{name = Var, line_no = N, char_no = C}, {Bindings, Errors, Results}) ->
+	{Bindings, D, NewErrs, NewResults};
+check_arg(#var{name = Var, line_no = N, char_no = C} = V, {Bindings, Dims, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
 		true  -> Binding = maps:get(Var, Bindings),
-				 Subst = maps:get(results, Binding),
-				 #liffey{args = NewA} = Subst,
-				 {Bindings, Errors, lists:reverse(NewA) ++ Results};
+				 Subst   = maps:get(results, Binding),
+				 #liffey{op = Op} = Subst,
+				 NewDims = get_dimensions(Op),
+				 {Bindings, NewDims, Errors, [V | Results]};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
                               msg1    = Var,
                               msg2    = "variable is not defined",
                               at_line = N,
                               at_char = C},
-				 {Bindings, [Err | Errors], Results}
+				 {Bindings, Dims, [Err | Errors], Results}
 	end;
-substitute_arg(V, {Bindings, Errors, Results}) ->
-	{Bindings, Errors, [V | Results]}.
+check_arg(V, {Bindings, Dims, Errors, Results}) ->
+	{Bindings, Dims, Errors, [V | Results]}.
+
+substitute_arg(#liffey{op   = #'¯¯⍴¯¯'{dimensions = D} = Rho,
+					   args = Args} = L, {Bindings, Dims, Errors, Results}) ->
+	Acc = {Bindings, D, ?EMPTYERRORS, ?EMPTYRESULTS},
+	{NewB, NewDims, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
+	{_, NewD2, Errs2, NewA2} = case NewArgs of
+		[#var{} = V] -> substitute_arg(V, {Bindings, Dims, Errs, []});
+		_            -> {NewB, NewDims, Errs, NewArgs}
+	end,
+	NewRho = substitute_dims(Rho, NewD2),
+	NewResults = [L#liffey{op   = NewRho,
+	                       args = lists:reverse(NewA2)} | Results],
+	NewErrs = Errs2 ++ Errors,
+	{Bindings, D, NewErrs, NewResults};
+substitute_arg(#var{name = Var, line_no = N, char_no = C}, {Bindings, Dims, Errors, Results}) ->
+	case maps:is_key(Var, Bindings) of
+		true  -> Binding = maps:get(Var, Bindings),
+				 Subst   = maps:get(results, Binding),
+				 #liffey{op   = Op,
+				         args = NewA} = Subst,
+				 NewDims = get_dimensions(Op),
+				 {Bindings, NewDims, Errors, lists:reverse(NewA) ++ Results};
+		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
+                              msg1    = Var,
+                              msg2    = "variable is not defined",
+                              at_line = N,
+                              at_char = C},
+				 {Bindings, Dims, [Err | Errors], Results}
+	end;
+substitute_arg(V, {Bindings, Dims, Errors, Results}) ->
+	{Bindings, Dims, Errors, [V | Results]}.
+
+substitute_dims(#'¯¯⍴¯¯'{} = Rho, Dims) -> Rho#'¯¯⍴¯¯'{dimensions = Dims}.
+
+get_dimensions(#'¯¯⍴¯¯'{dimensions = D}) -> D.
 
 make_duplicate_errs([], _Expr, Errs) ->
 	lists:reverse(Errs);
