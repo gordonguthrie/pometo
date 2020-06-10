@@ -64,10 +64,8 @@ to_num(Str) when is_list(Str)   ->
         exit : _ ->
             try to_f(Str2)
             catch
-                error:
-                _ -> {error, nan};
-                exit:
-                _ -> {error, nan}
+                error:_ -> {error, nan};
+                exit:_  -> {error, nan}
             end
     end;
 
