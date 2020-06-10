@@ -11,7 +11,7 @@ run() ->
 	Codes = [
 %	         "Z🤣🤣😀😃😄😁😆😂😅🐜+K😑[&^😐¯P😍÷I😍×E😍😍😍😍 ← 1 2 3"
 %			 "1 2 + 3 4"
-	         "Z ← 1 2 3"
+	         "1 2 + 1 2 3"
 %			 "KORYTNAČKA ← 1 2 3"
 %			 "1 2 × ¯3 4",
 %			 "1 2 + 3 4",
@@ -20,21 +20,11 @@ run() ->
 %			 "+ 0 1 2 ¯1"
 	         ],
 	[run(X) || X <- Codes],
-	exit(98765).
+	ok.
 
-run(Code) ->
-	  io:format("~nCode is ~p~n~n", [Code]),
-    Tokens  = pometo_lexer:get_tokens(Code),
-	  io:format("Tokens is ~p~n", [Tokens]),
-    {Parsed, _Bindings}  = parse(Tokens),
-	  io:format("Parsed is ~p~n", [Parsed]),
-    Results = pometo_runtime:run_ast(Parsed),
-	  io:format("Results is ~p~n", [Results]),
-    FormattedResults = lists:flatten(pometo_runtime:format(Results)),
-    io:format("~nFormatted results is ~p~n~n", [FormattedResults]),
-    {module, _} = pometo_compiler:compile(Parsed),
-    X = pometo:run(),
-    io:format("X is ~p~n", [X]).
+run(Code) -> Resp = pometo:compile_load_and_run_TEST(Code, "runner"),
+             io:format("compile_load_and_run_TEST returns ~ts~n", [Resp]),
+             ok.
 
 noodle() ->	make_module(bingo).
 
