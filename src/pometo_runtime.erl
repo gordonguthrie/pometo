@@ -120,12 +120,15 @@ apply([H | T], V, right, Fn, Acc) ->
 execute_dyadic("+", L, R) -> L + R;
 execute_dyadic("-", L, R) -> L - R;
 execute_dyadic("×", L, R) -> L * R;
-execute_dyadic("÷", L, R) -> L / R.
+execute_dyadic("÷", L, R) -> L / R;
+execute_dyadic("|", 0, R) -> R;
+execute_dyadic("|", L, R) -> R/L.
 
 execute_monadic("+", V) -> V; % complex conjugate stub. return identity.
 execute_monadic("-", V) -> -1 * V;
 execute_monadic("×", V) -> signum(V); % when complex numbers are introduced, this becomes {⍵÷|⍵}.
-execute_monadic("÷", V) -> 1 / V.
+execute_monadic("÷", V) -> 1 / V;
+execute_monadic("|", V) -> abs(V).
 
 signum(V) when V <  0 -> -1;
 signum(V) when V == 0 -> 0;

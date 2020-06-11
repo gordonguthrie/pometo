@@ -22,11 +22,16 @@
                 char_no = none
              }).
 
+-record(complex_no, {
+                      real,
+                      imaginary,
+                      line_no = none,
+                      char_no = none
+             }).
+
 -record(binding, {
                     expression = "",
                     results    = "",
                     line_no    = none,
                     char_no    = none
                   }).
-
-% complex number record TBD

@@ -125,7 +125,7 @@ lex3(Code, LineNo) ->
     % gotta clear the scope dictionary
 	scope_dictionary:put_line_no(LineNo),
     try
-        Lexed = pometo_lexer:get_tokens(Code),
+        Lexed = pometo_lexer:get_tokens_TEST(Code),
         {Lexed, Code}
     catch _Type:Errs ->
         {{errors, Errs}, Code}

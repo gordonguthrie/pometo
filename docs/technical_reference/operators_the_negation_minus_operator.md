@@ -1,8 +1,8 @@
-# The Minus Operator -
+# The Negation/Minus Operator -
 
 ## Monadic Use
 
-`-` is a monadic operator that returns the negation of the argument.
+`-` is a monadic operator that returns the `negation` of the argument.
 
 ```pometo
 - 1 3 5

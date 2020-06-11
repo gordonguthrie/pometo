@@ -53,8 +53,8 @@ MyVar≠99 ← 1 2 3
 ```pometo_results
 Error
 MyVar≠99 ← 1 2 3
------^
-SYNTAX ERROR (invalid token:≠) on line 1 at character 6
+---------^
+SYNTAX ERROR (syntax error before: :{let_op,10,[8592],[8592]}) on line 1 at character 10
 ```
 
 ```pometo
@@ -64,8 +64,8 @@ MyVar~99 ← 1 2 3
 ```pometo_results
 Error
 MyVar~99 ← 1 2 3
------^
-SYNTAX ERROR (invalid token:~) on line 1 at character 6
+---------^
+SYNTAX ERROR (syntax error before: :{let_op,10,[8592],[8592]}) on line 1 at character 10
 ```
 
 ```pometo
@@ -76,27 +76,7 @@ myvar ← 1 2 3
 Error
 myvar ← 1 2 3
 ^
-SYNTAX ERROR (invalid token:m) on line 1 at character 1
-
-Error
-myvar ← 1 2 3
--^
-SYNTAX ERROR (invalid token:y) on line 1 at character 2
-
-Error
-myvar ← 1 2 3
---^
-SYNTAX ERROR (invalid token:v) on line 1 at character 3
-
-Error
-myvar ← 1 2 3
----^
-SYNTAX ERROR (invalid token:a) on line 1 at character 4
-
-Error
-myvar ← 1 2 3
-----^
-SYNTAX ERROR (invalid token:r) on line 1 at character 5
+SYNTAX ERROR (syntax error before: :{maybe_varfrag,1,\"m\",\"m\"}) on line 1 at character 1
 ```
 
 # VARIABLE NOT DEFINED

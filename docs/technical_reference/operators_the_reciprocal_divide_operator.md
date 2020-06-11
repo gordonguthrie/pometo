@@ -1,7 +1,8 @@
-# The Plus Operator ÷
+# The Reciprocal/Divide Operator ÷
 
 ## Monadic Use
-`÷` is a monadic operator that returns the reciprocal of the argument.
+
+`÷` is a monadic operator that returns the `reciprocal` of the argument.
 
 ```pometo
 ÷ 4 5 10
@@ -15,7 +16,7 @@
 
 `÷` is a dyadic operator that works in two ways.
 
-If the `rho` of both sides is the same it performs zip-wise division
+If the `rho` of both sides is the same it performs zip-wise `division`
 
 If either side has a `rho` of [1] it divides the value by every value in the other.
 

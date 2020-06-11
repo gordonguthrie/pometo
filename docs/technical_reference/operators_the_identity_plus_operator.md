@@ -1,8 +1,8 @@
-# The Plus Operator +
+# The Identity/Plus Operator +
 
 ## Monadic Use
 
-`+` is a monadic operator that returns the complex conjugate of the argument.
+`+` is a monadic operator that for a complex number returns the complex conjugate of the argument, otherwise it is an identity operator
 
 ```pometo
 + 0 1 2 ¯1

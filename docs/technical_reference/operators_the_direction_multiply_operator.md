@@ -1,6 +1,7 @@
-# The Mulitply Operator ×
+# The Direction/Multiply Operator ×
 
 ## Monadic Use
+
 `×` is a monadic operator that returns the signum, or sign of the argument.
 
 When the argument is complex, `×` returns the argument divided by its magnitude.
