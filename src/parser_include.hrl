@@ -8,7 +8,6 @@
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
-
 append(#liffey{op     = #'¯¯⍴¯¯'{dimensions = [D1]} = R1,
               args    = Args1,
               char_no = CharNo},
@@ -68,13 +67,6 @@ make_let(#liffey{args = [#var{} = V]}, #liffey{} = Expr) ->
           char_no = CharNo,
           line_no = scope_dictionary:get_line_no()}.
 
-log(X, Label) ->
-  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
-  X.
-
--define(OPENCURLY, 123).
--define(COMMA,     44).
-
 make_err({CharNo, pometo_parser, [Error | Body]}) ->
   #error{type    = "SYNTAX ERROR",
          msg1    = Error,
@@ -93,3 +85,8 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = C2}.
+
+
+log(X, Label) ->
+  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
+  X.
