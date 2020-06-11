@@ -8,50 +8,19 @@
 -include_lib("eunit/include/eunit.hrl").
 
 run_interpreter_test(Code) when is_list(Code) ->
+    Code2 = string:join(Code, "\n"),
     try
-        Lexed = pometo_lexer:get_tokens(Code),
-        case Lexed of
-            {ok, []} ->
-                "";
-            {ok, Tokens} ->
-                {Parsed, Bindings} = parse(Tokens),
-                Results             = pometo_runtime:run_ast(Parsed),
-                FormattedResults    = pometo_runtime:format(Results),
-                FormattedResults;
-            {error, Errors} ->
-                pometo_runtime:format_errors(Errors)
-            end
+        pometo:interpret_TEST(Code2)
     catch Type:Errs ->
         ?debugFmt("Test ~ts failed to run in the interpreter~n- with ~p:~p", [Code, Type, Errs]),
-        {errors, Errs}
+        io_lib:format("Interpreter failed to run ~ts with ~p:~p~n", [Code, Type, Errs])
     end.
 
 run_compiler_test(Title, Code) when is_list(Code) ->
+    Code2 = string:join(Code, "\n"),
     try
-        Lexed = pometo_lexer:get_tokens(Code),
-        case Lexed of
-            {ok, []} ->
-                "";
-            {ok, Tokens} ->
-                {Parsed, Bindings} = parse(Tokens),
-                {module, Mod}       = pometo_compiler:compile(Parsed, Title),
-                Results             = Mod:run(),
-                FormattedResults    = pometo_runtime:format(Results),
-                FormattedResults;
-            {error, Errors} ->
-                pometo_runtime:format_errors(Errors)
-            end
+        pometo:compile_load_and_run_TEST(Code2, Title)
     catch Type:Errs ->
         ?debugFmt("Test ~ts failed to run in the compiler~n- with ~p:~p", [Code, Type, Errs]),
-        {error, Errs}
+        io_lib:format("Compiler failed to run ~ts with ~p:~p~n", [Code, Type, Errs])
     end.
-
-parse(Tokenlist) ->
-    Parsed = pometo_parser:parse(Tokenlist),
-    case Parsed of
-        {ok,    Parse} -> Parse;
-        {error, Error} -> ?debugFmt("Parser error ~p for ~ts~n", [Error, Tokenlist]),
-                          "error"
-    end.
-
-
