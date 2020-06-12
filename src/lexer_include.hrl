@@ -48,7 +48,7 @@ collect_variables([{maybe_varfrag, Ch1, NoChars1, _} = F,
   end;
 % catches variables starting with an underscore
 collect_variables([{maybe_varfrag, Ch1, NoChars1, _} = F,
-                   {FragType,      Ch2, NoChars2, _}| T], Acc) when FragType == j orelse
+                   {FragType,      Ch2, NoChars2, _} = F2| T], Acc) when FragType == j orelse
                                                                     FragType == maybe_varfrag ->
   case Ch1 of
     [$_, A | _Rest] when A >= ?UPPERCASE_A_ASCII andalso
@@ -57,7 +57,7 @@ collect_variables([{maybe_varfrag, Ch1, NoChars1, _} = F,
       % throw this var on the loop again
       collect_variables([NewVar | T], Acc);
     _ ->
-      collect_variables(T, [F | Acc])
+      collect_variables([F2 | T], [F | Acc])
   end;
 collect_variables([{var,      Ch1, NoChars1, _},
                    {FragType, Ch2, NoChars2, _} | T], Acc) when FragType == j             orelse
