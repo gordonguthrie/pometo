@@ -24,7 +24,7 @@
 
 %% fake compile point until we get full compile syntax
 %% gotta call the damn module something in the meantime
-compile(#liffey{} = L) -> compile(L, pometo, "").
+compile(#ast{} = L) -> compile(L, pometo, "").
 
 % copy from https://github.com/basho/riak_ql/blob/develop/src/riak_ql_ddl_compiler.erl
 
@@ -41,19 +41,19 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 	{ExpAttr, LineNo2}  = make_exports(Exports, LineNo1),
 
 	Records = [
-		reset(?Q("-record(liffey, {"                  ++
-							       "op, "             ++
-				                   "args    = [], "   ++
-				                   "line_no = none, " ++
-				                   "char_no = none"   ++
-				                   "})."), LineNo1),
-		reset(?Q("-record('¯¯⍴¯¯', {"                      ++
-							        "style      = eager, " ++
-                                    "indexed    = false, " ++
-                                    "dimensions = [],"     ++
-                                    "line_no    = none,"   ++
-                                    "char_no    = none"    ++
-                                    "})."), LineNo1 + 1)
+		reset(?Q("-record(ast, {"                  ++
+							    "op, "             ++
+				                "args    = [], "   ++
+				                "line_no = none, " ++
+				                "char_no = none"   ++
+				                "})."), LineNo1),
+		reset(?Q("-record('$¯¯⍴¯¯', {"                      ++
+							         "style      = eager, " ++
+                                     "indexed    = false, " ++
+                                     "dimensions = [],"     ++
+                                     "line_no    = none,"   ++
+                                     "char_no    = none"    ++
+                                     "})."), LineNo1 + 1)
 		],
 
 	SourceMap3 = SourceMap2#{LineNo2 => #sourcemap{description = "parser records import definition"}},
@@ -73,7 +73,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 		  PrivateFns ++
 		  [{eof, LineNo5}],
 
-	% io:format("AST is ~p~n", [AST]),
+	% ?debugFmt("AST is ~p~n", [AST]),
 
 	case erl_lint:module(AST) of
         {ok, []} ->
@@ -181,29 +181,29 @@ make_exports(Exports, LineNo) ->
 make_modname(ModuleName, LineNo) ->
 	{[{attribute, LineNo, module, list_to_atom(ModuleName)}], LineNo + 1}.
 
-make_line(#liffey{op = {Op, Decorator}, args = Args} = L)  ->
-	make_line(L#liffey{op = Op, args = [quote(Decorator) | Args]});
-make_line(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = {var, Var, _, _}} = L) ->
+make_line(#ast{op = {Op, Decorator}, args = Args} = L)  ->
+	make_line(L#ast{op = Op, args = [quote(Decorator) | Args]});
+make_line(#ast{op = #'$¯¯⍴¯¯'{} = Rho, args = #'$¯¯var¯¯'{name = Var}} = L) ->
 	NewRho = make_record(Rho),
 	NewArgs = list_to_atom(Var),
-	make_record(L#liffey{op = NewRho, args = NewArgs});
-make_line(#liffey{op = #'¯¯⍴¯¯'{} = Rho, args = Args} = L) ->
+	make_record(L#ast{op = NewRho, args = NewArgs});
+make_line(#ast{op = #'$¯¯⍴¯¯'{} = Rho, args = Args} = L) ->
 	NewRho = make_record(Rho),
 	NewArgs = [maybe_make_record(X) || X <- Args],
-	make_record(L#liffey{op = NewRho, args = NewArgs});
-make_line(#liffey{op = 'let', args = [Var, #liffey{op = #'¯¯⍴¯¯'{}, args = Args} | []]}) ->
+	make_record(L#ast{op = NewRho, args = NewArgs});
+make_line(#ast{op = 'let', args = [Var, #ast{op = #'$¯¯⍴¯¯'{}, args = Args} | []]}) ->
 	% strip the variable name and rename the op
 	Src = case Args of
-		{var, V, _, _} -> atom_to_list(Var)  ++
-	                      " = "            ++
-	                      V;
-		_              -> atom_to_list(Var)  ++
-	                      " = ["            ++
-	                      expand_args(Args) ++
-	                       "]"
+		#'$¯¯var¯¯'{name = V} -> atom_to_list(Var)  ++
+	                             " = "            ++
+	                             V;
+		_                     -> atom_to_list(Var)  ++
+	                             " = ["            ++
+	                             expand_args(Args) ++
+	                             "]"
 	end,
 	Src;
-make_line(#liffey{op = Op, args = Args}) ->
+make_line(#ast{op = Op, args = Args}) ->
     ExpFun = fun(A, Acc) ->
 				L = make_line(A),
 				[L | Acc]
@@ -222,7 +222,7 @@ maybe_make_record(T) when is_tuple(T) -> make_record(T);
 maybe_make_record(A) when is_atom(A)  -> atom_to_list(A);
 maybe_make_record(X)                  -> X.
 
-make_record({liffey, Op, Args, LineNo, CharNo}) ->
+make_record({ast, Op, Args, LineNo, CharNo}) ->
 	SrcArgs = case is_atom(Args) of
 		true  -> "args = "          ++
 		         atom_to_list(Args) ++
@@ -231,7 +231,7 @@ make_record({liffey, Op, Args, LineNo, CharNo}) ->
 				 expand_args(Args) ++
 	             "], "
 	end,
-	"#liffey{"            ++
+	"#ast{"               ++
 	"op = "               ++
 	maybe_make_record(Op) ++
 	", "                  ++
@@ -242,8 +242,8 @@ make_record({liffey, Op, Args, LineNo, CharNo}) ->
 	"char_no = "          ++
 	make_char_no(CharNo)  ++
 	"}";
-make_record({'¯¯⍴¯¯', Style, Indexed, Dims, LineNo, CharNo}) ->
-	"#'¯¯⍴¯¯'{"           ++
+make_record({'$¯¯⍴¯¯', Style, Indexed, Dims, LineNo, CharNo}) ->
+	"#'$¯¯⍴¯¯'{"          ++
 	"style = "            ++
 	atom_to_list(Style)   ++
 	", "                  ++
@@ -259,7 +259,7 @@ make_record({'¯¯⍴¯¯', Style, Indexed, Dims, LineNo, CharNo}) ->
 	"char_no = "          ++
 	make_char_no(CharNo)  ++
 	"}";
-make_record({var, V, _LineNo, _CharNo}) ->
+make_record({'$¯¯var¯¯', V, _LineNo, _CharNo}) ->
 	V.
 
 expand_args(Args) ->
@@ -282,7 +282,7 @@ make_char_no(N) when is_integer(N) -> integer_to_list(N).
 
 quote(X) -> "\"" ++ X ++ "\"".
 
-make_source_map(#liffey{op = Op, line_no = LNo, char_no = CharNo}, LineNo, SourceMap) ->
+make_source_map(#ast{op = Op, line_no = LNo, char_no = CharNo}, LineNo, SourceMap) ->
 	Desc = make_desc(Op),
 	SM = #sourcemap{pometo_line_no = LNo,
 					pometo_char_no = CharNo,
@@ -291,4 +291,3 @@ make_source_map(#liffey{op = Op, line_no = LNo, char_no = CharNo}, LineNo, Sourc
 
 make_desc({Op, Attr}) -> atom_to_list(Op) ++ "_" ++ Attr;
 make_desc(Op)         -> atom_to_list(Op).
-

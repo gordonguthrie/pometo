@@ -21,15 +21,15 @@ two_line_parser_failure_test_() ->
     Str = "+ 333\nMyVar ←← 1 2 3",
     %% error dance to get a unicode printable view
     [Got1, {error, Got2}] = pometo:parse_TEST(Str),
-    Rho1 = #'¯¯⍴¯¯'{dimensions = [1], line_no = 1, char_no = 3},
-    L1 = #liffey{op      = Rho1,
-                 args    = [333],
-                 line_no = 1,
-                 char_no = 3},
-    Exp1 = #liffey{op      = {monadic, "+"},
-                   args    = [L1],
-                   line_no = 1,
-                   char_no = 1},
+    Rho1 = #'$¯¯⍴¯¯'{dimensions = [1], line_no = 1, char_no = 3},
+    L1 = #ast{op      = Rho1,
+              args    = [333],
+              line_no = 1,
+              char_no = 3},
+    Exp1 = #ast{op      = {monadic, "+"},
+                args    = [L1],
+                line_no = 1,
+                char_no = 1},
     Exp2 = "Error\n" ++
           "MyVar ←← 1 2 3\n" ++
           "-------^\n" ++
@@ -40,15 +40,15 @@ two_line_parser_failure_test_() ->
 pass_through_lexer_parser_failure_test_() ->
     Str = "+ 333\n¯←⍳1 2 3",
     [Got1, {error, Got2}] = pometo:parse_TEST(Str),
-    Rho1 = #'¯¯⍴¯¯'{dimensions = [1], line_no = 1, char_no = 3},
-    L1 = #liffey{op      = Rho1,
-                 args    = [333],
-                 line_no = 1,
-                 char_no = 3},
-    Exp1 = #liffey{op      = {monadic, "+"},
-                   args    = [L1],
-                   line_no = 1,
-                  char_no = 1},
+    Rho1 = #'$¯¯⍴¯¯'{dimensions = [1], line_no = 1, char_no = 3},
+    L1 = #ast{op      = Rho1,
+              args    = [333],
+              line_no = 1,
+              char_no = 3},
+    Exp1 = #ast{op      = {monadic, "+"},
+                args    = [L1],
+                line_no = 1,
+                char_no = 1},
     Exp2 = "Error\n" ++
            "¯←⍳1 2 3\n" ++
            "--^\n" ++
