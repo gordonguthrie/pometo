@@ -18,9 +18,7 @@ Writing supervision trees and gen servers are not problems in that category.
 
 `Pometo` is an auxiliary language - used to write library functions which are consumed in applications not written in `Pometo`.
 
-Read more about the rational and thinking in this article:
-
-https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d
+[Read more about the rational and thinking](https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d).
 
 # Design Considerations
 
@@ -38,4 +36,15 @@ If you wish to help develop `Pometo` you should install `rappel`.
 
 The `rappel` github repository has instructions for how to get up and running with `rappel` and `Pometo` and start contributing code.
 
-http://github.com/gordonguthrie/rappel
+[You can find Rappel on github](http://github.com/gordonguthrie/rappel)
+
+# Contents
+
+{% for item in site.data.samplelist.toc %}
+    <h3>{{ item.title }}</h3>
+      <ul>
+        {% for entry in item.subfolderitems %}
+          <li><a href="{{ entry.url }}">{{ entry.page }}</a></li>
+        {% endfor %}
+      </ul>
+  {% endfor %}
