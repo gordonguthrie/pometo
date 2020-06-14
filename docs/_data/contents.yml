@@ -1,21 +1,21 @@
-tocL
-  - title: User Documentation 1
+toc:
+  - title: User Documentation
     subfolderitems:
-      - page: Comments 1
+      - page: Comments
         url: user_documentation/comments.html
-      - page: Variables 2
+      - page: Variables
         url: user_documentation/variables.html
-  - title: Technical Reference 2
+  - title: Technical Reference
     subfolderitems:
-       - page: Plus 1
+       - page: the Plus function +
          url: technical_reference/operators_the_plus_operator.html
-       - page: Minus 2
+       - page: the Minus -
          url: technical_reference/operators_the_minus_operator.html
-       - page: Times 3
+       - page: the Times function ×
          url: technical_reference/operators_the_multiply_operator.html
-       - page: Divide 4
+       - page: the Divide function ÷
          url: technical_reference/operators_operators_the_divide_operator.html
-  - title: Errors Reference 2
+  - title: Errors Reference
     subfolderitems:
-       - page: Errors 1
+       - page: Alphabetical list of Errors
          url: error_reference/errors.html
