@@ -40,7 +40,7 @@ The `rappel` github repository has instructions for how to get up and running wi
 
 # Contents
 
-{% for item in site.data.samplelist.toc %}
+{% for item in site.data.contents.toc %}
     <h3>{{ item.title }}</h3>
       <ul>
         {% for entry in item.subfolderitems %}
