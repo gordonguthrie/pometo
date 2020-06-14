@@ -1,6 +1,8 @@
-# Comments
+# Comments In Pometo
 
 ## Comment Your Code
+
+Because APL languages are so concise the ratio of comment-to-code is very high.
 
 The comment character is `⍝`
 
