@@ -22,7 +22,7 @@ Writing supervision trees and gen servers are not problems in that category.
 
 # Design Considerations
 
-The normal developer of `Erlang`, `Elixir` and `LFE` applications should now know they are calling `Pometo` without reading the source code.
+The normal developer of `Erlang`, `Elixir` and `LFE` applications should not know they are calling `Pometo` without reading the source code.
 
 `Pometo` libraries will be listed on `hex`, the will use `rebar3` to build. The data structures in Pometo will be `lists` and `maps`, the datatypes `integers`, `floats`, `binaries` and `atoms`.
 
