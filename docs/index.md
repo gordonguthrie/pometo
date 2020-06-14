@@ -1,4 +1,4 @@
-![Pometo Logo](docs/images/pometo_logo.png)
+![Pometo Logo](images/pometo_logo.png)
 
 # What is Pometo?
 
