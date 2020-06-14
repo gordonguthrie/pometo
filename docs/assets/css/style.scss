@@ -2,11 +2,11 @@
 ---
 @import "jekyll-theme-cayman";
 
-.main-content pre code .language-pometo {
+.main-content pre code.language-pometo {
 	padding: 0.6rem, 1.0rem !important;
 }
 
-.main-content pre .language-pometo_results {
+.main-content pre code.language-pometo_results {
 	color: maroon !important;
 	padding-left: 1.0rem !important;
 }
