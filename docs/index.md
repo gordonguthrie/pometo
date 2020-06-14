@@ -40,6 +40,7 @@ The `rappel` github repository has instructions for how to get up and running wi
 
 # Contents
 
+<div>
 {% for item in site.data.contents.toc %}
     <h3>{{ item.title }}</h3>
       <ul>
@@ -48,3 +49,4 @@ The `rappel` github repository has instructions for how to get up and running wi
         {% endfor %}
       </ul>
   {% endfor %}
+</div>
