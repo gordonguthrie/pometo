@@ -9,7 +9,7 @@ toc:
     subfolderitems:
        - page: the Plus function +
          url: technical_reference/operators_the_plus_operator.html
-       - page: the Minus -
+       - page: the Minus function -
          url: technical_reference/operators_the_minus_operator.html
        - page: the Times function ×
          url: technical_reference/operators_the_multiply_operator.html
