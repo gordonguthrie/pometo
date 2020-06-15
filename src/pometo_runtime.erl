@@ -147,7 +147,8 @@ monadic([Op, #ast{args = A} = L]) ->
 %%
 
 print_line(Args) ->
-	RawLine = lists:flatten(string:join([fmt(X) || X <- Args], [" "])),
+	ReversedArgs = lists:reverse(Args),
+	RawLine = lists:flatten(string:join([fmt(X) || X <- ReversedArgs], [" "])),
 	if
 		length(RawLine) > 74 -> {Line, _Discard} = lists:split(71, RawLine),
 								Line ++ "...";
