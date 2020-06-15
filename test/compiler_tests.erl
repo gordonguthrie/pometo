@@ -11,5 +11,5 @@ basic_compiler_test_() ->
 	      "A + B",
 	Got = pometo:compile_load_and_run_TEST(Str, "basic_compiler_test_module"),
 	Exp = "10 12 ¯2",
-    % ?debugFmt("in basic_compiler_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+    % ?debugFmt("in basic_compiler_test_~nfrom ~p~nGot ~ts~nExp ~ts~n", [Str, Got, Exp]),
 	?_assertEqual(Exp, Got).
