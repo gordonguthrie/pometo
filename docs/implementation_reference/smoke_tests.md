@@ -1,6 +1,6 @@
-# Runtime Basics
+# Smoke Tests
 
-Because the documentation is also the test suite it is sometimes necessary to just bang out primitove statements that would clutter the user-facing documentation.
+Because the documentation is also the test suite it is sometimes necessary to just bang out primitive smoke tests that would clutter the user-facing documentation.
 
 This section is one such. It is a test suite for basic execution paths in `pometo_runtime`.
 
@@ -8,7 +8,6 @@ Any test failure arising from this documentation will cause a slew of errors acr
 
 
 ## Unitary Negation
-
 
 ```pometo
 - 1
@@ -192,4 +191,14 @@ Any test failure arising from this documentation will cause a slew of errors acr
 
 ```pometo_results
 2.0J1.0 5.0J2.0
+```
+
+## Nested Arrays
+
+```pometo
+1 2 (3 4)
+```
+
+```pometo_results
+1 2  3 4
 ```

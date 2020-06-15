@@ -1,8 +1,8 @@
-# The Direction/Multiply Operator ×
+# The Direction/Multiply Function ×
 
 ## Monadic Use On Floats And Integers
 
-`×` is a monadic operator that returns the signum, or sign of the argument.
+`×` is a monadic function that returns the signum, or sign of the argument.
 
 When the argument is complex, `×` returns the argument divided by its magnitude.
 
@@ -16,7 +16,7 @@ When the argument is complex, `×` returns the argument divided by its magnitude
 
 ## Dyadic Use On Floats And Integers
 
-`×` is a dyadic operator that works in two ways.
+`×` is a dyadic function that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise multiplication
 

@@ -1,21 +1,34 @@
 toc:
   - title: User Documentation
     subfolderitems:
-      - page: Comments
-        url: user_documentation/comments.html
+      - page: APL for Erlang and Elixir Programmers
+        url:  apl_for_erlang_and_elixir_programmers.html
+      - page: Data Types
+        url:  data_types.html
       - page: Variables
-        url: user_documentation/variables.html
+        url:  user_documentation/variables.html
+      - page: Comments
+        url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
        - page: the Plus function +
-         url: technical_reference/operators_the_plus_operator.html
+         url:  technical_reference/operators_the_plus_operator.html
        - page: the Minus function -
-         url: technical_reference/operators_the_minus_operator.html
+         url:  technical_reference/operators_the_minus_operator.html
        - page: the Times function ×
-         url: technical_reference/operators_the_multiply_operator.html
+         url:  technical_reference/operators_the_multiply_operator.html
        - page: the Divide function ÷
-         url: technical_reference/operators_operators_the_divide_operator.html
+         url:  technical_reference/operators_operators_the_divide_operator.html
   - title: Errors Reference
     subfolderitems:
        - page: Alphabetical list of Errors
-         url: error_reference/errors.html
+         url:  error_reference/errors.html
+  - title: Implementation Reference
+    subfolderitems:
+       - page: Getting started as a developer of the Pometo runtime and language
+         url:  implementation_reference/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
+       - page: Implementation details of complex numbers
+         url:  implementation_details_of_complex_numbers.html
+       - page: Smoke tests
+         url:  implementation_reference/smoke_tests.html
+

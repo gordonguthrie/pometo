@@ -1,4 +1,4 @@
-# Complex Numbers
+# Implementation Details Of Complex Numbers
 
 This section covers both the parsing problems that complex numbers create and the solution that we use to resolve it.
 

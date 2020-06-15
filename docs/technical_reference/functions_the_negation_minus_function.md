@@ -1,8 +1,8 @@
-# The Negation/Minus Operator -
+# The Negation/Minus Function -
 
 ## Monadic Use On Floats And Integers
 
-`-` is a monadic operator that returns the `negation` of the argument.
+`-` is a monadic function that returns the `negation` of the argument.
 
 ```pometo
 - 1 3 5
@@ -22,7 +22,7 @@
 
 ## Dyadic Use On Floats And Integers
 
-`-` is a dyadic operator that works in two ways.
+`-` is a dyadic function that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise subtraction
 
@@ -60,7 +60,7 @@ and
 
 ## Monadic Use On Complex Nos
 
-The minus operator performs normal sign reversal on both parts of a complex no:
+The minus function performs normal sign reversal on both parts of a complex no:
 
 ```pometo
 - 3J¯5
