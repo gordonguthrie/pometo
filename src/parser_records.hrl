@@ -1,13 +1,13 @@
 %% basic AST record
--record(liffey, {
-                 op,
-                 args    = [],
-                 line_no = none,
-                 char_no = none
-                }).
+-record(ast, {
+                op,
+                args    = [],
+                line_no = none,
+                char_no = none
+              }).
 
 %% special operator record
--record('¯¯⍴¯¯', {
+-record('$¯¯⍴¯¯', {
                   style      = eager, % [eager | lazy]
                   indexed    = false,
                   dimensions = [],
@@ -16,17 +16,18 @@
                  }).
 
 % leaf records
--record(var, {
-                name,
-                line_no = none,
-                char_no = none
-             }).
+-record('$¯¯var¯¯', {
+                     name,
+                     line_no = none,
+                     char_no = none
+                    }).
 
--record(binding, {
-                    expression = "",
-                    results    = "",
-                    line_no    = none,
-                    char_no    = none
-                  }).
+% this record is used in the parser for interim processing - they
+% are eliminated in the creation of the AST
 
-% complex number record TBD
+% therefore they should be able to be refactored out???
+
+-record(complex, {
+                   real,
+                   imag
+                 }).

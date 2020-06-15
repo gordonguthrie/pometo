@@ -19,6 +19,8 @@ int
 float
 unary_negate
 seperator
+complex_number
+maybe_complex_number
 
 .
 
@@ -27,6 +29,7 @@ Endsymbol  '$end'.
 
 Expressions -> Expression                       : ['$1'].
 Expressions -> Expressions seperator Expression : '$1' ++ ['$3'].
+Expressions -> Vector                           : '$1'.
 
 Expression -> Let                     : '$1'.
 Expression -> Vector scalar_fn Vector : extract(dyadic, '$2', ['$1', '$3']).
@@ -43,8 +46,10 @@ Vector -> Var           : '$1'.
 Scalar -> unary_negate Value  : handle_value(negative, '$2').
 Scalar -> Value               : handle_value(positive, '$1').
 
-Value -> int   : '$1'.
-Value -> float : '$1'.
+Value -> int                  : '$1'.
+Value -> float                : '$1'.
+Value -> complex_number       : make_complex('$1').
+Value -> maybe_complex_number : make_complex('$1').
 
 
 Erlang code.

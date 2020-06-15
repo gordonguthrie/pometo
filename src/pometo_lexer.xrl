@@ -6,15 +6,19 @@
 
 Definitions.
 
-INT = ([0-9]+)
+INT      = ([0-9]+)
 FLOATDEC = (([0-9]+)?\.[0-9]+)
 FLOATSCI = (([0-9]+)?(\.)?[0-9]+(E|e)(\+|\-)?[0-9]+)
 
-TRUE = (true)
+TRUE  = (true)
 FALSE = (false)
-BOOL = ({TRUE}|{FALSE})
+BOOL  = ({TRUE}|{FALSE})
 
-VARIABLE = (_?[A-Z][A-Za-z0-9@_]*)
+J = (j|J)
+
+VARIABLE = (_?[A-IK-Z][A-Za-z0-9@_]*)
+
+MAYBVARFRAG = ([a-ik-z@_]?)
 
 WHITESPACE = [\000-\s]*
 
@@ -23,19 +27,42 @@ WHITESPACE = [\000-\s]*
 Rules.
 
 %% Basic data types.
-{FLOATDEC} : {token, {float, TokenChars, TokenLen, make_float(TokenChars)}}.
-{FLOATSCI} : {token, {float, TokenChars, TokenLen, make_float(TokenChars)}}.
-{INT}      : {token, {int, TokenChars, TokenLen, to_i(TokenChars)}}.
-{BOOL}     : {token, {bool, TokenChars, TokenLen, string:to_upper(TokenChars) == "TRUE"}}.
-{VARIABLE} : {token, {var, TokenChars, TokenLen, TokenChars}}.
+{FLOATDEC}    : {token, {float,         TokenChars, TokenLen, make_float(TokenChars)}}.
+{FLOATSCI}    : {token, {float,         TokenChars, TokenLen, make_float(TokenChars)}}.
+{INT}         : {token, {int,           TokenChars, TokenLen, to_i(TokenChars)}}.
+{BOOL}        : {token, {bool,          TokenChars, TokenLen, string:to_upper(TokenChars) == "TRUE"}}.
+{VARIABLE}    : {token, {var,           TokenChars, TokenLen, TokenChars}}.
+{MAYBVARFRAG} : {token, {maybe_varfrag, TokenChars, TokenLen, TokenChars}}.
+
+{J} : {token, {j, TokenChars, TokenLen, j}}.
 
 ¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
-
 
 \+ : {token, {scalar_fn, TokenChars, TokenLen, "+"}}.
 -  : {token, {scalar_fn, TokenChars, TokenLen, "-"}}.
 ×  : {token, {scalar_fn, TokenChars, TokenLen, "×"}}.
 ÷  : {token, {scalar_fn, TokenChars, TokenLen, "÷"}}.
+\| : {token, {scalar_fn, TokenChars, TokenLen, "|"}}.
+⌊  : {token, {scalar_fn, TokenChars, TokenLen, "⌊"}}.
+⌈  : {token, {scalar_fn, TokenChars, TokenLen, "⌈"}}.
+\* : {token, {scalar_fn, TokenChars, TokenLen, "*"}}.
+⍟  : {token, {scalar_fn, TokenChars, TokenLen, "⍟"}}.
+○  : {token, {scalar_fn, TokenChars, TokenLen, "○"}}.
+!  : {token, {scalar_fn, TokenChars, TokenLen, "!"}}.
+~  : {token, {scalar_fn, TokenChars, TokenLen, "~"}}.
+\? : {token, {scalar_fn, TokenChars, TokenLen, "?"}}.
+∊  : {token, {scalar_fn, TokenChars, TokenLen, "∊"}}.
+∧  : {token, {scalar_fn, TokenChars, TokenLen, "∧"}}.
+∨  : {token, {scalar_fn, TokenChars, TokenLen, "∨"}}.
+⍲  : {token, {scalar_fn, TokenChars, TokenLen, "⍲"}}.
+⍱  : {token, {scalar_fn, TokenChars, TokenLen, "⍱"}}.
+<  : {token, {scalar_fn, TokenChars, TokenLen, "<"}}.
+≤  : {token, {scalar_fn, TokenChars, TokenLen, "≤"}}.
+=  : {token, {scalar_fn, TokenChars, TokenLen, "="}}.
+≥  : {token, {scalar_fn, TokenChars, TokenLen, "≥"}}.
+>  : {token, {scalar_fn, TokenChars, TokenLen, ">"}}.
+≠  : {token, {scalar_fn, TokenChars, TokenLen, "≠"}}.
+
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 
