@@ -36,12 +36,21 @@ Rules.
 
 {J} : {token, {j, TokenChars, TokenLen, j}}.
 
+\( : {token, {open_bracket,  TokenChars, TokenLen, "("}}.
+\) : {token, {close_bracket, TokenChars, TokenLen, ")"}}.
+\{ : {token, {open_curly,    TokenChars, TokenLen, "{"}}.
+\} : {token, {close_curly,   TokenChars, TokenLen, "}"}}.
+\[ : {token, {open_square,   TokenChars, TokenLen, "["}}.
+\] : {token, {close_square,  TokenChars, TokenLen, "]"}}.
+
 ¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
 
 \+ : {token, {scalar_fn, TokenChars, TokenLen, "+"}}.
 -  : {token, {scalar_fn, TokenChars, TokenLen, "-"}}.
 ×  : {token, {scalar_fn, TokenChars, TokenLen, "×"}}.
 ÷  : {token, {scalar_fn, TokenChars, TokenLen, "÷"}}.
+
+%% yeah, yeah bud we will get round to you
 \| : {token, {scalar_fn, TokenChars, TokenLen, "|"}}.
 ⌊  : {token, {scalar_fn, TokenChars, TokenLen, "⌊"}}.
 ⌈  : {token, {scalar_fn, TokenChars, TokenLen, "⌈"}}.
@@ -63,6 +72,9 @@ Rules.
 >  : {token, {scalar_fn, TokenChars, TokenLen, ">"}}.
 ≠  : {token, {scalar_fn, TokenChars, TokenLen, "≠"}}.
 
+⍴ : {token, {rho,   TokenChars, TokenLen, "⍴"}}.
+⍴ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
+, : {token, {comma, TokenChars, TokenLen, ","}}.
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 

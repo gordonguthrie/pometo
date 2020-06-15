@@ -11,6 +11,7 @@
                   style      = eager, % [eager | lazy]
                   indexed    = false,
                   dimensions = [],
+                  type       = none,
                   line_no    = none,
                   char_no    = none
                  }).

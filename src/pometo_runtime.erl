@@ -44,14 +44,24 @@ run_ast2(#ast{op   = 'let',
 run_ast2(#ast{op   = {dyadic, Op},
 	          args = [A1, A2]})         -> dyadic([Op, A1, A2]);
 run_ast2(#ast{op   = {monadic, Op},
-	          args = [A]})              -> monadic([Op, A]).
+	          args = [A]})              -> monadic([Op, A]);
+run_ast2(#ast{op   = flatten_comma,
+	          args = [A]})              -> #ast{op   = #'$¯¯⍴¯¯'{} = R,
+												args = InnerA}     = A,
+										   NewR = R#'$¯¯⍴¯¯'{dimensions = length(InnerA)},
+										   A#ast{op = NewR}.
 
 format([]) -> [];
 format(List) when is_list(List) ->
-	lists:flatten(string:join([fmt(X) || X <- List], [" "]));
-format(#ast{op = #'$¯¯⍴¯¯'{},
+	print_line(List);
+%% this is fucked because the final element is the head of the list...
+format(#ast{op = #'$¯¯⍴¯¯'{dimensions = D},
 	        args = Args}) ->
-	lists:flatten(string:join([fmt(X) || X <- Args], [" "]));
+	case length(D) of
+		1 -> print_line(Args);
+		2 -> "banjo"
+	end;
+%	build_print(lists:reverse(D), Args);
 format({error, Err}) ->
 	format_errors([Err]).
 
@@ -136,6 +146,17 @@ monadic([Op, #ast{args = A} = L]) ->
 %% Helper functions
 %%
 
+print_line(Args) ->
+	RawLine = lists:flatten(string:join([fmt(X) || X <- Args], [" "])),
+	if
+		length(RawLine) > 74 -> {Line, _Discard} = lists:split(71, RawLine),
+								Line ++ "...";
+		el/=se               -> RawLine
+	end.
+
+% build_print(Dims, Args) ->
+%	build_p(Dims, hd(Dims), Args, ?EMPTY_ACCUMULATOR)
+
 zip([], [], _, Acc) -> lists:reverse(Acc);
 zip([H1 | T1], [H2 | T2], Fn, Acc) ->
 	NewAcc = execute_dyadic(Fn, H1, H2),
@@ -183,9 +204,10 @@ signum(V) when V == 0 -> 0;
 signum(V) when V >  0 -> 1.
 
 fmt(#ast{op = complex,
-	     args = [R, I]}) -> fmt(R) ++ "J" ++fmt(I);
-fmt(X) when X < 0        -> io_lib:format("¯~p", [abs(X)]);
-fmt(X)                   -> io_lib:format("~p",  [X]).
+	     args = [R, I]})   -> fmt(R) ++ "J" ++fmt(I);
+fmt(#ast{} = A)            -> " " ++ format(A);
+fmt(X)          when X < 0 -> io_lib:format("¯~p", [abs(X)]);
+fmt(X)                     -> io_lib:format("~p",  [X]).
 
 make_ast(Arg) -> Rho = #'$¯¯⍴¯¯'{dimensions = [1]},
                  #ast{op = Rho, args = Arg}.

@@ -51,6 +51,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 							         "style      = eager, " ++
                                      "indexed    = false, " ++
                                      "dimensions = [],"     ++
+                                     "type       = none,"   ++
                                      "line_no    = none,"   ++
                                      "char_no    = none"    ++
                                      "})."), LineNo1 + 1)
@@ -242,7 +243,7 @@ make_record({ast, Op, Args, LineNo, CharNo}) ->
 	"char_no = "          ++
 	make_char_no(CharNo)  ++
 	"}";
-make_record({'$¯¯⍴¯¯', Style, Indexed, Dims, LineNo, CharNo}) ->
+make_record({'$¯¯⍴¯¯', Style, Indexed, Dims, Type, LineNo, CharNo}) ->
 	"#'$¯¯⍴¯¯'{"          ++
 	"style = "            ++
 	atom_to_list(Style)   ++
@@ -253,6 +254,9 @@ make_record({'$¯¯⍴¯¯', Style, Indexed, Dims, LineNo, CharNo}) ->
 	"dimensions = ["      ++
 	make_dimensions(Dims) ++
 	"], "                 ++
+	"type = "             ++
+	atom_to_list(Type)    ++
+	", "                  ++
 	"line_no = "          ++
 	make_line_no(LineNo)  ++
 	", "                  ++
@@ -289,5 +293,10 @@ make_source_map(#ast{op = Op, line_no = LNo, char_no = CharNo}, LineNo, SourceMa
 					description    = Desc},
 	SourceMap#{LineNo => SM}.
 
+make_desc(#'$¯¯⍴¯¯'{style      = Style,
+                    indexed    = Indexed,
+                    dimensions = Dims,
+                    type       = Type}) ->
+	io_lib:format("~p Array (~p:~p) with shape ~p~n", [Type, Style, Indexed, Dims]);
 make_desc({Op, Attr}) -> atom_to_list(Op) ++ "_" ++ Attr;
 make_desc(Op)         -> atom_to_list(Op).
