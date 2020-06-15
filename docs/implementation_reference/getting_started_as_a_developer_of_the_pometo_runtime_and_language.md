@@ -82,6 +82,16 @@ If you screw up your code sections you tests can become wierd and very badly fai
 
 Try it.
 
+## Adding Documentation
+
+The goal is to build documentation as we go along so any features added to the system need to have associated documentation (and hence tests-generated-from-the-documentation) written as we go along.
+
+Documentation is stored in a structured set of directories under `docs/`. To add a page to the table of contents please edit `docs/_data/contents.yml`.
+
+Please manually check that the documentation builds before you commit your change. (There is one known and unavoidable problem: the string `{{` is interpreted as a template command and you need to write your `apl` a bit more spaced out - `{ {`.
+
+To build the docs locally start the docker file and `cd /pometo/docs` and run the bash script `./run_jekyll.sh`. This will build the docs and serve them on `0.0.0.0:4000`. They can be accessed on your host machine at `http://localhost:4000`.
+
 ## What Happens If A Million Tests Fail?
 
 Don't panic. Tests suites shadow each other. That is to say if a particulary test fails we can predict which other test suites will also fail. Understanding the shadow order helps you decide which of your million failing tests to fix.
