@@ -81,7 +81,7 @@ gmean ← {(÷⍴⍵)*⍨×/⍵} ⍝ geometric mean
 hmean ← {÷(⍴⍵)÷⍨+/÷⍵} ⍝ harmonic mean
 stdev ← { {0.5*⍨mean ⍵} {2*⍨⍵-⍨mean ⍵} ⍵ }
 skew ← {+/(⍺*⍨⍵-mean ⍵)÷(⍴⍵)×⍺*⍨stdev ⍵} ⍝ ⍺ ← 3 → skew ◊ ⍺ ← 4 → kurtosis
-phi ← {{1+÷⍵}⍣≡1⊣⍵}
+phi ← { {1+÷⍵}⍣≡1⊣⍵}
 eul ← {(÷2) *⍨ +/2*⍨⍵} ⍝ euclidian norm
 comb ← { ⍵ {((⊂⍳⍺)×⍵)~¨0} ⍺ {⊂[1](⍺=+⌿⍵)/⍵} {(⍵⍴2)⊤⍳2*⍵} ⍵} ⍝ combinatorial. 3 comb 5
 freq ← {(∪⍵){⍺,[÷2]+/⍺∘.=⍵}⍵} ⍝ frequency of numbers
