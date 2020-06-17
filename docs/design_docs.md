@@ -398,6 +398,18 @@ Consideration of these immediately surfaces a strategic problem pertaining to in
 
 `Erlang` and `Elixir` and most programming languages) have a mixed latin-arabic parse direction whereas APL is traditionally pure arabic.
 
+```
+  ____        _ _            _
+ |  _ \      | | |          | |
+ | |_) | ___ | | | ___   ___| | _____
+ |  _ < / _ \| | |/ _ \ / __| |/ / __|
+ | |_) | (_) | | | (_) | (__|   <\__ \
+ |____/ \___/|_|_|\___/ \___|_|\_\___/
+
+```
+
+***this is just bollocks tho because APL retains latin parsing for charlists - its left to right - foldr's can't be avoided the problem is determining if trains, atops and dfuns are commutative or not. For functions like `+` and `×` a foldl can be swapped for a foldr - for `-` and `÷` a foldr is needed. How does that generalise?***
+
 This arises from the simple insertion of Arabic numbers into latin scripts:
 
 ![mixed latin/arabic parsing in Erlang](./images/mixed_latin_arabic_parsing_in_erlang.png)
