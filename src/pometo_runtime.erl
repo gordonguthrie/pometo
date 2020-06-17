@@ -176,7 +176,7 @@ execute_dyadic(Op,  L,          #ast{} = R) -> dyadic([Op, make_ast(L), R]);
 execute_dyadic("+", L, R) -> L + R;
 execute_dyadic("-", L, R) -> L - R;
 execute_dyadic("×", L, R) -> L * R;
-execute_dyadic("÷", L, R) -> L / R;
+execute_dyadic("÷", L, R) -> divide(L,R);
 execute_dyadic("|", 0, R) -> R;
 execute_dyadic("|", L, R) -> R/L.
 
@@ -187,17 +187,26 @@ execute_monadic("-", #ast{op   = complex,
                           args = [R, I]} = A) -> A#ast{args = [-R, -I]};
 execute_monadic("×", #ast{op   = complex,
                           args = [R, I]} = A) -> Mag = math:sqrt(R * R + I * I),
-												 A#ast{args = [R/Mag,  I/Mag]};
+												 A#ast{args = [unit_tensor(R,Mag), unit_tensor(I,Mag)]};
 execute_monadic("÷", #ast{op   = complex,
                           args = [R, I]} = A) -> Sq = R * R + I * I,
 												 A#ast{args = [R/Sq, -I/Sq]};
 
 %% then plain ones
-execute_monadic("+", V) -> V; % complex conjugate stub. return identity.
+execute_monadic("+", V) -> V;
 execute_monadic("-", V) -> -1 * V;
-execute_monadic("×", V) -> signum(V); % when complex numbers are introduced, this becomes {⍵÷|⍵}.
+execute_monadic("×", V) -> signum(V);
 execute_monadic("÷", V) -> 1 / V;
 execute_monadic("|", V) -> abs(V).
+
+% Scalar Functions
+% 0÷0 ↔ 1
+divide(L,R) when L == 0, R == 0 -> 1;
+divide(L,R) -> L / R.
+
+% ×0J0 ↔ 0J0
+unit_tensor(_N,Mag) when Mag == 0 -> 0;
+unit_tensor( N,Mag) -> N / Mag.
 
 signum(V) when V <  0 -> -1;
 signum(V) when V == 0 -> 0;
