@@ -18,7 +18,7 @@ append(#ast{op      = #'$¯¯⍴¯¯'{dimensions = [D1],
         NewType = match_types(Type1, Type2),
   #ast{op      = R1#'$¯¯⍴¯¯'{dimensions = [D1 + D2],
                              type       = NewType},
-       args    = Args2 ++ Args1,
+       args    = Args1 ++ Args2,
        char_no = CharNo,
        line_no = scope_dictionary:get_line_no()}.
 
@@ -126,7 +126,7 @@ enclose_vector(#ast{op      = #'$¯¯⍴¯¯'{dimensions = [D1]} = R1,
   NewR = R1#'$¯¯⍴¯¯'{dimensions = [D1 + 1],
                      type       = mixed},
   A1#ast{op   = NewR,
-         args = [NewA | Args]}.
+         args = Args ++ [NewA]}.
 
 % come back to these once you know of which you speak mofo
 % rho(#ast{op = #'$¯¯⍴¯¯'{dimensions = D} = R} = A) ->
