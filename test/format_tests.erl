@@ -115,44 +115,6 @@ basic_rhoed_fragments_nested_vector_test_() ->
     ?_assertEqual(Exp, Got).
 
 %%%
-%%% Now test the width normaliser
-%%
-
-deep_vector_normalised_widths_test_() ->
-    Shape = pometo:run_for_format_TEST("2 2 ⍴ (1 22) (1 22 (333 4444)) 55555", "basic_rhoed_fragments_nested_vector_test_"),
-    % ┌────┬┬─────────────────┐
-    % │1 22││┌─┬┬──┬┬────────┐│
-    % │    │││1││22││333 4444││
-    % │    ││└─┴┴──┴┴────────┘│
-    % ├────┼┼─────────────────┤
-    % 55555 │1 22             │
-    %       ┴─────────────────┘
-    % 123456
-    %       1234567890123456789
-
-    % ?debugFmt("in deep_vector_normalised_widths_test_ Shape is~n- ~p~n", [Shape]),
-    Segs = pometo_runtime_format:build_segments_TEST(Shape),
-    % ?debugFmt("in deep_vector_normalised_widths_test_ Segs is~n- ~p~n", [Segs]),
-    Got  = pometo_runtime_format:normalise_widths_TEST(Segs),
-    Exp  = [[{widths,6, 3,
-                           [{widths,1,none,none},{widths,2,none,none}],
-                           boxed},
-                   {widths,17,
-                           [{widths,1,none,none},
-                            {widths,2,none,none},
-                            {widths,10,
-                                    [{widths,3,none,none},
-                                     {widths,4,none,none}],
-                                    boxed}],
-                           boxed}],
-                  [{widths,6,none,blankbox},
-                   {widths,17,
-                           [{widths,1,none,none},{widths,2,none,none}],
-                           boxed}]],
-    % ?debugFmt("in basic_normalised_widths_test_~nGot ~p~nExp ~p~n", [Got, Exp]),
-    ?_assertEqual(Exp, Got).
-
-%%%
 %%% Overall tests
 %%%
 
@@ -161,27 +123,29 @@ basic_one_line_format_test_() ->
          %0123456789012345678901234567890123456789
     Got = pometo:interpret_TEST(Str),
     Exp = "1 2 ¯3 4.0J0.0 5.0",
-    % ?debugFmt("in basic_one_line_format_test_~nGot ~ts~nExp ~p~n", [Got, Exp]),
+    % ?debugFmt("in basic_one_line_format_test_~nGot~n~ts~nExp~n~ts~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 basic_nested_format_test_() ->
     Str = "MyVariable ← 1 2 3 4 5 (1 2 3 4 5)",
     Got = pometo:interpret_TEST(Str),
-    Exp = "1 2 3 4 5 " ++
-          " 1 2 3 4 5",
-    % ?debugFmt("in basic_two_line_format_test_~nGot ~ts~nExp ~p~n", [Got, Exp]),
+    Exp = "          ┌─────────┐\n" ++
+          "1 2 3 4 5 │1 2 3 4 5│\n" ++
+          "          └─────────┘",
+    % ?debugFmt("in basic_nested_format_test_~nGot~n~ts~n--~nExp~n~ts~n--", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 double_nested_format_test_() ->
     Str = "MyVariable ← (1 2 3 4 5) (1 2 3 4 5)",
     Got = pometo:interpret_TEST(Str),
-    Exp = " 1 2 3 4 5 " ++
-          " 1 2 3 4 5",
-    % ?debugFmt("in basic_two_line_format_test_~nGot ~ts~nExp ~p~n", [Got, Exp]),
+    Exp = "┌─────────┐ ┌─────────┐\n" ++
+          "│1 2 3 4 5│ │1 2 3 4 5│\n" ++
+          "└─────────┘ └─────────┘",
+    % ?debugFmt("in double_nested_format_test_~nGot~n~ts~n--Exp~n~ts~n--", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 
-basic_one_line_bust_measure_format_test_() ->
+basic_one_line_bust_measure_format_test_xx() ->
     Str = "MyVariable ← 1 2 3 4 5 6 7 8 9 0" ++
     	              " 1 2 3 4 5 6 7 8 9 0" ++
     	              " 1 2 3 4 5 6 7 8 9 0" ++
@@ -192,7 +156,7 @@ basic_one_line_bust_measure_format_test_() ->
     	  "1 2 3 4 5 6 7 8 9 10 " ++
     	  "1 2 3 4 5 6 7 8 9 10 " ++
     	  "1 2 3 4 5 ...",
-    % ?debugFmt("in basic_one_line_bust_measure_format_test_~nGot ~ts~nExp ~p~n", [Got, Exp]),
+    % ?debugFmt("in basic_one_line_bust_measure_format_test_~nGot~n~ts~nExp~n~ts~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 basic_nested_bust_measure_format_test_xx() ->
@@ -211,11 +175,11 @@ basic_nested_bust_measure_format_test_xx() ->
     	  "1 2 3 4 5 6 7 8 9 0 " ++
     	  "1 2 3 4 5 6 7 8 9 0 " ++
     	  "1 2 3 4 5 ...",
-    % ?debugFmt("in basic_two_line_bust_measure_format_test_~nGot ~ts~nExp ~p~n", [Got, Exp]),
+    % ?debugFmt("in basic_two_line_bust_measure_format_test_~nGot~n<~ts>~nExp~n<~ts>~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 
-basic_normalised_format_test_xx() ->
+kitchen_sink_test_() ->
     Str = "2 2 ⍴ (1 22) (1 22 (333 4444)) 55555",
     % ┌────┬┬─────────────────┐
     % │1 22││┌─┬┬──┬┬────────┐│
@@ -228,8 +192,16 @@ basic_normalised_format_test_xx() ->
     %       1234567890123456789
 
     Got  = pometo:interpret_TEST(Str),
-    Exp  = [],
-    ?debugFmt("in basic_normalised_widths_test_~nGot ~p~nExp ~p~n", [Got, Exp]),
+    Exp  = "┌─────┐ ┌───────────────┐\n" ++
+           "│1 22 │ │1 22 ┌────────┐│\n" ++
+           "└─────┘ │     │333 4444││\n" ++
+           "        │     └────────┘│\n" ++
+           "        └───────────────┘\n" ++
+           "        ┌───────────────┐\n" ++
+           "55555   │1 22           │\n" ++
+           "        └───────────────┘"
+           ,
+    ?debugFmt("in kitchen_sink_test_~nGot~n~ts~n--~nExp~n~ts~n--~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 %%%

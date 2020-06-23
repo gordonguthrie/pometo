@@ -19,8 +19,7 @@
 
 %% exports for testing
 -export([
-		build_segments_TEST/1,
-		normalise_widths_TEST/1
+		  build_segments_TEST/1
 		]).
 
 
@@ -56,18 +55,13 @@ format_errors(Errors) ->
 	lists:flatten(string:join(FormattedEs, "\n") ++ "\n").
 
 print(List) ->
-	io:format("in print List is ~p~n", [List]),
-	Widths = normalise_widths(List),
-	io:format("in print Widths is ~p~n", [Widths]),
-	Stripped = [X || #fmt_line{segs = X} <- List],
-	Zipped = lists:zip(Stripped, Widths),
-	Lines = [format_line(Line, LineWidths, ?EMPTY_ACCUMULATOR) || {Line, LineWidths} <- Zipped],
-	io:format("Lines is ~p~n", [Lines]),
+	List2 = normalise_widths(List),
+	List3 = normalise_heights(List2, ?EMPTY_ACCUMULATOR),
+	Lines = [format_line(Line, ?EMPTY_ACCUMULATOR) || Line <- List3],
 	print(Lines, ?EMPTY_ACCUMULATOR).
 
 print([], Acc) -> string:join(lists:reverse(Acc), "\n");
 print([[H] | T], Acc) ->
-	io:format("H is ~p~n", [H]),
 	NewAcc = string:join([io_lib:format("~ts", [X]) || X <- H], "\n"),
 	print(T, [NewAcc| Acc]).
 
@@ -81,125 +75,130 @@ join2([H | T], Acc) ->
 
 join3([], _Key, Map) ->
 	Map;
-join3([[Val] | T], Key, Map) ->
+join3([Val | T], Key, Map) ->
 	NewMap = case maps:is_key(Key, Map) of
 		true  -> OldVal = maps:get(Key, Map),
-				 NewVal = OldVal ++ " " ++ Val,
+				 NewVal = lists:flatten(OldVal ++ " " ++ Val),
 				 maps:put(Key, NewVal, Map);
 		false -> maps:put(Key, Val, Map)
 	end,
 	join3(T, Key + 1, NewMap).
 
-format_line([], _Widths, Acc) ->
-	io:format("in format_line (1) returning- Acc ~p~n", [lists:reverse(Acc)]),
+format_line([], Acc) ->
 	join(lists:reverse(Acc));
 format_line([#fmt_segment{strings = Strings,
-						 is_leaf = false} = S| T], [Widths | Rest], Acc) ->
-	io:format("in print line (2)~n- with S of ~p~n- Widths of ~p~n", [S, Widths]),
-	#fmt_segment{width   = NW,
-			     height  = H,
-			     boxing  = NB,
-			     strings = InnerStrings} = Widths,
-	NewLines = format_line(Strings, InnerStrings, ?EMPTY_ACCUMULATOR),
-	io:format("in print line (2) NewLines is ~p~n", [NewLines]),
+						  width   = NW,
+						  height  = H,
+						  boxing  = NB,
+						 is_leaf  = false} | T], Acc) ->
+	[NewLines] = format_line(Strings, ?EMPTY_ACCUMULATOR),
 	PaddedLines = pad_lines(NewLines, NW, H, NB),
-	format_line(T, Rest, [PaddedLines | Acc]);
-format_line([#fmt_segment{strings = [S],
-						 is_leaf = true} | T], [Widths | Rest], Acc) ->
-	io:format("in print line (3)~n- with S of ~p~n- Widths of ~p~n", [S, Widths]),
-	#fmt_segment{width  = NW,
-			     height = H,
-			     boxing = NB} = Widths,
-	Line = [pad_width(S, NW)],
-	PaddedLines = pad_lines([Line], NW, H, NB),
-	format_line(T, Rest, [PaddedLines | Acc]).
+	format_line(T, [PaddedLines | Acc]);
+format_line([#fmt_segment{strings = [Strs],
+						  width   = NW,
+						  height  = H,
+						  boxing  = NB,
+						  is_leaf = true} | T], Acc) ->
+	PaddedLines = pad_lines([Strs], NW, H, NB),
+	format_line(T, [PaddedLines | Acc]).
 
 pad_lines(Lines, Width, Height, Boxing) ->
-	io:format("in pad line Lines is ~p Width is ~p Height is ~p Boxing is ~p~n", [Lines, Width, Height, Boxing]),
-	[io:format("Line in Lines ~p~n", [X]) || X <- Lines],
 	Boxed = case Boxing of
-		none       -> Lines;
-		boxed      -> FinalLines = side_pad(Lines, [?VERTICALLINE]),
-					  Border     = lists:duplicate(Width - 2, ?HORIZONTALLINE),
-				 	  Top    = [[?TOPLEFT]    ++ Border ++ [?TOPRIGHT]],
-				 	  Bottom = [[?BOTTOMLEFT] ++ Border ++ [?BOTTOMRIGHT]],
-				 	  [Top] ++ FinalLines ++ [Bottom];
-		blankboxed -> FinalLines = side_pad(Lines, [?SPACE]),
-					  Border     = [[lists:duplicate(Width + 2, ?SPACE)]],
-					  Border ++ FinalLines ++ Border
+		none ->
+			Lines;
+		boxed ->
+			RectifiedLines = rectify(Lines, Width - 2, ?EMPTY_ACCUMULATOR),
+			FinalLines = side_pad(RectifiedLines, [?VERTICALLINE], ?EMPTY_ACCUMULATOR),
+			Border     = lists:duplicate(Width - 2, ?HORIZONTALLINE),
+			Top        = [[?TOPLEFT]    ++ Border ++ [?TOPRIGHT]],
+			Bottom     = [[?BOTTOMLEFT] ++ Border ++ [?BOTTOMRIGHT]],
+			[Top] ++ FinalLines ++ [Bottom];
+		blankboxed ->
+			RectifiedLines = rectify(Lines, Width, ?EMPTY_ACCUMULATOR),
+			Border     = [[lists:duplicate(Width, ?SPACE)]],
+			Border ++ RectifiedLines ++ Border
 	end,
-	[io:format("Line in Boxed ~p~n", [X]) || X <- Boxed],
 	H = length(Boxed),
-	io:format("in pad line H is ~p~n", [H]),
 	HPad = if
 		Height - H > 0 -> Height - H;
 		el/=se         -> 0
 	end,
-	io:format("HPad is ~p~n", [HPad]),
 	PaddedLines = case HPad of
-					0 -> Boxed;
-					_ -> BlankLine  = [lists:duplicate(Width, ?SPACE)],
-						 BlankLines = lists:duplicate(HPad,  BlankLine),
-						 Boxed ++ BlankLines
-				end,
-	PaddedLines,
-	[io:format("Line in PaddedLines ~p~n", [X]) || X <- PaddedLines],
+						0 -> Boxed;
+						_ -> BlankLine  = [lists:duplicate(Width, ?SPACE)],
+							               BlankLines = lists:duplicate(HPad, BlankLine),
+							               Boxed ++ BlankLines
+				   end,
 	PaddedLines.
 
-side_pad(List, Padding) ->
-	io:format("in side padding List is ~p Padding is ~p~n", [List, Padding]),
-	Return = [[Padding ++ X ++ Padding] || [X] <- List],
-	io:format("side pad returns ~p~n", [Return]),
-	Return.
+rectify([], _Width, Acc) ->
+	lists:reverse(Acc);
+rectify([H | T], Width, Acc) ->
+	W = length(H),
+	Padded = if
+				W < Width -> H ++ lists:duplicate(Width - W, ?SPACE);
+				el/=se    -> H
+			end,
+	rectify(T, Width, [Padded | Acc]).
 
-pad_width(X, W) -> Len = length(X),
-				   Pad = W - Len,
-				   X ++ lists:duplicate(Pad, " ").
+side_pad([], _Padding, Acc) ->
+	Ret = lists:reverse(Acc),
+	Ret;
+side_pad([H | T], Padding, Acc) ->
+	NewAcc = lists:flatten(Padding ++ H ++ Padding),
+	side_pad(T, Padding, [NewAcc | Acc]).
 
-normalise_widths_TEST(A) -> normalise_widths(A).
+normalise_heights([], Acc) -> lists:reverse(Acc);
+normalise_heights([H | T], Acc) ->
+	GetMaxHeightFn = fun(#fmt_segment{height = Height}, Max) ->
+							get_greater(Height, Max)
+					end,
+	MaxHeight = lists:foldl(GetMaxHeightFn, 0, H),
+	SetMaxHeightFun = fun(#fmt_segment{} = F) ->
+		F#fmt_segment{height = MaxHeight}
+	end,
+	NormalisedHeights = lists:map(SetMaxHeightFun, H),
+	normalise_heights(T, [NormalisedHeights | Acc]).
 
 normalise_widths(Lines) ->
 	RawSegs = [X || #fmt_line{segs = X} <- Lines],
-	io:format("RawSegs is ~p~n", [RawSegs]),
 	Len = length(hd(RawSegs)),
 	Blank = lists:duplicate(Len, 0),
-	ConsolidateFn = fun(Line, {IsBlankBoxed, Height, Acc}) ->
-		io:format("in consolidate fn Line is ~p~n", [Line]),
-		_NewWidest = normalise_segs(Line, Acc, IsBlankBoxed, Height, ?EMPTY_ACCUMULATOR)
+	ConsolidateFn = fun(Line, {IsBlankBoxed, Acc}) ->
+		_NewWidest = normalise_segs(Line, Acc, IsBlankBoxed, ?EMPTY_ACCUMULATOR)
 	end,
-	{ForceBox, NormalisedHeight, NormalisedWidths} = lists:foldl(ConsolidateFn, {false, 0, Blank}, RawSegs),
-	io:format("ForceBox is ~p NormalisedHeight is ~p NormalisedWidths is ~p~n", [ForceBox, NormalisedHeight, NormalisedWidths]),
+	{ForceBox, NormalisedWidths} = lists:foldl(ConsolidateFn, {false, Blank}, RawSegs),
 	ApplyFun = fun(Line) ->
-		apply_normal(Line, NormalisedWidths, NormalisedHeight, ForceBox, ?EMPTY_ACCUMULATOR)
+		apply_normal(Line, NormalisedWidths, ForceBox, ?EMPTY_ACCUMULATOR)
 	end,
-	RenormalisedWidths = lists:map(ApplyFun, RawSegs),
-	io:format("NormalisedWidths is ~p~n", [RenormalisedWidths]),
-	RenormalisedWidths.
+	_RenormalisedWidths = lists:map(ApplyFun, RawSegs).
 
-apply_normal([], _Height, _ForceBlank, _Normalised, Acc) ->
+apply_normal([], _ForceBlank, _Normalised, Acc) ->
 	lists:reverse(Acc);
-apply_normal([#fmt_segment{boxing = B1} = Seg | T], [Width | Rest], Height, ForceBlank, Acc) ->
+apply_normal([#fmt_segment{boxing = B1} = Seg | T], [Width | Rest], ForceBlank, Acc) ->
 	NewB = case {B1, ForceBlank} of
 		{none, true} -> blankboxed;
 		_            -> B1
 	end,
-	apply_normal(T, Rest, Height, ForceBlank, [Seg#fmt_segment{width  = Width,
-													   		   height = Height,
-												  	   		   boxing = NewB} | Acc]).
+	apply_normal(T, Rest, ForceBlank, [Seg#fmt_segment{width  = Width,
+													   boxing = NewB} | Acc]).
 
-normalise_segs([], [], IsBlankBoxed, Height, Acc) -> {IsBlankBoxed, Height, lists:reverse(Acc)};
-normalise_segs([Line | T1], [Width | T2], IsBlankBoxed, Height, Acc) ->
+normalise_segs([], [], IsBlankBoxed, Acc) -> {IsBlankBoxed, lists:reverse(Acc)};
+normalise_segs([Line | T1], [Width | T2], IsBlankBoxed, Acc) ->
 	#fmt_segment{width  = W1,
-				 height = H1,
 				 boxing = B1} = Line,
-	NewW = get_greater(W1, Width),
-	NewH = get_greater(H1, Height),
+	%% it is only know that we know if we have to pad this line with a blank box
+	ActualWidth = case {B1, IsBlankBoxed} of
+					{none, true} -> W1 + 2;
+					_            -> W1
+	end,
 	NewBoxing = case B1 of
 					none       -> IsBlankBoxed;
 					boxed      -> true;
 					blankboxed -> true
 				end,
-	normalise_segs(T1, T2, NewBoxing, NewH, [NewW | Acc]).
+	NewW = get_greater(ActualWidth, Width),
+	normalise_segs(T1, T2, NewBoxing, [NewW | Acc]).
 
 get_greater(A, B) when A > B -> A;
 get_greater(_, B)            -> B.
@@ -207,11 +206,11 @@ get_greater(_, B)            -> B.
 
 build_segments_TEST(A) -> build_segments(A).
 
-build_segments(#'$ast¯'{op = #'$shape¯'{dimensions = 0},
-	                     args = Arg}) ->
+build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+	                    args = Arg}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
-build_segments(#'$ast¯'{op = #'$shape¯'{dimensions = D},
-	                     args = Args}) ->
+build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = D},
+	                    args = Args}) ->
 	[LineSize | Dims] = lists:reverse(D),
 	Lines = make_lines(Args, LineSize, ?EMPTY_ACCUMULATOR),
 	SplitFn = fun(Ls) ->
@@ -231,7 +230,19 @@ size_line(0, Args) ->
 	SizeFn = fun(X, Acc) ->
 		[fmt(X) | Acc]
 	end,
-	lists:foldl(SizeFn, [], Args);
+	Lines = lists:foldl(SizeFn, [], Args),
+	MaxHeightFn = fun(#fmt_segment{height = H}, Acc) ->
+					if
+						H >  Acc -> H;
+						H =< Acc -> Acc
+					end
+				   end,
+	MaxHeight = lists:foldl(MaxHeightFn, 0, Lines),
+	NormaliseHeightFn = fun(#fmt_segment{} = Seg) ->
+							Seg#fmt_segment{height = MaxHeight}
+						end,
+	Normalised = lists:map(NormaliseHeightFn, Lines),
+	Normalised;
 size_line(N, Args) -> lists:flatten([size_line(N - 1, X) || X <- Args]).
 
 split_line([], Args) ->
