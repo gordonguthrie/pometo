@@ -8,4 +8,4 @@ pometo_lexer.erl
 erl_crash.dump
 test/generated_tests
 docs/_site
-Gemfile.lock
+docs/Gemfile.lock

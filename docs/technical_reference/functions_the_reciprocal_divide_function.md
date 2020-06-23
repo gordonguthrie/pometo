@@ -81,5 +81,5 @@ In mixed use the real numbers are cast to a complex number with an imaginary val
 ```
 
 ```pometo_results
-2.0J1.0 2.0J4.5
+0.4J¯0.8 2.0J4.5
 ```

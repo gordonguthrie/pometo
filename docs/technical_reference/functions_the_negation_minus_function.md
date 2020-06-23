@@ -91,5 +91,5 @@ In mixed use the real numbers are cast to a complex number with an imaginary val
 ```
 
 ```pometo_results
-¯2J4 2J4
+¯2J¯4 2J4
 ```

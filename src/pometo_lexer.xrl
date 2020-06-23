@@ -72,13 +72,21 @@ Rules.
 >  : {token, {scalar_fn, TokenChars, TokenLen, ">"}}.
 ≠  : {token, {scalar_fn, TokenChars, TokenLen, "≠"}}.
 
+% Functions
 ⍴ : {token, {rho,   TokenChars, TokenLen, "⍴"}}.
-⍴ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
-, : {token, {comma, TokenChars, TokenLen, ","}}.
+⍳ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
+, : {token, {ravel, TokenChars, TokenLen, ","}}.
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 
 ⋄ : {token, {seperator, TokenChars, TokenLen, "⋄"}}. % statement separator
+
+%% StdLib Fns
+
+⎕debug    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug}}}.
+⎕tuple    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, tuple}}}.
+⎕fixedmap : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, fixedmap}}}.
+⎕record   : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, record}}}.
 
 {WHITESPACE} : {token, {whitespace, TokenChars, TokenLen, " "}}.
 

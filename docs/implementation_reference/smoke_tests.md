@@ -1,4 +1,4 @@
-# Smoke Tests
+1J¯1 3J¯4# Smoke Tests
 
 Because the documentation is also the test suite it is sometimes necessary to just bang out primitive smoke tests that would clutter the user-facing documentation.
 
@@ -26,6 +26,18 @@ Any test failure arising from this documentation will cause a slew of errors acr
 ```
 
 ## Monadic Branches - Real Numbers
+
+### Scalar first
+
+```pometo
++ 1
+```
+
+```pometo_results
+1
+```
+
+### Now Vectors
 
 ```pometo
 + 1 2
@@ -61,10 +73,12 @@ Any test failure arising from this documentation will cause a slew of errors acr
 
 ## Monadic Branches - Complex Numbers
 
+This covers mixed vectors and scalars
 
 ```pometo
 + 1j2 2J¯1
 ```
+
 ```pometo_results
 1J¯2 2J1
 ```
@@ -95,9 +109,41 @@ Any test failure arising from this documentation will cause a slew of errors acr
 
 ## Dyadic Branches - Real Numbers
 
+### Scalars first
+
+```pometo
+1 + 2
+```
+
+```pometo_results
+3
+```
+
+### Now Mixed
+
+```pometo
+1 + 2 3
+```
+
+```pometo_results
+3 4
+```
+
+```pometo
+2 3 + 1
+```
+
+```pometo_results
+3 4
+```
+
+
+### Now Pure Vectors
+
 ```pometo
 4 5 + 1 2
 ```
+
 ```pometo_results
 5 7
 ```
@@ -174,7 +220,7 @@ Any test failure arising from this documentation will cause a slew of errors acr
 ```
 
 ```pometo_results
-1J2 3J5
+1J2 3J¯5
 ```
 
 ```pometo
@@ -190,7 +236,7 @@ Any test failure arising from this documentation will cause a slew of errors acr
 ```
 
 ```pometo_results
-2.0J1.0 5.0J2.0
+2.0J1.0 0.6896551724137931J¯1.7241379310344827
 ```
 
 ## Nested Arrays
