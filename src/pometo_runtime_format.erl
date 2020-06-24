@@ -1,5 +1,7 @@
 -module(pometo_runtime_format).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -include("parser_records.hrl").
 -include("errors.hrl").
 -include("comments.hrl").
@@ -22,6 +24,9 @@
 		  build_segments_TEST/1
 		]).
 
+%% the size we allow the formated output to be
+-define(DISPLAYWIDTH,  80).
+-define(DISPLAYHEIGHT, 40).
 
 %% ascii art boxes in unicode
 -define(TOPLEFT,        9484).
@@ -40,9 +45,24 @@
 %%%
 
 format([]) -> [];
-format(#'$ast¯'{op = #'$shape¯'{}} = AST) ->
-	Frags = build_segments(AST),
-	print(Frags);
+% special case for the null return from ⍴ on a scalar
+format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+				args = []}) ->
+	"";
+format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+				args = Arg}) ->
+	#fmt_segment{strings = [String]} = fmt(Arg),
+	String;
+format(#'$ast¯'{op = #'$shape¯'{dimensions = Dims}} = AST) ->
+	Len = length(Dims),
+	if
+		Len <  3 -> Frags = build_segments(AST),
+				    Block = print(Frags),
+				    maybe_truncate_block(Block);
+		Len >= 3 -> [First, Second | _Rest] = lists:reverse(Dims),
+				    Block = chunk_format(AST, First, Second, ?EMPTY_ACCUMULATOR),
+				    maybe_truncate_block(Block)
+	end;
 format(#comment{msg = Msg,
 				at_line = LNo,
 				at_char = CNo}) ->
@@ -52,7 +72,17 @@ format({error, Err}) ->
 
 format_errors(Errors) ->
 	FormattedEs = [format_error(X) || X <- Errors],
-	lists:flatten(string:join(FormattedEs, "\n") ++ "\n").
+	lists:flatten(string:join(FormattedEs, "\n")).
+
+chunk_format(#'$ast¯'{args = []}, _First, _Second, Acc) ->
+	string:join(lists:reverse(Acc), "\n\n");
+chunk_format(#'$ast¯'{args = Args} = AST, First, Second, Acc) ->
+	Chunk = First * Second,
+	{Chunked, Remainder} = lists:split(Chunk, Args),
+	NewAcc = format(AST#'$ast¯'{op   = #'$shape¯'{dimensions = [Second, First]},
+							    args = Chunked}),
+	NewAST = AST#'$ast¯'{args = Remainder},
+	chunk_format(NewAST, First, Second, [NewAcc | Acc]).
 
 print(List) ->
 	List2 = normalise_widths(List),
@@ -60,10 +90,22 @@ print(List) ->
 	Lines = [format_line(Line, ?EMPTY_ACCUMULATOR) || Line <- List3],
 	print(Lines, ?EMPTY_ACCUMULATOR).
 
-print([], Acc) -> string:join(lists:reverse(Acc), "\n");
+print([], Acc) ->
+	_Block = string:join(lists:reverse(Acc), "\n");
 print([[H] | T], Acc) ->
 	NewAcc = string:join([io_lib:format("~ts", [X]) || X <- H], "\n"),
 	print(T, [NewAcc| Acc]).
+
+maybe_truncate_block(Block) ->
+	% the length of the block is the number_of_lines + (number_of_lines - 1)
+	% each line (except the last) is followed by a line return
+	Len = trunc((length(Block) + 1)/2),
+	_NewBlock = if
+		Len >  ?DISPLAYHEIGHT -> Cut = trunc((Len - ?DISPLAYHEIGHT)/2),
+								 {Keep, _Discard} = lists:split(length(Block) - Cut, Block),
+								 Keep ++ ["\n[... " ++ integer_to_list(Len - ?DISPLAYHEIGHT) ++ " lines cut...]"];
+		Len =< ?DISPLAYHEIGHT -> Block
+	end.
 
 join(List) -> join2(List, ?EMPTY_MAP).
 
@@ -85,7 +127,8 @@ join3([Val | T], Key, Map) ->
 	join3(T, Key + 1, NewMap).
 
 format_line([], Acc) ->
-	join(lists:reverse(Acc));
+	[Lines] = join(lists:reverse(Acc)),
+	[[maybe_truncate_line(X) || X <- Lines]];
 format_line([#fmt_segment{strings = Strings,
 						  width   = NW,
 						  height  = H,
@@ -102,10 +145,22 @@ format_line([#fmt_segment{strings = [Strs],
 	PaddedLines = pad_lines([Strs], NW, H, NB),
 	format_line(T, [PaddedLines | Acc]).
 
+maybe_truncate_line(Line) ->
+	Len = length(Line),
+	if
+		Len >  ?DISPLAYWIDTH -> Cut = Len - ?DISPLAYWIDTH,
+								Msg = " chars deleted ]",
+							    CutLen = Cut + length(Msg) + 1,
+							    Append = "[" ++ integer_to_list(CutLen) ++ Msg,
+							    {Start, _Cut} = lists:split(?DISPLAYWIDTH - length(Append), Line),
+							    Start ++ Append;
+		Len =< ?DISPLAYWIDTH -> Line
+	end.
+
 pad_lines(Lines, Width, Height, Boxing) ->
 	Boxed = case Boxing of
 		none ->
-			Lines;
+			rectify(Lines, Width, ?EMPTY_ACCUMULATOR);
 		boxed ->
 			RectifiedLines = rectify(Lines, Width - 2, ?EMPTY_ACCUMULATOR),
 			FinalLines = side_pad(RectifiedLines, [?VERTICALLINE], ?EMPTY_ACCUMULATOR),
@@ -136,7 +191,7 @@ rectify([], _Width, Acc) ->
 rectify([H | T], Width, Acc) ->
 	W = length(H),
 	Padded = if
-				W < Width -> H ++ lists:duplicate(Width - W, ?SPACE);
+				W < Width -> lists:duplicate(Width - W, ?SPACE) ++ H;
 				el/=se    -> H
 			end,
 	rectify(T, Width, [Padded | Acc]).
@@ -207,6 +262,9 @@ get_greater(_, B)            -> B.
 build_segments_TEST(A) -> build_segments(A).
 
 build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+	                    args = null}) ->
+	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
+build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	                    args = Arg}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
 build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = D},
@@ -243,19 +301,25 @@ size_line(0, Args) ->
 						end,
 	Normalised = lists:map(NormaliseHeightFn, Lines),
 	Normalised;
-size_line(N, Args) -> lists:flatten([size_line(N - 1, X) || X <- Args]).
+size_line(N, Args) ->
+	lists:flatten([size_line(N - 1, X) || X <- Args]).
 
 split_line([], Args) ->
 	lists:reverse(Args);
 split_line([H | T], Args) ->
 	Len = length(Args),
 	Slice = trunc(Len/H),
-	NewArgs = split_l2(Args, Slice, ?EMPTY_ACCUMULATOR),
+	NewArgs = case Slice of
+					0 -> [Args];
+					_ -> split_l2(Args, Slice, ?EMPTY_ACCUMULATOR)
+			  end,
 	[split_line(T, X) || X <- NewArgs].
 
-split_l2([],   _N, Acc) -> lists:reverse(Acc);
-split_l2(List, N,  Acc) -> {First, Rest} = lists:split(N, List),
-						   split_l2(Rest, N, [First | Acc]).
+split_l2([],   _N, Acc) ->
+	lists:reverse(Acc);
+split_l2(List, N,  Acc) when N /= 0 -> % yes it ran away in an infinite loop here earlier
+	{First, Rest} = lists:split(N, List),
+	split_l2(Rest, N, [First | Acc]).
 
 fmt(#'$ast¯'{op   = complex,
 	         args = [R, I]}) when R < 0 andalso
@@ -268,6 +332,7 @@ fmt(#'$ast¯'{op   = complex,
 	         args = [R, I]})            -> make_frag("~pJ~p",   [abs(R), abs(I)]);
 fmt(#'$ast¯'{} = A)                     -> [#fmt_line{segs = Strings}] = build_segments(A),
 										   {Width, Height} = get_size(Strings),
+										   	io:format("in fmt Strings is ~p before maybe normalise widths~n", [Strings]),
 										   #fmt_segment{strings = Strings,
 										   			    width   = Width  + 2,
 										   			    height  = Height + 2,
@@ -317,5 +382,7 @@ format_error(#error{type    = T,
 		none   -> "";
 		_      -> lists:flatten(lists:duplicate(AtC - 1, "-") ++ "^")
 	end,
-	io_lib:format("Error~n~ts~n~s~n~s (~ts:~ts) on line ~p at character ~p~n",
+	% there are reasons we add extra new lines here and then take the first ones away later
+	% its to make the test suites work and keep the output purty for users with multiple errors
+	io_lib:format("~n~nError~n~ts~n~s~n~s (~ts:~ts) on line ~p at character ~p",
 				  [E, Pointer, T, M1, M2, AtL, AtC]).

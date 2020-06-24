@@ -37,10 +37,10 @@ debug2(#'$ast¯'{op      = Op,
 		is_list(Args) -> length(Args);
 	    el/=se        -> 1
 	end,
-	Line1 = io_lib:format(Padding ++ "from line ~p at character no ~p~n", [LNo, CNo]),
-	Line2 = format_op(Op, Padding),
-	Line3 = io_lib:format(Padding ++ "arguments: ~p~n", [NumArgs]),
-	Line4 = print_args(Args, Indent + 1, ?EMPTY_ACCUMULATOR),
+	Line1  = io_lib:format(Padding ++ "from line ~p at character no ~p~n", [LNo, CNo]),
+	Line2  = format_op(Op, Padding),
+	Line3  = io_lib:format(Padding ++ "arguments: ~p~n", [NumArgs]),
+	Line4  = print_args(Args, Indent + 1, ?EMPTY_ACCUMULATOR),
 	_Lines = lists:flatten([
 								Line1,
 								Line2,

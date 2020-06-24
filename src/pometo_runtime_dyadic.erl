@@ -6,53 +6,53 @@
 			dyadic_RUNTIME/1
 		]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -include("parser_records.hrl").
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-dyadic_RUNTIME(["⍴", #'$ast¯'{op   = ?shape(N, number) = Shp,
-	                          args = A1},
-	                 #'$ast¯'{op   = ?shape(0, Type),
-	                          args = A2} = Right]) ->
-	Size = case A1 of
-		[N]     -> N;
-		[H | T] -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T)
-	end,
-	NewArgs = lists:duplicate(Size, A2),
-	Right#'$ast¯'{op   = Shp?shape(A1, Type),
-				  args = NewArgs};
-% this clause handles both a scalar and a vector on the LHS
-dyadic_RUNTIME(["⍴", #'$ast¯'{op   = ?shape(_N1, number) = Shp,
-	                          args = A1},
-	                 #'$ast¯'{op   = ?shape(_N2, Type),
-	                          args = A2} = Right]) ->
-	% this casts any LHS vector to a scalar
-	{Size, NewA1} = case A1 of
-		[H | T] -> {lists:foldl(fun(X, Acc) -> X * Acc end, H, T), A1};
-		N       -> {N, [N]}
-	end,
-	SliceSize = length(A2),
-	NewArgs = if
-				Size <  SliceSize -> {Keep, _Discard} = lists:split(Size, A2),
-									 Keep;
-				Size == SliceSize -> A2;
-				Size >  SliceSize -> Repetitions = trunc(Size/SliceSize),
-									 Rem = Size rem SliceSize,
-									 {TopUp, _Discard2} = lists:split(Rem, A2),
-									 lists:flatten(lists:duplicate(Repetitions, A2)) ++ TopUp
-			   end,
-	Right#'$ast¯'{op   = Shp?shape(NewA1, Type),
-				  args = NewArgs};
-dyadic_RUNTIME(["⍴", #'$ast¯'{args    = A1,
-							  line_no = LNo,
-							  char_no = CNo} = Left,
-	                 #'$ast¯'{args    = A2} = Right]) ->
-	io:format("in dyadic rho (3) with~n- Left  ~p~n- Right ~p~n", [Left, Right]),
-	Msg1 = "dyadic ⍴ only accepts integer arguments to the left and was called with",
-	Msg2 = io_lib:format("Left: ~p - Right: ~p", [A1, A2]),
-	Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
-	throw({error, Error});
-
+% this clause handles both a scalar and a vector on eigher of the LHS or the RHS
+dyadic_RUNTIME(["⍴", #'$ast¯'{op      = ?shape(N1, Type1) = Shp,
+	                          args    = A1,
+	                          line_no = LNo,
+	                          char_no = CNo},
+	                 #'$ast¯'{op      = ?shape(N2, Type2),
+	                          args    = A2} = Right]) when Type1 == number  orelse
+														   Type1 == boolean ->
+	% this casts any LHS scalars on either side to vectors
+	NewA1 = case N1 of
+				0 -> [A1];
+				_ -> A1
+			end,
+	NewA2 = case N2 of
+				0 -> [A2];
+				_ -> A2
+			end,
+	case are_all_integers(NewA1) of
+		true ->
+			{Size, NewA1} = case NewA1 of
+				[H | T] -> {lists:foldl(fun(X, Acc) -> X * Acc end, H, T), NewA1};
+				N       -> {N, [N]}
+			end,
+			SliceSize = length(NewA2),
+			NewArgs = if
+						Size <  SliceSize -> {Keep, _Discard} = lists:split(Size, NewA2),
+											 Keep;
+						Size == SliceSize -> NewA2;
+						Size >  SliceSize -> Repetitions = trunc(Size/SliceSize),
+											 Rem = Size rem SliceSize,
+											 {TopUp, _Discard2} = lists:split(Rem, NewA2),
+									 		 lists:flatten(lists:duplicate(Repetitions, NewA2)) ++ TopUp
+					   end,
+			Right#'$ast¯'{op   = Shp?shape(NewA1, Type2),
+						  args = NewArgs};
+		false ->
+			Msg1 = "dyadic ⍴ only accepts integer arguments to the left and was called with",
+			Msg2 = io_lib:format("Left: ~p - Right: ~p", [A1, A2]),
+			Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
+			throw({error, Error})
+	end;
 %% complex element number handling first
 %% complex numbers in arrays are unpacked in execute_dyadic
 %% some ops on complex numbers are simple scalar extentions
@@ -131,6 +131,12 @@ dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp(N1),
 %%
 %% private fns
 %%
+
+
+are_all_integers([])                         -> true;
+are_all_integers([H | T]) when is_integer(H) -> are_all_integers(T);
+are_all_integers(X)       when is_integer(X) -> true;
+are_all_integers(_)                          -> false.
 
 get_fmt(X) ->
 	#fmt_segment{strings = [Str]} = pometo_runtime_format:fmt(X),

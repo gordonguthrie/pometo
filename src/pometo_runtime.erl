@@ -51,7 +51,8 @@ run_ast2(#'$ast¯'{op   = flatten_comma,
 %% Exported for use in compiled modules
 %%
 
-dyadic(Args)  -> pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+dyadic(Args)  -> io:format("calling dyadic with ~p~n", [Args]),
+				 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
 monadic(Args) -> pometo_runtime_monadic:monadic_RUNTIME(Args).
 

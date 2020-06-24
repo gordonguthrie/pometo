@@ -61,10 +61,12 @@ run_for_format_TEST(Str, ModuleName) ->
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> compile_and_run3([{{run, 0, []}, Exprs}], ModuleName, Str);
-	    {Errors,      _Exprs} -> lists:flatten(Errors)
+	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 
@@ -73,10 +75,12 @@ compile_load_and_run_TEST(Str, ModuleName) ->
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName, Str);
-	    {Errors,      _Exprs} -> lists:flatten(Errors)
+	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 interpret_TEST(Str) ->
@@ -84,10 +88,12 @@ interpret_TEST(Str) ->
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> lists:flatten(interpret_TEST2(Exprs, Str));
-	    {Errors,      _Exprs} -> lists:flatten(Errors)
+		{?EMPTYERRORS, Exprs} -> interpret_TEST2(Exprs, Str);
+	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 parse_TEST(Str) ->
@@ -116,11 +122,14 @@ compile_and_run3(Exprs, ModuleName, Str) ->
 	end.
 
 compile_and_run2(Exprs, ModuleName, Str) ->
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
 		{module, Mod} -> case Mod:run() of
 							{error, Err} -> FixedErr = Err#error{expr = Str, at_line = 1, at_char = 1},
-											pometo_runtime_format:format_errors([FixedErr]);
-							Results      -> pometo_runtime_format:format(Results)
+											RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
+											string:trim(RunTimeErrs, leading, "\n");
+							Results      -> lists:flatten(pometo_runtime_format:format(Results))
 						 end;
 		{error, Errs} -> pometo_runtime_format:format_errors(Errs)
 	end.
@@ -135,7 +144,9 @@ interpret_TEST2(Exprs, Str) ->
 	Resps          = [pometo_runtime:run_ast(E, Str)  || E <- Exprs],
 	FormattedResps = [pometo_runtime_format:format(R) || R <- Resps],
 	LastResponse   = hd(lists:reverse(FormattedResps)),
-	LastResponse.
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
+	string:trim(lists:flatten(LastResponse), leading, "\n").
 
 lex2(Str) ->
 	Lines = string:split(Str, "\n", all),

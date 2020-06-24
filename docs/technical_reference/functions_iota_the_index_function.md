@@ -2,23 +2,25 @@
 
 ## Monadic Use On Integers
 
+TESTS ON THIS DISABLED AS IOTA IS NOT IMPLEMENTED YET
+
 `⍳` is a monadic function which when applied to a vector of integers generates a matrix of indices.
 
-```pometo
+```xxpometo
 ⍳3
 ```
 
-```pometo_results
+```xxpometo_results
 1 2 3
 ```
 
 It is multidimensional, of course:
 
-```pometo
+```xxpometo
 ⍳3 2 1
 ```
 
-```pometo_results
+```xxpometo_results
 1 1 1
 1 2 1
 
@@ -33,10 +35,10 @@ It is multidimensional, of course:
 
 Attemps to use `i` on a vector of other values will throw a `DOMAIN ERROR`:
 
-```pometo
+```xxpometo
 ⍳ 3 2 1.0
 ```
 
-```pometo_results
+```xxpometo_results
 Error DOMAIN ERROR
 ```

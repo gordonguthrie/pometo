@@ -246,5 +246,7 @@ This covers mixed vectors and scalars
 ```
 
 ```pometo_results
-1 2  3 4
+    ┌───┐
+1 2 │3 4│
+    └───┘
 ```

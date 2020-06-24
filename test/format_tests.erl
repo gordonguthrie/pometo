@@ -145,63 +145,125 @@ double_nested_format_test_() ->
     ?_assertEqual(Exp, Got).
 
 
-basic_one_line_bust_measure_format_test_xx() ->
+basic_one_line_bust_measure_format_test_() ->
     Str = "MyVariable ← 1 2 3 4 5 6 7 8 9 0" ++
-    	              " 1 2 3 4 5 6 7 8 9 0" ++
-    	              " 1 2 3 4 5 6 7 8 9 0" ++
+    	              " 1 2 3 4 5 6 7 8 9 0"   ++
+    	              " 1 2 3 4 5 6 7 8 9 0"   ++
     	              " 1 2 3 4 5 6 7 8 9 0\n" ++
     	   "MyVariable + 1",
     Got = pometo:interpret_TEST(Str),
-    Exp = "2 3 4 5 6 7 8 9 10 "   ++
-    	  "1 2 3 4 5 6 7 8 9 10 " ++
-    	  "1 2 3 4 5 6 7 8 9 10 " ++
-    	  "1 2 3 4 5 ...",
+    Exp = "2 3 4 5 6 7 8 9 10 1 2 3 4 5 6 7 8 9 10 1 2 3 4 5 6 7 8 9 10 [20 chars deleted ]",
     % ?debugFmt("in basic_one_line_bust_measure_format_test_~nGot~n~ts~nExp~n~ts~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
-basic_nested_bust_measure_format_test_xx() ->
-    Str = "MyVariable ← (1 2 3 4 5 6 7 8 9 0"  ++
-    	              " 1 2 3 4 5 6 7 8 9 0"   ++
-    	              " 1 2 3 4 5 6 7 8 9 0"   ++
-    	              " 1 2 3 4 5 6 7 8 9 0)"  ++
-                      " (1 2 3 4 5 6 7 8 9 0"  ++
-                      " 1 2 3 4 5 6 7 8 9 0"   ++
-                      " 1 2 3 4 5 6 7 8 9 0"   ++
-                      " 1 2 3 4 5 6 7 8 9 0)"  ++
-                      "\n"                     ++
-                      "MyVariable + 0",
+basic_nested_bust_measure_format_test_() ->
+    Str = "MyVariable ← (1 2 3 4 5 6 7 8 9 0" ++
+    	              " 1 2 3 4 5 6 7 8 9 0"    ++
+    	              " 1 2 3 4 5 6 7 8 9 0"    ++
+    	              " 1 2 3 4 5 6 7 8 9 0)"   ++
+                    "(1 2 3 4 5 6 7 8 9 0"    ++
+                    " 1 2 3 4 5 6 7 8 9 0"    ++
+                    " 1 2 3 4 5 6 7 8 9 0"    ++
+                    " 1 2 3 4 5 6 7 8 9 0)"   ++
+                    "\n"                      ++
+                    "MyVariable + 0",
     Got = pometo:interpret_TEST(Str),
-    Exp = " 1 2 3 4 5 6 7 8 9 0 " ++
-    	  "1 2 3 4 5 6 7 8 9 0 " ++
-    	  "1 2 3 4 5 6 7 8 9 0 " ++
-    	  "1 2 3 4 5 ...",
-    % ?debugFmt("in basic_two_line_bust_measure_format_test_~nGot~n<~ts>~nExp~n<~ts>~n", [Got, Exp]),
+    Exp = "┌───────────────────────────────────────────────────────────[100 chars deleted ]\n" ++
+          "│1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0[100 chars deleted ]\n" ++
+          "└───────────────────────────────────────────────────────────[100 chars deleted ]",
+    % ?debugFmt("in basic_nested_bust_measure_format_test_~nGot~n~p~nExp~n~p~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
+basic_height_measure_busted_test_() ->
+  Str = "4 4 4 4 ⍴ 1 2 3 4 5 6 7 8 9 0",
+    Got = pometo:interpret_TEST(Str),
+    Exp = "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "\n"        ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "\n"        ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "\n"        ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "\n"        ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "\n"        ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "\n"        ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "\n"        ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "\n"        ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "\n"        ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "\n"        ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "\n"        ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "9 0 1 2\n" ++
+          "\n"        ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "5 6 7 8\n" ++
+          "\n"        ++
+          "9 0 1 2\n" ++
+          "3 4 5 6\n" ++
+          "7 8 9 0\n" ++
+          "1 2 3 4\n" ++
+          "\n"        ++
+          "5 6 7 8\n" ++
+          "[... 31 lines cut...]",
+    % ?debugFmt("in basic_height_measure_busted_test_~nGot~n~ts~nExp~n~ts~n", [Got, Exp]),
+    ?_assertEqual(Exp, Got).
 
 kitchen_sink_test_() ->
     Str = "2 2 ⍴ (1 22) (1 22 (333 4444)) 55555",
-    % ┌────┬┬─────────────────┐
-    % │1 22││┌─┬┬──┬┬────────┐│
-    % │    │││1││22││333 4444││
-    % │    ││└─┴┴──┴┴────────┘│
-    % ├────┼┼─────────────────┤
-    % 55555 │1 22             │
-    %       ┴─────────────────┘
-    % 123456
-    %       1234567890123456789
-
     Got  = pometo:interpret_TEST(Str),
     Exp  = "┌─────┐ ┌───────────────┐\n" ++
-           "│1 22 │ │1 22 ┌────────┐│\n" ++
+           "│ 1 22│ │1 22 ┌────────┐│\n" ++
            "└─────┘ │     │333 4444││\n" ++
            "        │     └────────┘│\n" ++
            "        └───────────────┘\n" ++
            "        ┌───────────────┐\n" ++
-           "55555   │1 22           │\n" ++
-           "        └───────────────┘"
-           ,
-    ?debugFmt("in kitchen_sink_test_~nGot~n~ts~n--~nExp~n~ts~n--~n", [Got, Exp]),
+           "  55555 │           1 22│\n" ++
+           "        └───────────────┘",
+    % ?debugFmt("in kitchen_sink_test_~nGot~n~ts~n--~nExp~n~ts~n--~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
 %%%

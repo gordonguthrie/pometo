@@ -17,10 +17,8 @@ monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(Dims) = Shp} = AST]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
 						   type       = number},
-	Ret = AST#'$ast¯'{op   = NewShp,
-					  args = Dims},
-	io:format("Ret is ~p~n", [Ret]),
-				Ret;
+	AST#'$ast¯'{op   = NewShp,
+				args = Dims};
 monadic_RUNTIME(["⍳", #'$ast¯'{args    = Args,
 					           line_no = LNo,
 					           char_no = CNo}]) ->
