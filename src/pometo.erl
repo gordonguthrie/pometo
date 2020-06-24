@@ -57,7 +57,6 @@ interpret(Str, ExternalBindings) ->
 
 run_for_format_TEST(Str, ModuleName) ->
     scope_dictionary:clear_all(),
-    io:format("running format test for ~p~n", [Str]),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
