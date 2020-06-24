@@ -17,4 +17,6 @@ rebar3 eunit --module=interpreter_complex_no_tests
 rebar3 eunit --module=compiler_tests
 rebar3 eunit --module=compiler_error_tests
 rebar3 eunit --module=compiler_complex_no_tests
+# finally if the tests have been generated run the smoke tests
+rebar3 eunit --module=smoke_tests_tests
 
