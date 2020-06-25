@@ -36,12 +36,21 @@ Rules.
 
 {J} : {token, {j, TokenChars, TokenLen, j}}.
 
+\( : {token, {open_bracket,  TokenChars, TokenLen, "("}}.
+\) : {token, {close_bracket, TokenChars, TokenLen, ")"}}.
+\{ : {token, {open_curly,    TokenChars, TokenLen, "{"}}.
+\} : {token, {close_curly,   TokenChars, TokenLen, "}"}}.
+\[ : {token, {open_square,   TokenChars, TokenLen, "["}}.
+\] : {token, {close_square,  TokenChars, TokenLen, "]"}}.
+
 ¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
 
 \+ : {token, {scalar_fn, TokenChars, TokenLen, "+"}}.
 -  : {token, {scalar_fn, TokenChars, TokenLen, "-"}}.
 ×  : {token, {scalar_fn, TokenChars, TokenLen, "×"}}.
 ÷  : {token, {scalar_fn, TokenChars, TokenLen, "÷"}}.
+
+%% yeah, yeah bud we will get round to you
 \| : {token, {scalar_fn, TokenChars, TokenLen, "|"}}.
 ⌊  : {token, {scalar_fn, TokenChars, TokenLen, "⌊"}}.
 ⌈  : {token, {scalar_fn, TokenChars, TokenLen, "⌈"}}.
@@ -63,10 +72,21 @@ Rules.
 >  : {token, {scalar_fn, TokenChars, TokenLen, ">"}}.
 ≠  : {token, {scalar_fn, TokenChars, TokenLen, "≠"}}.
 
+% Functions
+⍴ : {token, {rho,   TokenChars, TokenLen, "⍴"}}.
+⍳ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
+, : {token, {ravel, TokenChars, TokenLen, ","}}.
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 
 ⋄ : {token, {seperator, TokenChars, TokenLen, "⋄"}}. % statement separator
+
+%% StdLib Fns
+
+⎕debug    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug}}}.
+⎕tuple    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, tuple}}}.
+⎕fixedmap : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, fixedmap}}}.
+⎕record   : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, record}}}.
 
 {WHITESPACE} : {token, {whitespace, TokenChars, TokenLen, " "}}.
 

@@ -15,11 +15,11 @@ basic_interpreter_failure_test_() ->
     Exp = "Error\n" ++
 		  "MyVar ←← 1 2 3 ⋄ 55 66 + 77 88\n" ++
 		  "-------^\n" ++
-          "SYNTAX ERROR (syntax error before: :{let_op,8,[8592],[8592]}) on line 3 at character 8\n\n" ++
-          "Error\n" ++
+          "SYNTAX ERROR (syntax error before: :{let_op,8,[8592],[8592]}) on line 3 at character 8" ++
+          "\n\nError\n" ++
 		  "Myvr ←×← 1 2 3\n" ++
 		  "------^\n" ++
-          "SYNTAX ERROR (syntax error before: :{scalar_fn,7,\"×\",\"×\"}) on line 4 at character 7\n\n",
+          "SYNTAX ERROR (syntax error before: :{scalar_fn,7,\"×\",\"×\"}) on line 4 at character 7",
     % ?debugFmt("in basic_interpreter_failure_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
@@ -29,7 +29,7 @@ variable_redefinition_same_line_test_() ->
     Exp = "Error\n" ++
 		  "A ← 4 5 6 ⋄ A ← 6 7 ¯8 ⍝ including comments\n" ++
 		  "------------^\n" ++
-		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13\n\n",
+		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13",
     % ?debugFmt("in variable_redefinition_same_line_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
@@ -39,17 +39,15 @@ variable_triple_redefinition_same_line_test_() ->
     Exp = "Error\n" ++
 		  "A ← 4 5 6 ⋄ A ← 6 7 8 ⋄ A ← 1 2 3 ⋄ A ← 9 8 7\n" ++
 		  "------------^\n" ++
-		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13\n" ++
-		  "\n" ++
-		  "Error\n" ++
+		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13" ++
+		  "\n\nError\n" ++
 		  "A ← 4 5 6 ⋄ A ← 6 7 8 ⋄ A ← 1 2 3 ⋄ A ← 9 8 7\n" ++
 		  "------------------------^\n" ++
-		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 13) on line 1 at character 25\n" ++
-		  "\n" ++
-		  "Error\n" ++
+		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 13) on line 1 at character 25" ++
+		  "\n\nError\n" ++
 		  "A ← 4 5 6 ⋄ A ← 6 7 8 ⋄ A ← 1 2 3 ⋄ A ← 9 8 7\n" ++
 		  "------------------------------------^\n" ++
-		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 25) on line 1 at character 37\n\n",
+		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 25) on line 1 at character 37",
     % ?debugFmt("in variable_triple_redefinition_same_line_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
@@ -59,7 +57,7 @@ variable_redefinition_test_() ->
     Exp = "Error\n" ++
 		  "A ← 6 7 8\n" ++
 		  "^\n" ++
-		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 3 at character 1\n\n",
+		  "VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 3 at character 1",
     % ?debugFmt("in variable_redefinition_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
@@ -71,6 +69,6 @@ undefined_variable_failure_test_() ->
 	Exp = "Error\n" ++
 		  "A + C\n" ++
 		  "----^\n" ++
-		  "VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5\n\n",
+		  "VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5",
     % ?debugFmt("in undefined_variable_failure_test_Got ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).

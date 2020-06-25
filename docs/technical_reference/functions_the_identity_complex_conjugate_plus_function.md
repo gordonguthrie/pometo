@@ -1,8 +1,8 @@
-# The Identity/Plus Operator +
+# The Identity/Plus Function +
 
 ## Monadic Use On Floats And Integers
 
-`+` is a monadic operator that for a complex number returns the complex conjugate of the argument, otherwise it is an identity operator
+`+` is a monadic function that for a complex number returns the complex conjugate of the argument, otherwise it is an identity function.
 
 ```pometo
 + 0 1 2 ¯1 2.0 3e+1
@@ -14,7 +14,7 @@
 
 ## Dyadic Use On Floats And Integers
 
-`+` is a dyadic operator that works in two ways.
+`+` is a dyadic function that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise addition
 
@@ -52,7 +52,7 @@ and
 
 ## Monadic Use On Complex Nos
 
-the `+` operator returns the complex conjugate of a complex no.
+the `+` function returns the complex conjugate of a complex no.
 
 The complex conjugate of a complex number is the complex number which when multiplied by the original gives a real number.
 

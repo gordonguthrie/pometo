@@ -143,7 +143,7 @@ type({Type,       _,  _, _}) -> Type.
 post_process(List, _N, _Expr, [],     Acc) when List == [] orelse hd(List) == {'$end'} ->
   {ok, lists:reverse(Acc)};
 post_process(List, _N, _Expr, Errors, _Acc) when List == [] orelse hd(List) == {'$end'} ->
-  {error, pometo_runtime:format_errors(lists:reverse(Errors))};
+  {error, pometo_runtime_format:format_errors(lists:reverse(Errors))};
 post_process([{invalid_token, Chars, TokenLen, _}| T], N, Expr, Errors, Acc) ->
   NewError = #error{type = 'SYNTAX ERROR', msg1 = "invalid token", msg2 = Chars, expr = Expr, at_line = scope_dictionary:get_line_no(), at_char = N},
   NewN = N + TokenLen,

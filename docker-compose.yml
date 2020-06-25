@@ -12,7 +12,7 @@ services:
       - type: bind
         source: ./
         target: /pometo
-        # for xwindows
+      # for xwindows
       #- type: bind
       #  source: /tmp/.X11-unix
       #  target: /tmp/.X11-unix

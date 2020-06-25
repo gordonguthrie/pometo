@@ -9,9 +9,9 @@
 basic_compiler_failure_test_() ->
 	Str = "A ← 4 5 6",
 	Got = pometo:compile_load_and_run_TEST(Str, "basic_compiler_error_test_module"),
-	Exp = "Error\n"        ++
+	Exp = "\n\nError\n"        ++
 		  "dunno? FIXME\n" ++
 		  "^\n"            ++
-		  "UNUSED VARIABLE (variable is unused:A) on line 1 at character 1\n\n",
-    % ?debugFmt("in basic_compiler_failure_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+		  "UNUSED VARIABLE (variable is unused:A) on line 1 at character 1",
+    % ?debugFmt("in basic_compiler_failure_test_~nfrom ~p~nGot ~ts~nExp ~ts~n", [Str, Got, Exp]),
 	?_assertEqual(Exp, Got).

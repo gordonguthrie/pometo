@@ -1,8 +1,8 @@
-# The Reciprocal/Divide Operator ÷
+# The Reciprocal/Divide Function ÷
 
 ## Monadic Use On Floats And Integers
 
-`÷` is a monadic operator that returns the `reciprocal` of the argument.
+`÷` is a monadic function that returns the `reciprocal` of the argument.
 
 ```pometo
 ÷ 4 5 10
@@ -14,7 +14,7 @@
 
 ## Dyadic Use On Floats And Integers
 
-`÷` is a dyadic operator that works in two ways.
+`÷` is a dyadic function that works in two ways.
 
 If the `rho` of both sides is the same it performs zip-wise `division`
 
@@ -81,5 +81,5 @@ In mixed use the real numbers are cast to a complex number with an imaginary val
 ```
 
 ```pometo_results
-2.0J1.0 2.0J4.5
+0.4J¯0.8 2.0J4.5
 ```

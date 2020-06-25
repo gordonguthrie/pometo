@@ -377,3 +377,108 @@ In addition a source module data structure is built up:
 In the final state the exposed function (here `run`) will contain a `try`/`catch` pair and any runtime errors will be caught. There will be an internal function constructured from the `sourcemap` data and run time errors will be reformatted to express that error in terms of the `line_no`/`character_no` of the original source code.
 
 As the characteristics of `Pometo` functions are better defined in the language the exported function wrapping the `do_` function may or may not be decorated with functions that cast lists into internal `Pometo` data structures before invoking the `do_` and back again after.
+
+### Getting down and dirty with the real nitty gritty lolol 2020/06/15
+
+#### Compiler rewrite
+
+Driven and informed by this https://dl.acm.org/doi/abs/10.1145/3386319
+
+The developmenal approach needs to slow down and be more considered. First up I know understand the difference between `operators` and `functions`. We need to systematically implmement the following `operators`:
+
+* `reduce`
+* `reduce last`
+* `scan`
+* `scan last`
+* `inner product`
+* `outer product`
+* `axis`
+
+Consideration of these immediately surfaces a strategic problem pertaining to interoperability.
+
+`Erlang` and `Elixir` and most programming languages) have a mixed latin-arabic parse direction whereas APL is traditionally pure arabic.
+
+```
+  ____        _ _            _
+ |  _ \      | | |          | |
+ | |_) | ___ | | | ___   ___| | _____
+ |  _ < / _ \| | |/ _ \ / __| |/ / __|
+ | |_) | (_) | | | (_) | (__|   <\__ \
+ |____/ \___/|_|_|\___/ \___|_|\_\___/
+
+```
+
+***this is just bollocks tho because APL retains latin parsing for charlists - its left to right - foldr's can't be avoided the problem is determining if trains, atops and dfuns are commutative or not. For functions like `+` and `×` a foldl can be swapped for a foldr - for `-` and `÷` a foldr is needed. How does that generalise?***
+
+This arises from the simple insertion of Arabic numbers into latin scripts:
+
+![mixed latin/arabic parsing in Erlang](./images/mixed_latin_arabic_parsing_in_erlang.png)
+
+This accounts for the problem that some developers when presented with list comprehensions which are notationally arabic:
+
+![anomolous arabic parse direction for Erlang](./images/anomolous_arabic_parse_direction_for_erlang.png)
+
+By comparison of course `APL` is a purely arabic language:
+
+![arabic parse direction for APL](./images/arabic_parse_direction_for_apl.png)
+
+The consequence of this is that conceptually `Erlang` `lists` and `APL` `arrays` are reversed:
+
+In `Erlang`:
+
+![Erlang list head](./images/erlang_list_head.png)
+
+but in `APL`:
+
+![APL array head](./images/apl_array_head.png)
+
+At the moment `Pometo` `array`s are implemented with latin parsing - which if maintained would imply that all `Pometo` `operator`s are implemented as `foldr`'s and not `foldl`'s. This is not good. (The overhead in full link-list scans alone would be horrendous).
+
+We need to embrace the notational conciseness of `APL` and point out to converting `Erlang` developers that notationally their `lists` are reversed.
+
+The fix is fairly simple - accumulate at the head not the tail in `parser_include.hrl` but it does mean that in debugging the arrays will appear reversed.
+
+But from a `Pometo` developer's perspective any dumped data structures willl be shown in error logs reversed.
+
+
+#### Array's And Data Types
+
+`Pometo` will support nested arrays and strand notation.
+
+Array's will be typed with the following type:
+ * current types are:
+    * `number`
+      * integers
+      * floats
+      * complex numbers
+    * `boolean`
+      * `boolean` arrays are typed on the numbers `1` and `0` and cast to `numbers` on accumulation
+    * `array`
+    * `mixed`
+* future types will be:
+    * `charlists`
+    * `bitstrings`
+    * `bitbools`
+* there will also be leaf-arrays - array-types that cannot contain other arrays, these will be based on existing `Erlang`/`Elixir` data types:
+    * `tuples`
+    * `records`
+    * `fixedmaps` - these are `Erlang` `maps` with the immutability of structure of `Elixir` `structs`
+    * maybe `ordsets` and `orddicts` (can be thought of as sparse arrays - and/or we might implmenent spares arrays in them).
+
+Leaf-arrays will be addressable with index notation if they are tuples and key notation if they are maps or records.
+
+There will be built in functions to declare the non-numeric/charlist types
+
+Array representations can be:
+
+* indexed
+* unindexed
+
+An unindexed array is represented by a list - an indexed one by a map with numerical keys. Typically we would expect `Erlang` or `Elixir` programmes to pass in unindexed arrays and the compiler knows when indexing is required and the runtime will ensure that datasets are converted when appropriate. This can be done 'in passing' if necessary.
+
+Array's can also be:
+
+* eager
+* lazy
+
+A lazy array representation is one in which it doesn't know its shape - it is a vector of indeterminate length - again any pass over a lazy array might convert it to an eager one.

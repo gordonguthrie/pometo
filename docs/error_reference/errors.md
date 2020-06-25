@@ -35,7 +35,7 @@ The error `LENGTH ERROR` is a runtime error that is thrown when an operation is 
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic \"+\":LHS dimensions [3]: RHS dimensions [2]) on line 1 at character 1
+LENGTH ERROR (dimensions mismatch in dyadic \"+\":LHS dimensions \"3\": RHS dimensions \"2\") on line 1 at character 1
 ```
 
 # SYNTAX ERROR
@@ -97,6 +97,7 @@ Error
 D + C
 ----^
 VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5
+
 
 Error
 D + C
