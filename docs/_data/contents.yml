@@ -11,14 +11,20 @@ toc:
         url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
-       - page: the Plus function +
-         url:  technical_reference/operators_the_plus_operator.html
-       - page: the Minus function -
-         url:  technical_reference/operators_the_minus_operator.html
-       - page: the Times function ×
-         url:  technical_reference/operators_the_multiply_operator.html
-       - page: the Divide function ÷
-         url:  technical_reference/operators_operators_the_divide_operator.html
+       - page: the Identity/Complex Conjugate/Plus function +
+         url:  technical_reference/functions_the_identity_complex_conjugate_plus_function.html
+       - page: the Negation/Minus function -
+         url:  technical_reference/functions_the_negation_minus_function.html
+       - page: the Direction/Multiply function ×
+         url:  technical_reference/functions_the_direction_multiply_function.html
+       - page: the Reciprocal/Divide function ÷
+         url:  technical_reference/functions_the_reciprocal_divide_function.html
+       - page: the Rho/Shape function ⍴
+         url:  technical_reference/functions_rho_the_shape_function.html
+       - page: the Iota/Index function ⍳
+         url:  technical_reference/functions_iota_the_index_function.html
+       - page: the Ravel/Comma function ,
+         url:  technical_reference/functions_ravel_or_comma_function.html
   - title: Errors Reference
     subfolderitems:
        - page: Alphabetical list of Errors
