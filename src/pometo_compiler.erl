@@ -206,6 +206,7 @@ make_line(#'$ast¯'{op   = #'$shape¯'{} = Shp,
 	NewArgs = [maybe_make_record(X) || X <- Args],
 	make_record(L#'$ast¯'{op   = NewShp,
 		                  args = NewArgs});
+% when the variable is being set to a scalar or vector
 make_line(#'$ast¯'{op   = 'let',
 	               args = [Var, #'$ast¯'{op   = #'$shape¯'{},
 	                                     args = Args} = A | []]}) ->
@@ -217,6 +218,19 @@ make_line(#'$ast¯'{op   = 'let',
 		_                  -> atom_to_list(Var) ++
 	                          " = "             ++
 	                          make_record(A)
+	end,
+	Src;
+% when the variable is being set to the result of an expression
+make_line(#'$ast¯'{op   = 'let',
+	               args = [Var, Args]}) ->
+	% strip the variable name and rename the op
+	Src = case Args of
+		#'$var¯'{name = V} -> atom_to_list(Var) ++
+	                          " = "             ++
+		                      V;
+		_                  -> atom_to_list(Var) ++
+	                          " = "             ++
+	                          make_line(Args)
 	end,
 	Src;
 make_line(#'$ast¯'{op   = Op,

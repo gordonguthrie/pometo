@@ -7,7 +7,10 @@
 
 %% things exported for runtime
 -export([
-		  run_ast/2
+		  run_ast/2,
+		  are_all_integers/1,
+		  are_all_positive_integers/1,
+		  product/1
 		]).
 
 %% exported for inclusion in compiled modules
@@ -26,7 +29,8 @@
 run_ast(AST, Str) ->
 	try run_ast2(AST)
 	catch
-		throw:E -> {error, #error{} = Err} = E,
+		throw:E -> io:format("Error thrown ~p~n", [E]),
+				   {error, #error{} = Err} = E,
 		           {error, Err#error{expr = Str}}
 	end.
 
@@ -47,15 +51,28 @@ run_ast2(#'$ast¯'{op   = flatten_comma,
 										       NewR = R#'$shape¯'{dimensions = length(InnerA)},
 										       A#'$ast¯'{op = NewR}.
 
+are_all_integers([])                         -> true;
+are_all_integers([H | T]) when is_integer(H) -> are_all_integers(T);
+are_all_integers(X)       when is_integer(X) -> true;
+are_all_integers(_)                          -> false.
+
+are_all_positive_integers([])                                 -> true;
+are_all_positive_integers([H | T]) when is_integer(H)         -> are_all_positive_integers(T);
+are_all_positive_integers(X)       when is_integer(X) andalso
+                                        X >= 0                -> true;
+are_all_positive_integers(_)                                  -> false.
+
 %%
 %% Exported for use in compiled modules
 %%
 
-dyadic(Args)  -> io:format("calling dyadic with ~p~n", [Args]),
-				 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+product([H | T]) -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T);
+product(N)       -> N.
+
+dyadic(Args)  -> pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
 monadic(Args) -> pometo_runtime_monadic:monadic_RUNTIME(Args).
 
 apply_fn([Mod, Fun, Arg]) -> Mod:Fun(Arg).
 
-runtime_let([#'$ast¯'{op = runtime_let, args = Args}]) -> Args.
+runtime_let([#'$ast¯'{op = runtime_let, args = Args}]) -> run_ast2(Args).

@@ -6,10 +6,21 @@
 			monadic_RUNTIME/1
 		]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 -include("parser_records.hrl").
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
+monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(0) = Shp,
+							   args = Arg} = AST]) ->
+	NewShp = Shp?shp([1]),
+	AST#'$ast¯'{op   = NewShp,
+				args = [Arg]};
+monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(N) = Shp,
+							   args = Args} = AST]) ->
+	NewShp = Shp?shp([length(Args)]),
+	AST#'$ast¯'{op = NewShp};
 monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(0) = Shp} = AST]) ->
 	AST#'$ast¯'{op   = Shp,
 		        args = ""};
@@ -19,23 +30,32 @@ monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(Dims) = Shp} = AST]) ->
 						   type       = number},
 	AST#'$ast¯'{op   = NewShp,
 				args = Dims};
-monadic_RUNTIME(["⍳", #'$ast¯'{args    = Args,
+monadic_RUNTIME(["⍳", #'$ast¯'{op      = ?shp(D),
+							   args    = Args,
 					           line_no = LNo,
-					           char_no = CNo}]) ->
-	try
-		Shp = #'$shape¯'{dimensions = Args,
-						 type       = boolean,
-						 line_no    = LNo,
-						 char_no    = CNo},
-		#'$ast¯'{op      = Shp,
-				 args    = lists:seq(1, Args),
-			     line_no = LNo,
-				 char_no = CNo}
-	catch _Type:_Errs ->
-    	Msg1 = "⍳ only accepts integer arguments and was called with",
-		Msg2 = io_lib:format("~p", [Args]),
-		Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
-		throw({error, Error})
+					           char_no = CNo} = AST]) ->
+	io:format("in monadic for iota AST is ~p~n", [AST]),
+	NewArgs = case D of
+					0 -> [Args];
+					_ -> Args
+			   end,
+	case pometo_runtime:are_all_positive_integers(NewArgs) of
+		true ->
+			Shp = #'$shape¯'{dimensions = NewArgs,
+							 type       = array,
+							 line_no    = LNo,
+							 char_no    = CNo},
+			NewArgs2 = make_args(lists:reverse(NewArgs), LNo, CNo),
+			io:format("in ⍳ NewArgs2 is ~p~n", [NewArgs2]),
+			#'$ast¯'{op      = Shp,
+					 args    = NewArgs2,
+				     line_no = LNo,
+					 char_no = CNo};
+		false ->
+			Msg1 = "⍳ only accepts integer arguments and was called with",
+			Msg2 = io_lib:format("~p", [Args]),
+			Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
+			throw({error, Error})
 	end;
 monadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(0),
 	                          args = A} = L]) ->
@@ -49,6 +69,34 @@ monadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(_N),
 %%
 %% Helper functions
 %%
+make_args(Args, LNo, CNo) ->
+
+	NewArgs = make_args2(Args),
+	%% the indices can either be scalars or vectors depending
+	%% on how many arguments are passed to ⍴
+	case length(Args) of
+		1 ->
+			[X || [X] <- NewArgs];
+		_ ->
+			Shp = #'$shape¯'{dimensions = 0,
+							 type       = array,
+							 line_no    = LNo,
+							 char_no    = CNo},
+			AST = #'$ast¯'{op = Shp,
+						   line_no = LNo,
+						   char_no = CNo},
+			[AST#'$ast¯'{args = X} || X <- NewArgs]
+	end.
+
+make_args2([]) -> [];
+make_args2([H | T]) ->
+	Seq = lists:seq(1, H),
+	SecondSeq = make_args2(T),
+	case SecondSeq of
+		[] -> [[X]     || X <- Seq];
+		_  -> [[X | Y] || X <- Seq,
+	                       Y <- SecondSeq]
+	end.
 
 %% complex nos first
 execute_monadic("+", #'$ast¯'{op   = complex,

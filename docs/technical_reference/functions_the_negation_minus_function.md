@@ -1,4 +1,4 @@
-# The Negation/Minus Function -
+# The Negation/Minus Function `-`
 
 ## Monadic Use On Floats And Integers
 

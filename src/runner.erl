@@ -19,7 +19,7 @@ run() ->
             % "_Myvar ← 1 2 3"
             %"3 4⍴ 9999 (8 7) 6"
             % "2 2 ⍴ (1 22) (1 22 (333 4444)) 55555",
-            "1 ⍴ 2"
+            "A ← , 1\n⍴ A"
           ],
 	[run(X) || X <- Codes],
 	exit(0).
@@ -36,9 +36,9 @@ run() ->
 
 run(Code) ->
   % Resp0 = pometo:parse_TEST(Code),
-  % io:format("parse_TEST returns ~p~n", [Resp0]),
+  % io:format("parse_TEST returns~n~p~n", [Resp0]),
   Resp1 = pometo:interpret_TEST(Code),
-  io:format("interpret_TEST returns~p~n~n~ts~n", [Resp1, Resp1]),
-  % Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
-  % io:format("compile_load_and_run_TEST returns ~ts~n", [Resp2]),
+  io:format("interpret_TEST returns~n~p~n~n~ts~n", [Resp1, Resp1]),
+  Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
+  io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
   ok.

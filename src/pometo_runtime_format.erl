@@ -49,6 +49,13 @@ format([]) -> [];
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 				args = []}) ->
 	"";
+format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0,
+								  type       = array},
+				args = Args} = AST) ->
+	% promote an array scalar to a mixed vector for printing
+	NewDims = [length(Args)],
+	format(AST#'$ast¯'{op   = #'$shape¯'{dimensions = NewDims,
+								         type       = mixed}});
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 				args = Arg}) ->
 	#fmt_segment{strings = [String]} = fmt(Arg),
@@ -264,6 +271,11 @@ build_segments_TEST(A) -> build_segments(A).
 build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	                    args = null}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
+% now handle the scalar array
+build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0,
+									      type       = array},
+	                    args = Args}) ->
+	_SizedLines = [#fmt_line{segs = size_line(0, Args)}];
 build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	                    args = Arg}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
@@ -332,7 +344,6 @@ fmt(#'$ast¯'{op   = complex,
 	         args = [R, I]})            -> make_frag("~pJ~p",   [abs(R), abs(I)]);
 fmt(#'$ast¯'{} = A)                     -> [#fmt_line{segs = Strings}] = build_segments(A),
 										   {Width, Height} = get_size(Strings),
-										   	io:format("in fmt Strings is ~p before maybe normalise widths~n", [Strings]),
 										   #fmt_segment{strings = Strings,
 										   			    width   = Width  + 2,
 										   			    height  = Height + 2,

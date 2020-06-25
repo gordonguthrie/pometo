@@ -1,4 +1,4 @@
-# The Shape Function ⍴
+# The Shape Function `⍴`
 
 ## Monadic Use On Scalars
 
@@ -83,21 +83,19 @@ Dyadically `⍴` is used to reshape an object. It will stripe an existing vector
 
 It also works on arrays of arrays:
 
-THIS IS NOT IMPLEMENTED YET!!!! TEST COMMENTED OUT
-
-```xxxpometo
-A ← 2 ⍴ 9
+```pometo
 A ← 2 ⍴ 9
 B ← 2 ⍴ 99
 2 3 ⍴ A B
 ```
 
-```xxxpometo_results
-┌─────┬─────┬─────┐
-│9 9  │99 99│9 9  │
-├─────┼─────┼─────┤
-│99 99│9 9  │99 99│
-└─────┴─────┴─────┘
+```pometo_results
+┌─────┐ ┌─────┐ ┌─────┐
+│  9 9│ │99 99│ │  9 9│
+└─────┘ └─────┘ └─────┘
+┌─────┐ ┌─────┐ ┌─────┐
+│99 99│ │  9 9│ │99 99│
+└─────┘ └─────┘ └─────┘
 ```
 
 The left hand side must be an array of integers:

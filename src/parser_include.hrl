@@ -118,13 +118,13 @@ make_var({var, CharNo, _, Var}) ->
 
 extract(monadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
                                                        Type == iota      orelse
-                                                       Type == rho ->
+                                                       Type == rho       orelse
+                                                       Type == ravel ->
   #'$ast¯'{op      = {monadic, Fnname},
            args    = Args,
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()};
 extract(dyadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
-                                                      Type == iota      orelse
                                                       Type == rho ->
   #'$ast¯'{op      = {dyadic, Fnname},
            args    = Args,
