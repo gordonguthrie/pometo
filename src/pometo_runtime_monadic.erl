@@ -17,7 +17,7 @@ monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(0) = Shp,
 	NewShp = Shp?shp([1]),
 	AST#'$ast¯'{op   = NewShp,
 				args = [Arg]};
-monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(N) = Shp,
+monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(_N) = Shp,
 							   args = Args} = AST]) ->
 	NewShp = Shp?shp([length(Args)]),
 	AST#'$ast¯'{op = NewShp};
@@ -34,7 +34,6 @@ monadic_RUNTIME(["⍳", #'$ast¯'{op      = ?shp(D),
 							   args    = Args,
 					           line_no = LNo,
 					           char_no = CNo} = AST]) ->
-	io:format("in monadic for iota AST is ~p~n", [AST]),
 	NewArgs = case D of
 					0 -> [Args];
 					_ -> Args
@@ -46,7 +45,6 @@ monadic_RUNTIME(["⍳", #'$ast¯'{op      = ?shp(D),
 							 line_no    = LNo,
 							 char_no    = CNo},
 			NewArgs2 = make_args(lists:reverse(NewArgs), LNo, CNo),
-			io:format("in ⍳ NewArgs2 is ~p~n", [NewArgs2]),
 			#'$ast¯'{op      = Shp,
 					 args    = NewArgs2,
 				     line_no = LNo,

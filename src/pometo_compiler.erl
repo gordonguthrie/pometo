@@ -50,6 +50,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 							          "shaping    = eager, " ++
                                       "indexed    = false, " ++
                                       "dimensions = [],"     ++
+                                      "forcing    = none,"   ++
                                       "type       = none,"   ++
                                       "line_no    = none,"   ++
                                       "char_no    = none"    ++
@@ -308,6 +309,7 @@ make_record(#'$ast¯'{op      = Op,
 make_record(#'$shape¯'{shaping    = Shaping,
 					   indexed    = Indexed,
 					   dimensions = Dims,
+	                   forcing    = Forcing,
 					   type       = Type,
 					   line_no    = LineNo,
 					   char_no    = CharNo}) ->
@@ -320,6 +322,9 @@ make_record(#'$shape¯'{shaping    = Shaping,
 	", "                  ++
 	"dimensions = "       ++
 	make_dimensions(Dims) ++
+	", "                  ++
+	"forcing = "          ++
+	atom_to_list(Forcing) ++
 	", "                  ++
 	"type = "             ++
 	atom_to_list(Type)    ++

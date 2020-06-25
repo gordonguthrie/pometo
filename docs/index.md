@@ -1,5 +1,3 @@
-![Pometo Logo](images/pometo_logo.png)
-
 # What is Pometo?
 
 `Pometo` is the the little `APL` for the `BEAM`, an auxiliary language to complement and use in your `Erlang`, `Elixir` and `LFE` applications.

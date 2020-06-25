@@ -8,9 +8,10 @@
 
 -export([
 		 debug/1,
-		 tuple/1,
-		 fixedmap/1,
-		 record/1
+		 make_lazy/1,
+		 make_indexed/1,
+		 force_indexing/1,
+		 force_unindexing/1
 		]).
 
 -define(INITIALINDENT, 1).
@@ -48,17 +49,27 @@ debug2(#'$ast¯'{op      = Op,
 								Line4
 						    ]).
 
-tuple(X) ->
-	io:format("in stdlib tuple X is ~p~n", [X]),
+% don't do anything scalars
+make_lazy(#'$ast¯'{op   = #'$shape¯'{dimensions = 0}} = AST) ->
+	io:format("in make lazy (1)~n"),
+	AST;
+% do work on unindexed arrays
+make_lazy(#'$ast¯'{op = #'$shape¯'{shaping = eager} = Shp} = AST) ->
+	NewShp = Shp#'$shape¯'{shaping    = lazy,
+						   dimensions = unsized_vector},
+	Ret = AST#'$ast¯'{op = NewShp},
+	io:format("Ret is ~p~n", [Ret]),
+		Ret;
+% don't do anything to anything else
+make_lazy(X) ->
+	io:format("in make lazy (3) AST is ~p~n", [X]),
 	X.
 
-fixedmap(X) ->
-	io:format("in stdlib fixedmap X is ~p~n", [X]),
-	X.
+make_indexed(AST)     -> pometo_runtime:make_indexed(AST).
 
-record(X) ->
-	io:format("in stdlib record X is ~p~n", [X]),
-	X.
+force_indexing(AST)   -> pometo_runtime:force_indexing(AST, index).
+
+force_unindexing(AST) -> pometo_runtime:force_indexing(AST, unindex).
 
 %%
 %% Internal Functions
