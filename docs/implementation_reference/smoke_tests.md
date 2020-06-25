@@ -1,4 +1,4 @@
-1J¯1 3J¯4# Smoke Tests
+# Smoke Tests
 
 Because the documentation is also the test suite it is sometimes necessary to just bang out primitive smoke tests that would clutter the user-facing documentation.
 

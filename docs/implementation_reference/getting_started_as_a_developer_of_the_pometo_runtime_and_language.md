@@ -97,9 +97,9 @@ The goal is to build documentation as we go along so any features added to the s
 
 Documentation is stored in a structured set of directories under `docs/`. To add a page to the table of contents please edit `docs/_data/contents.yml`.
 
-Please manually check that the documentation builds before you commit your change. (There is one known and unavoidable problem: the string `{{` is interpreted as a template command and you need to write your `apl` a bit more spaced out - `{ {`.
+Please manually check that the documentation builds before you commit your change. (There is one known and unavoidable problem: two left curly brackets side by side is interpreted as a template command and you need to write your `apl` a bit more spaced out - `{ {`.
 
-To build the docs locally start the docker file and `cd /pometo/docs` and run the bash script `./run_jekyll.sh`. This will build the docs and serve them on `0.0.0.0:4000`. They can be accessed on your host machine at `http://localhost:4000`.
+To build the docs locally start the docker file and `cd /pometo/docs` and run the bash script `./run_jekyll.sh`. This will build the docs and serve them on `0.0.0.0:5000`. They can be accessed on your host machine at `http://localhost:5000`.
 
 You should write your documentation top down - the easy basic and normal cases at the top, errors, edge cases, exceptions futher down.
 

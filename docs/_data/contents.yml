@@ -2,9 +2,9 @@ toc:
   - title: User Documentation
     subfolderitems:
       - page: APL for Erlang and Elixir Programmers
-        url:  apl_for_erlang_and_elixir_programmers.html
+        url:  user_documentation/apl_for_erlang_and_elixir_programmers.html
       - page: Data Types
-        url:  data_types.html
+        url:  user_documentation/data_types.html
       - page: Variables
         url:  user_documentation/variables.html
       - page: Comments
@@ -34,7 +34,7 @@ toc:
        - page: Getting started as a developer of the Pometo runtime and language
          url:  implementation_reference/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
        - page: Implementation details of complex numbers
-         url:  implementation_details_of_complex_numbers.html
+         url:  implementation_reference/implementation_details_of_complex_numbers.html
        - page: Smoke tests
          url:  implementation_reference/smoke_tests.html
 

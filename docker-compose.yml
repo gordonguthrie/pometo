@@ -8,6 +8,9 @@ services:
       context: ./
     environment:
       DISPLAY: host.docker.internal:0
+    ports:
+      # Mapping the port to make the Jeckyll server accessible outside of the container
+      - "5000:5000"
     volumes:
       - type: bind
         source: ./
