@@ -29,7 +29,7 @@ dyadic_RUNTIME(["⍴", #'$ast¯'{op      = ?shape(N1, Type1) = Shp,
 				0 -> [A2];
 				_ -> A2
 			end,
-	case are_all_integers(NewA1) of
+	case pometo_runtime:are_all_integers(NewA1) of
 		true ->
 			{Size, NewA1} = case NewA1 of
 				[H | T] -> {lists:foldl(fun(X, Acc) -> X * Acc end, H, T), NewA1};
@@ -131,12 +131,6 @@ dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp(N1),
 %%
 %% private fns
 %%
-
-
-are_all_integers([])                         -> true;
-are_all_integers([H | T]) when is_integer(H) -> are_all_integers(T);
-are_all_integers(X)       when is_integer(X) -> true;
-are_all_integers(_)                          -> false.
 
 get_fmt(X) ->
 	#fmt_segment{strings = [Str]} = pometo_runtime_format:fmt(X),

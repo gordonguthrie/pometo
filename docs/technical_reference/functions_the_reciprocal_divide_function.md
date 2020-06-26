@@ -1,4 +1,4 @@
-# The Reciprocal/Divide Function ÷
+# The Reciprocal/Divide Function `÷`
 
 ## Monadic Use On Floats And Integers
 

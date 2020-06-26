@@ -11,6 +11,7 @@
                     shaping    = eager, % [eager | lazy]
                     indexed    = false,
                     dimensions = [],
+                    forcing    = none,
                     type       = none,
                     line_no    = none,
                     char_no    = none

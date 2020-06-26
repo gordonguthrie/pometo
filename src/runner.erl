@@ -19,7 +19,7 @@ run() ->
             % "_Myvar ← 1 2 3"
             %"3 4⍴ 9999 (8 7) 6"
             % "2 2 ⍴ (1 22) (1 22 (333 4444)) 55555",
-            "1 ⍴ 2"
+            "A ← 2 2 ⍴ 1 22 333 444\n ⎕make_indexed A"
           ],
 	[run(X) || X <- Codes],
 	exit(0).
@@ -30,15 +30,13 @@ run() ->
 %  io:format("run_for_format_TEST returns shape ~p~n", [Shape]),
 %  Segs = pometo_runtime_format:build_segments_TEST(Shape),
 %  io:format("Segs is ~p~n", [Segs]),
-%  Resp = pometo_runtime_format:normalise_widths_TEST(Segs),
-%  io:format("Resp is ~p~n", [Resp]),
 %  ok.
 
 run(Code) ->
   % Resp0 = pometo:parse_TEST(Code),
-  % io:format("parse_TEST returns ~p~n", [Resp0]),
+  % io:format("parse_TEST returns~n~p~n", [Resp0]),
   Resp1 = pometo:interpret_TEST(Code),
-  io:format("interpret_TEST returns~p~n~n~ts~n", [Resp1, Resp1]),
+  io:format("interpret_TEST returns~n~p~n~n~ts~n", [Resp1, Resp1]),
   % Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
-  % io:format("compile_load_and_run_TEST returns ~ts~n", [Resp2]),
+  % io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
   ok.

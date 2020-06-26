@@ -125,7 +125,7 @@ compile_and_run2(Exprs, ModuleName, Str) ->
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
 		{module, Mod} -> case Mod:run() of
-							{error, Err} -> FixedErr = Err#error{expr = Str, at_line = 1, at_char = 1},
+							{error, Err} -> FixedErr = Err#error{expr = Str},
 											RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
 											string:trim(RunTimeErrs, leading, "\n");
 							Results      -> lists:flatten(pometo_runtime_format:format(Results))
@@ -341,9 +341,12 @@ chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	                       args = Args}) ->
 	Args;
-%% otherwise return a vector
+%% if the replacement is a vector return that
 chose_replacement(#'$ast¯'{op   = #'$shape¯'{}} = A) ->
-	A.
+	A;
+%% if the replacement is an expression run it and return the value
+chose_replacement(AST) ->
+	chose_replacement(pometo_runtime:run_ast(AST, "")).
 
 make_duplicate_errs([], _Expr, Errs) ->
 	lists:reverse(Errs);

@@ -1,4 +1,4 @@
-# The Direction/Multiply Function ×
+# The Direction/Multiply Function `×`
 
 ## Monadic Use On Floats And Integers
 

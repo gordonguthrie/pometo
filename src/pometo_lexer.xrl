@@ -83,10 +83,11 @@ Rules.
 
 %% StdLib Fns
 
-⎕debug    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug}}}.
-⎕tuple    : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, tuple}}}.
-⎕fixedmap : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, fixedmap}}}.
-⎕record   : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, record}}}.
+⎕debug            : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug}}}.
+⎕make_indexed     : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, make_indexed}}}.
+⎕make_lazy        : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, make_lazy}}}.
+⎕force_indexing   : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, force_indexing}}}.
+⎕force_unindexing : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, force_unindexing}}}.
 
 {WHITESPACE} : {token, {whitespace, TokenChars, TokenLen, " "}}.
 

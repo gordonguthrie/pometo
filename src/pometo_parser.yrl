@@ -8,6 +8,8 @@ Scalar
 Let
 Value
 Var
+Dy_and_monadics
+Monadics
 
 .
 
@@ -26,6 +28,7 @@ open_bracket
 close_bracket
 iota
 rho
+ravel
 stdlib
 
 .
@@ -35,20 +38,27 @@ Endsymbol  '$end'.
 
 Left 50   open_bracket.
 Left  100 Vector.
+Left  200 Expression.
 
 Expressions -> Expression                       : ['$1'].
 Expressions -> Expressions seperator Expression : '$1' ++ ['$3'].
 
-Expression -> Vectors                   : '$1'.
-Expression -> Let                       : '$1'.
-Expression -> Vectors scalar_fn Vectors : extract(dyadic,  '$2', ['$1', '$3']).
-Expression -> Vectors rho       Vectors : extract(dyadic,  '$2', ['$1', '$3']).
-Expression ->         scalar_fn Vectors : extract(monadic, '$1', ['$2']).
-Expression ->         iota      Vectors : extract(monadic, '$1', ['$2']).
-Expression ->         rho       Vectors : extract(monadic, '$1', ['$2']).
-Expression ->         stdlib    Vectors : make_stdlib('$1', '$2').
+Expression -> Vectors                         : '$1'.
+Expression -> Let                             : '$1'.
+Expression -> Vectors scalar_fn       Vectors : extract(dyadic,  '$2', ['$1', '$3']).
+Expression -> Vectors Dy_and_monadics Vectors : extract(dyadic,  '$2', ['$1', '$3']).
+Expression ->         scalar_fn       Vectors : extract(monadic, '$1', ['$2']).
+Expression ->         Dy_and_monadics Vectors : extract(monadic, '$1', ['$2']).
+Expression ->         Monadics        Vectors : extract(monadic, '$1', ['$2']).
+Expression ->         stdlib          Vectors : make_stdlib('$1', '$2').
 
-Let -> Var let_op Vectors : make_let('$1', '$3').
+Dy_and_monadics -> rho : '$1'.
+
+Monadics -> ravel : '$1'.
+Monadics -> iota  : '$1'.
+
+Let -> Var let_op Vectors    : make_let('$1', '$3').
+Let -> Var let_op Expression : make_let('$1', '$3').
 
 Vectors -> Vector                 : '$1'.
 Vectors -> Vectors Vector         : append('$1', '$2').
