@@ -9,7 +9,6 @@ It is defined by this Erlang record:
 
 ```
 -record('$shape¯', {
-                    shaping    = eager, % [eager | lazy]
                     indexed    = false,
                     dimensions = [],
                     forcing    = none,
@@ -22,7 +21,7 @@ It is defined by this Erlang record:
 We see that this array `2 2 ⍴ 1 22 333 4444` is represented internally by this data structure:
 
 ```erlang
-{'$ast¯',{'$shape¯',eager,false,[2,2],none,number,2,16},
+{'$ast¯',{'$shape¯',false,[2,2],none,number,2,16},
                 [1,22,333,444],
                 2,16}
 ```
@@ -30,7 +29,7 @@ We see that this array `2 2 ⍴ 1 22 333 4444` is represented internally by this
 The `stdlib` function `⎕make_indexed` takes one of these and converts it to an indexed vector:
 
 ```erlang
-{'$ast¯',{'$shape¯',eager,true,[2,2],none,number,2,16},
+{'$ast¯',{'$shape¯',true,[2,2],none,number,2,16},
                  #{1 => 1,2 => 22,3 => 333,4 => 444},
                  2,16}
 ```

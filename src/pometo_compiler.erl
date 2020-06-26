@@ -47,7 +47,6 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 				                    "char_no = none"   ++
 				                    "})."), LineNo1),
 		reset(?Q("-record('$shape¯', {"                      ++
-							          "shaping    = eager, " ++
                                       "indexed    = false, " ++
                                       "dimensions = [],"     ++
                                       "forcing    = none,"   ++
@@ -306,17 +305,13 @@ make_record(#'$ast¯'{op      = Op,
 	"char_no = "          ++
 	make_char_no(CharNo)  ++
 	"}";
-make_record(#'$shape¯'{shaping    = Shaping,
-					   indexed    = Indexed,
+make_record(#'$shape¯'{indexed    = Indexed,
 					   dimensions = Dims,
 	                   forcing    = Forcing,
 					   type       = Type,
 					   line_no    = LineNo,
 					   char_no    = CharNo}) ->
 	"#'$shape¯'{"         ++
-	"shaping = "          ++
-	atom_to_list(Shaping) ++
-	", "                  ++
 	"indexed = "          ++
 	atom_to_list(Indexed) ++
 	", "                  ++
@@ -347,8 +342,9 @@ expand_arg(A) when is_atom(A)    -> atom_to_list(A);
 expand_arg(T) when is_tuple(T)   -> make_record(T);
 expand_arg(L) when is_list(L)    -> L.
 
-make_dimensions(0) -> "0";
-make_dimensions(Dimensions) ->
+make_dimensions(0)              -> "0";
+make_dimensions(unsized_vector) -> "unsized_vector";
+make_dimensions(Dimensions)     ->
 	"[" ++ string:join([integer_to_list(D) || D <- Dimensions], ", ") ++ "]".
 
 make_line_no(none)                 -> "none";
@@ -368,10 +364,9 @@ make_source_map(#'$ast¯'{op      = Op,
 					description    = Desc},
 	SourceMap#{LineNo => SM}.
 
-make_desc(#'$shape¯'{shaping    = Shaping,
-                     indexed    = Indexed,
+make_desc(#'$shape¯'{indexed    = Indexed,
                      dimensions = Dims,
                      type       = Type}) ->
-	io_lib:format("~p Array (~p:~p) with shape ~p~n", [Type, Shaping, Indexed, Dims]);
+	io_lib:format("~p Array (indexed:~p) with shape ~p~n", [Type, Indexed, Dims]);
 make_desc({Op, Attr}) -> atom_to_list(Op) ++ "_" ++ Attr;
 make_desc(Op)         -> atom_to_list(Op).

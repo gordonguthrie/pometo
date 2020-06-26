@@ -24,6 +24,11 @@ monadic_RUNTIME([",", #'$ast¯'{op   = ?shp(_N) = Shp,
 monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(0) = Shp} = AST]) ->
 	AST#'$ast¯'{op   = Shp,
 		        args = ""};
+% need to know the size for ⍴ so size it and flip it back in
+monadic_RUNTIME(["⍴", #'$ast¯'{op   = ?shp(unsized_vector) = Shp,
+							   args = Args} = AST]) ->
+	Dims = [length(Args)],
+	monadic_RUNTIME(["⍴", AST#'$ast¯'{op = Shp?shp(Dims)}]);
 monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(Dims) = Shp} = AST]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
@@ -33,7 +38,7 @@ monadic_RUNTIME(["⍴", #'$ast¯'{op = ?shp(Dims) = Shp} = AST]) ->
 monadic_RUNTIME(["⍳", #'$ast¯'{op      = ?shp(D),
 							   args    = Args,
 					           line_no = LNo,
-					           char_no = CNo} = AST]) ->
+					           char_no = CNo}]) ->
 	NewArgs = case D of
 					0 -> [Args];
 					_ -> Args

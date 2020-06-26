@@ -17,25 +17,30 @@ http://microapl.com/apl_help/ch_020_030_030.htm
 
 # LENGTH ERROR
 
-THERE IS A PROBLEM WITH RUNTIME ERRORS AT THE MOMENT (`LENGTH ERROR` IS A RUNTIME ERROR).
-
-We bodge in `line 1` and `char 1` to the error message in the compiler test which gives the same error as the interpreter test
-
-So writing `LENGTH ERROR` tests with code snippets more than 1 line long will fail at the moment...
-
 ## Mismatched Shape Errors
 
-The error `LENGTH ERROR` is a runtime error that is thrown when an operation is attempted on an array that has the wrong shape.
+The error `LENGTH ERROR` is a runtime error that is thrown when an operation is attempted on an array that has the wrong shape. The message you get will depend on if the vector being processes is `eager` or `lazy`.
 
 ```pometo
 1 2 3 + 4 5
 ```
+
+An `eager` vector will be tested before invoking the dyadic function and give this error message:
 
 ```pometo_results
 Error
 1 2 3 + 4 5
 ^
 LENGTH ERROR (dimensions mismatch in dyadic \"+\":LHS dimensions \"3\": RHS dimensions \"2\") on line 1 at character 1
+```
+
+A `lazy` vector doesn't know it its own length and is typically passed in from `Erlang` or `Elixir`. If this expression were evaluated where both the LHS and the RHS were lazy the error message would emerge from the bowels of the dyadic function slightly differently:
+
+```pometo_lazy
+Error
+1 2 3 + 4 5
+^
+LENGTH ERROR (dimensions mismatch in dyadic \"+\":ran out of matches after 2 elements) on line 1 at character 1
 ```
 
 # SYNTAX ERROR

@@ -172,15 +172,13 @@ maybe_enclose_vector({open_bracket, CharNo, _, _},
            line_no = scope_dictionary:get_line_no()}.
 
 basic_shape(CharNo, Type, array) ->
-  #'$shape¯'{shaping    = eager,
-             indexed    = false,
+  #'$shape¯'{indexed    = false,
              dimensions = [1],
              type       = Type,
              char_no    = CharNo,
              line_no    = scope_dictionary:get_line_no()};
 basic_shape(CharNo, Type, scalar) ->
-  #'$shape¯'{shaping    = eager,
-             indexed    = false,
+  #'$shape¯'{indexed    = false,
              dimensions = 0,
              type       = Type,
              char_no    = CharNo,

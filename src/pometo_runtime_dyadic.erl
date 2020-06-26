@@ -12,13 +12,14 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-% this clause handles both a scalar and a vector on eigher of the LHS or the RHS
+% rho needs to know the length of the vector
+% this clause handles both a scalar and a vector on either of the LHS or the RHS
 dyadic_RUNTIME(["⍴", #'$ast¯'{op      = ?shape(N1, Type1) = Shp,
-	                          args    = A1,
-	                          line_no = LNo,
-	                          char_no = CNo},
-	                 #'$ast¯'{op      = ?shape(N2, Type2),
-	                          args    = A2} = Right]) when Type1 == number  orelse
+							  args    = A1,
+							  line_no = LNo,
+							  char_no = CNo},
+					 #'$ast¯'{op      = ?shape(N2, Type2),
+							  args    = A2} = Right]) when Type1 == number  orelse
 														   Type1 == boolean ->
 	% this casts any LHS scalars on either side to vectors
 	NewA1 = case N1 of
@@ -43,7 +44,7 @@ dyadic_RUNTIME(["⍴", #'$ast¯'{op      = ?shape(N1, Type1) = Shp,
 						Size >  SliceSize -> Repetitions = trunc(Size/SliceSize),
 											 Rem = Size rem SliceSize,
 											 {TopUp, _Discard2} = lists:split(Rem, NewA2),
-									 		 lists:flatten(lists:duplicate(Repetitions, NewA2)) ++ TopUp
+											 lists:flatten(lists:duplicate(Repetitions, NewA2)) ++ TopUp
 					   end,
 			Right#'$ast¯'{op   = Shp?shape(NewA1, Type2),
 						  args = NewArgs};
@@ -57,64 +58,66 @@ dyadic_RUNTIME(["⍴", #'$ast¯'{op      = ?shape(N1, Type1) = Shp,
 %% complex numbers in arrays are unpacked in execute_dyadic
 %% some ops on complex numbers are simple scalar extentions
 dyadic_RUNTIME([Op, ?complex_el(A1)   = Left,
-	                ?complex_el(A2)]) ->
+					?complex_el(A2)]) ->
 	Vals = do_complex(Op, A1, A2),
 	Left?complex_el(Vals);
 % mixed real and complex addition and subtraction
 dyadic_RUNTIME([Op, ?complex_el(A1)       = Left,
-	                #'$ast¯'{op = ?shp(0),
-	                         args = A2}]) ->
+					#'$ast¯'{op = ?shp(0),
+							 args = A2}]) ->
 	Vals = do_complex(Op, A1, [A2, 0]),
 	Left?complex_el(Vals);
 dyadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(0),
-	                         args = A1},
-	                ?complex_el(A2) = Right]) ->
+							 args = A1},
+					?complex_el(A2) = Right]) ->
 	Vals = do_complex(Op, [A1, 0], A2),
 	Right?complex_el(Vals);
 
 % handle scalars
 % if both sides are scalar return a scalar
 dyadic_RUNTIME([Op, #'$ast¯'{op = ?shp(0), args = A1} = Left,
-	        #'$ast¯'{op = ?shp(0),
-	                 args = A2}]) ->
+			#'$ast¯'{op = ?shp(0),
+					 args = A2}]) ->
 	Val = execute_dyadic(Op, A1, A2),
 	Left#'$ast¯'{args = Val};
 % if one side is a scalar cast it to an array
 dyadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(0),
-	                         args = A1},
-	                #'$ast¯'{op   = ?shp(_N),
-	                         args = A2}       = Right]) ->
+							 args = A1},
+					#'$ast¯'{op   = ?shp(_N),
+							 args = A2}       = Right]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
-	Vals = apply(A2, A1, left, Op, ?EMPTY_ACCUMULATOR),
-	Right#'$ast¯'{args = Vals};
+	{NoArgs, Vals} = apply(A2, A1, left, Op, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	maybe_make_eager(Right#'$ast¯'{args = Vals}, NoArgs);
 dyadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(_N),
-					         args = A1}     = Left,
-	                #'$ast¯'{op   = ?shp(0),
-	                         args = A2}])   ->
-	Vals = apply(A1, A2, right, Op, ?EMPTY_ACCUMULATOR),
-	Left#'$ast¯'{args = Vals};
+							 args = A1}     = Left,
+					#'$ast¯'{op   = ?shp(0),
+							 args = A2}])   ->
+	{NoArgs, Vals} = apply(A1, A2, right, Op, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	maybe_make_eager(Left#'$ast¯'{args = Vals}, NoArgs);
 %% now plain number handling
-dyadic_RUNTIME([Op, #'$ast¯'{op   = ?shp(N),
-							 args = A1} = Left,
-	                #'$ast¯'{op   = ?shp(N),
-	                		 args = A2}]) ->
-	Vals = zip(A1, A2, Op, ?EMPTY_ACCUMULATOR),
-	Left#'$ast¯'{args = Vals};
-dyadic_RUNTIME([Op, #'$ast¯'{op   = ?shp([1]),
-							 args = [A1]},
-	                #'$ast¯'{args = A2} = Right]) ->
+dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp(N),
+							 args    = A1,
+							 line_no = LNo,
+							 char_no = CNo} = Left,
+					#'$ast¯'{op      = ?shp(N),
+							 args    = A2}]) ->
+	{NoArgs, Vals} = zip(A1, A2, Op, LNo, CNo, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	maybe_make_eager(Left#'$ast¯'{args = Vals}, NoArgs);
+dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp([1]),
+							 args    = [A1]},
+					#'$ast¯'{args    = A2} = Right]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
-	Vals = apply(A2, A1, left, Op, ?EMPTY_ACCUMULATOR),
-	Right#'$ast¯'{args = Vals};
+	{NoArgs, Vals} = apply(A2, A1, left, Op, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	maybe_make_eager(Right#'$ast¯'{args = Vals}, NoArgs);
 dyadic_RUNTIME([Op, #'$ast¯'{args = A1} = Left,
-	                #'$ast¯'{op   = ?shp([1]),
-	                         args = [A2]}]) ->
-	Vals = apply(A1, A2, right, Op, ?EMPTY_ACCUMULATOR),
-	Left#'$ast¯'{args = Vals};
+					#'$ast¯'{op   = ?shp([1]),
+							 args = [A2]}]) ->
+	{NoArgs, Vals} = apply(A1, A2, right, Op, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	maybe_make_eager(Left#'$ast¯'{args = Vals}, NoArgs);
 dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp(N1),
-	                         line_no = LNo,
-	                         char_no = CNo},
-	                #'$ast¯'{op = ?shp(N2)}]) ->
+							 line_no = LNo,
+							 char_no = CNo},
+					#'$ast¯'{op = ?shp(N2)}]) ->
 	Lhs = case is_list(N1) of
 		true  -> string:join([get_fmt(X) || X <- N1], ", ");
 		false -> get_fmt(N1)
@@ -132,16 +135,26 @@ dyadic_RUNTIME([Op, #'$ast¯'{op      = ?shp(N1),
 %% private fns
 %%
 
+maybe_make_eager(#'$ast¯'{op = #'$shape¯'{dimensions = unsized_vector} = Shp} = AST, NoArgs) ->
+	AST#'$ast¯'{op = Shp#'$shape¯'{dimensions = [NoArgs]}};
+maybe_make_eager(X, _N) ->
+	X.
+
 get_fmt(X) ->
 	#fmt_segment{strings = [Str]} = pometo_runtime_format:fmt(X),
 	Str.
 
 make_ast(Arg) -> Shp = #'$shape¯'{dimensions = 0},
-                 #'$ast¯'{op = Shp, args = Arg}.
+				 #'$ast¯'{op = Shp, args = Arg}.
 
 do_complex(Op, A1, A2) when Op == "+" orelse
 							Op == "-" ->
-	zip(A1, A2, Op, ?EMPTY_ACCUMULATOR);
+	% call zip with dummy line and char nos because we know it won't fail
+	% and they are only needed for the error message
+	% make 'em grepable because yeah-it-can-never-get-there code ***ALWAYS*** gets executed
+	% that's the law, I didn't fuckin make it, ok? bud...
+	{_NoArgs, Vals} = zip(A1, A2, Op, -98765, -98765, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	Vals;
 do_complex(Op, [Rl1, Im1], [Rl2, Im2]) when Op == "×" ->
 	[Rl1 * Rl2 - Im1 * Im2, Rl1 * Im2 + Im1 * Rl2];
 do_complex(Op, [Rl1, Im1], [Rl2, Im2]) when Op == "÷" ->
@@ -150,18 +163,29 @@ do_complex(Op, [Rl1, Im1], [Rl2, Im2]) when Op == "÷" ->
 	Imag = (Im1 * Rl2 - Rl1 * Im2)/Sq,
 	[Real, Imag].
 
-	zip([], [], _, Acc) -> lists:reverse(Acc);
-zip([H1 | T1], [H2 | T2], Fn, Acc) ->
+zip([], [], _, _, _, N, Acc) -> {N, lists:reverse(Acc)};
+zip([_H1 | T1], [_H2 | T2], Fn, LineNo, CharNo, N, _Acc)  when (T1 == []  andalso
+															  T2 /= []) orelse
+															 (T1 /= []  andalso
+															  T2 == []) ->
+	Msg1 = io_lib:format("dimensions mismatch in dyadic ~p", [Fn]),
+	Msg2 = case N + 1 of
+		1 -> io_lib:format("ran out of matches after 1 element",   []);
+		_ -> io_lib:format("ran out of matches after ~p elements", [N + 1])
+	end,
+	Error = pometo_runtime_format:make_error("LENGTH ERROR", Msg1, Msg2, LineNo, CharNo),
+	throw({error, Error});
+zip([H1 | T1], [H2 | T2], Fn, LineNo, CharNo, N, Acc) ->
 	NewAcc = execute_dyadic(Fn, H1, H2),
-	zip(T1, T2, Fn, [NewAcc | Acc]).
+	zip(T1, T2, Fn, LineNo, CharNo, N + 1, [NewAcc | Acc]).
 
-apply([], _, _Direction, _Fn, Acc) -> lists:reverse(Acc);
-apply([H | T], V, left, Fn, Acc) ->
+apply([], _, _Direction, _Fn, N, Acc) -> {N, lists:reverse(Acc)};
+apply([H | T], V, left, Fn, N, Acc) ->
 	NewAcc = execute_dyadic(Fn, V, H),
-	apply(T, V, left, Fn, [NewAcc | Acc]);
-apply([H | T], V, right, Fn, Acc) ->
+	apply(T, V, left, Fn, N + 1, [NewAcc | Acc]);
+apply([H | T], V, right, Fn, N, Acc) ->
 	NewAcc = execute_dyadic(Fn, H, V),
-	apply(T, V, right, Fn, [NewAcc | Acc]).
+	apply(T, V, right, Fn, N + 1, [NewAcc | Acc]).
 
 
 % first capture the complex nos

@@ -28,17 +28,39 @@ This can tend to lead to dirty code with extra `io:format`s and `?debugFmt`s lit
 
 Docs pages have a simple format.
 
-A markdown code section like so will become the input source:
+A markdown code section maked as a `pometo` code block so will become the input source:
 
 ```pometo
 1 + 2
 ```
 
-The next markdown code section MUST be marked up as:
+The next markdown code section MUST be marked up as a `pometo_results` code block:
 
 ```pometo_results
 3
 ```
+
+If the code you are writing generates run time errors when trying to iterate over vectors you will find that `lazy` vectors and `eager` ones generate slightly different error messages.
+
+For an example see the discussion of `LENGTH ERROR` in [the Errors Reference](../error_reference/errors.md).
+
+In this case you can add an optional third markdown code section marked as `pometo_lazy` code block:
+
+```pometo_lazy
+3
+```
+
+The source code for this with the code block markings visible looks like:
+
+![markdown](../images/writing_pometo_documentation.png)
+
+(in this case the `lazy` and the `eager` evaluation is the same so the contents are the same).
+
+This allows you to give two different results for a given `Pometo` code fragment.
+
+***NOTE***:
+
+* this is only offered for `runtime` `lazy` errors where they cannot be sensibly normalised and should be used rarely. This test suite was 345 tests in before one needed to be written
 
 The `pometo_docs_to_test` `rebar3` plugin will turn this page into a test file `get_started_as_a_developer_tests.erl` in `test/generated_tests` and it will contain a single test `how_to_write_docs_pages_as_tests_1_test_/0`.
 
@@ -84,12 +106,16 @@ If you screw up your code sections you tests can become wierd and very badly fai
 
 A cheap and quick way to see if the sets of code and results are correctly done hokey-cokey fashion is to run
 ```
-grep -Rh "\`\`\`p" docs/*
+grep -Rh "\`\`\`" docs/*
 ```
 
 and inspect the output.
 
-Try writing doc tests.
+***NOTE***:
+
+* don't write blank code block is you are just quoting some bollocks give the code block a type of `bollocks` - this makes the `grep` trick usable - a little discipline goes a long way here
+
+Go on, try writing doc tests.
 
 ## Adding Documentation
 

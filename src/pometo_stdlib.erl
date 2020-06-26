@@ -51,18 +51,14 @@ debug2(#'$ast¯'{op      = Op,
 
 % don't do anything scalars
 make_lazy(#'$ast¯'{op   = #'$shape¯'{dimensions = 0}} = AST) ->
-	io:format("in make lazy (1)~n"),
 	AST;
 % do work on unindexed arrays
-make_lazy(#'$ast¯'{op = #'$shape¯'{shaping = eager} = Shp} = AST) ->
-	NewShp = Shp#'$shape¯'{shaping    = lazy,
-						   dimensions = unsized_vector},
-	Ret = AST#'$ast¯'{op = NewShp},
-	io:format("Ret is ~p~n", [Ret]),
-		Ret;
+make_lazy(#'$ast¯'{op = #'$shape¯'{dimensions = Type} = Shp} = AST)
+	when Type /= unsized_vector ->
+	NewShp = Shp#'$shape¯'{dimensions = unsized_vector},
+	AST#'$ast¯'{op = NewShp};
 % don't do anything to anything else
 make_lazy(X) ->
-	io:format("in make lazy (3) AST is ~p~n", [X]),
 	X.
 
 make_indexed(AST)     -> pometo_runtime:make_indexed(AST).
@@ -86,10 +82,9 @@ print_args([H                | T], Indent,  Acc) -> Padding = get_padding(Indent
 													NewAcc = Padding ++ io_lib:format("~p~n", [H]),
 													print_args(T, Indent, [NewAcc       | Acc]).
 
-format_op(#'$shape¯'{shaping    = Shaping,
-	                 indexed    = Index,
+format_op(#'$shape¯'{indexed    = Index,
 	                 dimensions = Dims,
 	                 type       = Type}, Ind) ->
-	io_lib:format(Ind ++ "type: ~p (~p:~p) with dimensions ~p~n", [Type, Shaping, Index, Dims]);
+	io_lib:format(Ind ++ "type: ~p (indexed:~p) with dimensions ~p~n", [Type, Index, Dims]);
 format_op(Op, Ind) ->
 	io_lib:format(Ind ++ "~p~n", [Op]).

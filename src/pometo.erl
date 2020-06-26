@@ -20,10 +20,12 @@
 		 lex_TEST/1,
 		 parse_TEST/1,
 		 compile_load_and_run_TEST/2,
+		 compile_load_and_run_lazy_TEST/2,
 		 interpret_TEST/1,
 		 run_for_format_TEST/2
 		 ]).
 
+-define(EMPTYACC,       []).
 -define(EMPTYRESULTS,   []).
 -define(EMPTYARGS,      []).
 -define(EMPTYERRORS,    []).
@@ -64,23 +66,17 @@ run_for_format_TEST(Str, ModuleName) ->
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> compile_and_run3([{{run, 0, []}, Exprs}], ModuleName, Str);
+		{?EMPTYERRORS, Exprs} -> compile_and_run_for_format2([{{run, 0, []}, Exprs}], ModuleName, Str);
 	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
+
+compile_load_and_run_lazy_TEST(Str, ModuleName) ->
+	compile_load_and_run2(Str, ModuleName, lazy).
 
 compile_load_and_run_TEST(Str, ModuleName) ->
-    scope_dictionary:clear_all(),
-	RawLexed = lex2(Str),
-	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
-	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
-	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
-	% its to make the test suites work and keep the output purty for users with multiple errors
-	case NormalRawExprs of
-		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName, Str);
-	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
-	end.
+	compile_load_and_run2(Str, ModuleName, pometo).
+
 
 interpret_TEST(Str) ->
     scope_dictionary:clear_all(),
@@ -111,7 +107,33 @@ lex_TEST(Str) ->
 %%% Helper Functions
 %%%
 
-compile_and_run3(Exprs, ModuleName, Str) ->
+compile_load_and_run2(Str, ModuleName, Type) ->
+    scope_dictionary:clear_all(),
+	RawLexed = lex2(Str),
+	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
+	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
+	case NormalRawExprs of
+		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
+		{?EMPTYERRORS, Exprs} -> Exprs2 = case Type of
+									lazy   -> make_lazy(Exprs, ?EMPTYACC);
+									pometo -> Exprs
+								 end,
+								 compile_and_run3([{{run, 0, []}, Exprs2}], ModuleName, Str);
+	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+	end.
+
+make_lazy([],      Acc) ->
+	lists:reverse(Acc);
+make_lazy([#'$ast¯'{op = #'$shape¯'{}} = AST | T], Acc) ->
+	Lazy = pometo_stdlib:make_lazy(AST),
+	make_lazy(T, [Lazy | Acc]);
+make_lazy([#'$ast¯'{args = Args} = AST | T], Acc) ->
+	LazyArgs = [pometo_stdlib:make_lazy(A) || A <- Args],
+	make_lazy(T, [AST#'$ast¯'{args = LazyArgs} | Acc]).
+
+compile_and_run_for_format2(Exprs, ModuleName, Str) ->
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
 		{module, Mod} -> case Mod:run() of
 							{error, Err} -> Err#error{expr = Str, at_line = 1, at_char = 1};
@@ -120,7 +142,7 @@ compile_and_run3(Exprs, ModuleName, Str) ->
 		{error, Errs} -> Errs
 	end.
 
-compile_and_run2(Exprs, ModuleName, Str) ->
+compile_and_run3(Exprs, ModuleName, Str) ->
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
