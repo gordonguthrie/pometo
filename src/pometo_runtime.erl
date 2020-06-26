@@ -99,7 +99,7 @@ make_indexed(#'$ast¯'{op   = #'$shape¯'{dimensions = 0}} = AST) ->
 % do work on unindexed arrays
 make_indexed(#'$ast¯'{op   = #'$shape¯'{indexed = false} = Shp,
 					  args = Args} = AST) ->
-	{Len, NewArgs} = pometo_runtime:index(Args),
+	{_Len, NewArgs} = pometo_runtime:index(Args),
 	AST#'$ast¯'{op   = Shp#'$shape¯'{indexed = true},
 				args = NewArgs};
 % don't do anything to anything else
