@@ -66,6 +66,11 @@ format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 				args = Arg}) ->
 	#fmt_segment{strings = [String]} = fmt(Arg),
 	String;
+% if its unsized, size it and bung it back around
+format(#'$ast¯'{op   = #'$shape¯'{dimensions = unsized_vector} = Shp,
+				args = Args} = AST) ->
+	Dims = length(Args),
+	format(AST#'$ast¯'{op = Shp#'$shape¯'{dimensions = [Dims]}});
 format(#'$ast¯'{op = #'$shape¯'{dimensions = Dims}} = AST) ->
 	Len = length(Dims),
 	if
@@ -272,8 +277,7 @@ get_greater(A, B) when A > B -> A;
 get_greater(_, B)            -> B.
 
 
-build_segments_TEST(A) -> io:format("A is ~p~n", [A]),
-						  build_segments(A).
+build_segments_TEST(A) -> build_segments(A).
 
 build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	                    args = null}) ->
