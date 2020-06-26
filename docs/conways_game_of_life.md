@@ -12,7 +12,7 @@ life←{                                  ⍝ John Conway's "Game of Life".
 
 There is an even shorter version:
 
-```
+```apl
 lifeJF ← {3=s-⍵∧4=s←{+/,⍵}⌺3 3⊢⍵}
 ```
 
