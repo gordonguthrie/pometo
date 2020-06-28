@@ -154,3 +154,9 @@ Ah, are you sure you types `rebar3 ....` and not `rebar ...` becuz `rebar` is al
 ## Working On The Runtime
 
 If you are working on the runtime please to add the simplest smoke tests to the documentation page `basics.md`
+
+## Things Wut Is Bad, So Bad, So Very Bad
+
+The order of keys in a map is undefined but also if your keys are positive integers it is also positive integers.
+
+At some stage in the future this might change and then the very gates of hell will be ripped open, but hey! you only live once.

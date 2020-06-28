@@ -10,7 +10,7 @@
 
 run() ->
 	Codes = [
-            "⍴ 2 3 4"
+            "2 3 ⍴ 9 8 7 6"
           ],
 	[run3(X) || X <- Codes],
 	exit(0).
@@ -39,4 +39,6 @@ run2(Code) ->
 run3(Code) ->
   Resp = pometo:compile_load_and_run_lazy_TEST(Code, "compile_lazy_runner"),
   io:format("compile_load_and_run_lazy_TEST returns~n~ts~n", [Resp]),
+  Resp1 = pometo:compile_load_and_run_indexed_TEST(Code, "compile_indexed_runner"),
+  io:format("compile_load_and_run_indexed_TEST returns~n~ts~n", [Resp1]),
   ok.

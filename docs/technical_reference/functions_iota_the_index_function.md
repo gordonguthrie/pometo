@@ -1,7 +1,10 @@
 # The Index Function `⍳`
 
-## Monadic Use On Integers Scalars
+## DEVELOPERS NOTE
 
+For the moment `⍳` is returning an unindexed array - this might need to change.
+
+## Monadic Use On Integers Scalars
 
 `⍳` is a monadic function which when applied to a vector of integers or a scalar generates a matrix of indices.
 

@@ -250,3 +250,59 @@ This covers mixed vectors and scalars
 1 2 │3 4│
     └───┘
 ```
+
+## Mixing lazy and eager vectors
+
+The default tests set all vectors to either lazy or eager but dyadics need to be tested in mixed mode.
+
+```pometo
+A ← ⎕make_lazy 1 2 3
+A + 3 4 5
+```
+
+should give
+
+```pometo_results
+4 6 8
+```
+
+and
+
+```pometo
+A ← ⎕make_lazy 1 2 3
+3 4 5 + A
+```
+
+should give:
+
+```pometo_results
+4 6 8
+```
+
+## Mixing indexed and unindexed vectors
+
+The default tests set all vectors to either indexed or not indexed but dyadics need to be tested in mixed mode.
+
+```pometo
+A ← ⎕make_indexed 1 2 3
+A + 3 4 5
+```
+
+should give:
+
+```pometo_results
+4 6 8
+```
+
+and
+
+```pometo
+A ← ⎕make_indexed 1 2 3
+3 4 5 + A
+```
+
+should give
+
+```pometo_results
+4 6 8
+```

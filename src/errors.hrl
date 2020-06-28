@@ -2,7 +2,7 @@
                 type,
                 msg1,
                 msg2,
-                expr,
+                expr = "",
                 at_line,
                 at_char
                }).

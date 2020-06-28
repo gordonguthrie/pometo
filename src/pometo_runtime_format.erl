@@ -46,32 +46,33 @@
 
 format([]) -> [];
 format(#'$ast¯'{op   = #'$shape¯'{indexed = true} = Shp,
-				args = Args} = AST) ->
-	%% if it is indexed we just unindex it before display
+								args = Args} = AST) ->
+	% if it is indexed we just unindex it before display
 	NewArgs = pometo_runtime:unindex(Args),
 	format(AST#'$ast¯'{op   = Shp#'$shape¯'{indexed = false},
-					   args = NewArgs});
+									   args = NewArgs});
 % special case for the null return from ⍴ on a scalar
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 				args = []}) ->
 	"";
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0,
-								  type       = array},
-				args = Args} = AST) ->
+																  type       = array},
+							  args = Args} = AST) ->
 	% promote an array scalar to a mixed vector for printing
 	NewDims = [length(Args)],
 	format(AST#'$ast¯'{op   = #'$shape¯'{dimensions = NewDims,
 								         type       = mixed}});
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
-				args = Arg}) ->
+							  args = Arg}) ->
 	#fmt_segment{strings = [String]} = fmt(Arg),
 	String;
 % if its unsized, size it and bung it back around
 format(#'$ast¯'{op   = #'$shape¯'{dimensions = unsized_vector} = Shp,
-				args = Args} = AST) ->
+								args = Args} = AST) ->
 	Dims = length(Args),
 	format(AST#'$ast¯'{op = Shp#'$shape¯'{dimensions = [Dims]}});
-format(#'$ast¯'{op = #'$shape¯'{dimensions = Dims}} = AST) ->
+format(#'$ast¯'{op   = #'$shape¯'{dimensions = Dims},
+								args = Args} = AST) when is_list(Args) ->
 	Len = length(Dims),
 	if
 		Len <  3 -> Frags = build_segments(AST),
@@ -86,7 +87,9 @@ format(#comment{msg     = Msg,
 				at_char = CNo}) ->
 	io_lib:format("~ts on line ~p at character ~p~n", [Msg, LNo, CNo]);
 format({error, Err}) ->
-	format_errors([Err]).
+	format_errors([Err]);
+format(X) ->
+	X.
 
 format_errors(Errors) ->
 	FormattedEs = [format_error(X) || X <- Errors],
