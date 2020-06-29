@@ -121,6 +121,6 @@ giving:
 Error
 ⍳ 1.0
 --^
-DOMAIN ERROR (⍳ only accepts integer arguments and was called with:1.0) on line 1 at character 3
+DOMAIN ERROR (⍳ only accepts integer arguments and was called with:[1.0]) on line 1 at character 3
 ```
 

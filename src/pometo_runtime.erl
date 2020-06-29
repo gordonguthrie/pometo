@@ -149,7 +149,8 @@ make_dims2(Iter, Acc) -> {_K, V, NextI} = maps:next(Iter),
 args_to_list(List) when is_list(List) -> List;
 args_to_list(Map)  when is_map(Map)   -> List = maps:to_list(Map),
 																				 {_Keys, Vals} = lists:unzip(List),
-																				 Vals.
+																				 Vals;
+args_to_list(X)                       -> [X].
 
 snip_args(List, N) when is_list(List) -> {Keep, _Discard} = lists:split(N, List),
 																				 Keep;
