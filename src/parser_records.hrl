@@ -1,9 +1,9 @@
 %% basic AST record
 -record('$ast¯', {
-                  op,
-                  args    = [],
-                  line_no = none,
-                  char_no = none
+                  do,
+                  args            = [],
+                  line_no         = none,
+                  char_no         = none
                  }).
 
 %% special operator record
@@ -11,7 +11,7 @@
                     indexed    = false,
                     dimensions = [],
                     forcing    = none,
-                    type       = none,
+                    type       = none, % number | boolean | mixed | array
                     line_no    = none,
                     char_no    = none
                    }).

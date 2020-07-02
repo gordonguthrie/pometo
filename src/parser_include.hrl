@@ -10,46 +10,46 @@
 
 % this works
 make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
-  #'$ast¯'{op      = {apply_fn, {Mod, Fn}},
+  #'$ast¯'{do      = {apply_fn, {Mod, Fn}},
            args    = [A],
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-append(#'$ast¯'{op      = #'$shape¯'{dimensions = [D1],
+append(#'$ast¯'{do      = #'$shape¯'{dimensions = [D1],
                                      type       = Type1} = R1,
                 args    = Args1,
                 char_no = CharNo},
-       #'$ast¯'{op     = #'$shape¯'{dimensions = [D2],
+       #'$ast¯'{do     = #'$shape¯'{dimensions = [D2],
                                     type       = Type2},
                 args   = Args2}) ->
   NewType = match_types(Type1, Type2),
-  #'$ast¯'{op      = R1#'$shape¯'{dimensions = [D1 + D2],
+  #'$ast¯'{do      = R1#'$shape¯'{dimensions = [D1 + D2],
                                   type       = NewType},
            args    = Args1 ++ Args2,
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()};
-append(#'$ast¯'{op      = #'$shape¯'{dimensions = 0,
+append(#'$ast¯'{do      = #'$shape¯'{dimensions = 0,
                                      type       = Type1} = R1,
                 args    = Args1,
                 char_no = CharNo},
-       #'$ast¯'{op      = #'$shape¯'{dimensions = 0,
+       #'$ast¯'{do      = #'$shape¯'{dimensions = 0,
                                     type       = Type2},
                 args    = Args2}) ->
   NewType = match_types(Type1, Type2),
-  #'$ast¯'{op      = R1#'$shape¯'{dimensions = [2],
+  #'$ast¯'{do      = R1#'$shape¯'{dimensions = [2],
                                   type       = NewType},
            args    = [Args1, Args2],
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()};
-append(#'$ast¯'{op      = #'$shape¯'{dimensions = [D1],
+append(#'$ast¯'{do      = #'$shape¯'{dimensions = [D1],
                                      type       = Type1} = R1,
                 args    = Args1,
                 char_no = CharNo},
-       #'$ast¯'{op      = #'$shape¯'{dimensions = 0,
+       #'$ast¯'{do      = #'$shape¯'{dimensions = 0,
                                     type       = Type2},
                 args    = Args2}) ->
   NewType = match_types(Type1, Type2),
-  #'$ast¯'{op      = R1#'$shape¯'{dimensions = [D1 + 1],
+  #'$ast¯'{do      = R1#'$shape¯'{dimensions = [D1 + 1],
                                   type       = NewType},
            args    = Args1 ++ [Args2],
            char_no = CharNo,
@@ -57,12 +57,12 @@ append(#'$ast¯'{op      = #'$shape¯'{dimensions = [D1],
 
 make_scalar({Type, CharNo, _, {R, I}}, complex) when Type == complex_number       orelse
                                                      Type == maybe_complex_number ->
-  Arg = #'$ast¯'{op      = complex,
+  Arg = #'$ast¯'{do      = complex,
                  args    = [R, I],
                  char_no = CharNo,
                  line_no = scope_dictionary:get_line_no()},
   Shp = basic_shape(CharNo, complex, scalar),
-  #'$ast¯'{op         = Shp,
+  #'$ast¯'{do         = Shp,
            args       = Arg,
            char_no    = CharNo,
            line_no    = scope_dictionary:get_line_no()};
@@ -70,30 +70,30 @@ make_scalar({_Token, CharNo, _, Val}, Type) when Type == number andalso
                                                  (Val == 0      orelse
                                                   Val == 1)     ->
   Shp = basic_shape(CharNo, boolean, scalar),
-  #'$ast¯'{op         = Shp,
+  #'$ast¯'{do         = Shp,
            args       = Val,
            char_no    = CharNo,
            line_no    = scope_dictionary:get_line_no()};
 make_scalar({_Token, CharNo, _, Val}, Type) when Type == number   orelse
                                                  Type == variable ->
   Shp = basic_shape(CharNo, Type, scalar),
-  #'$ast¯'{op         = Shp,
+  #'$ast¯'{do         = Shp,
            args       = Val,
            char_no    = CharNo,
            line_no    = scope_dictionary:get_line_no()}.
 
-handle_value(Sign, #'$ast¯'{op      = #'$shape¯'{dimensions = 0,
+handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{dimensions = 0,
                                                  type       = complex} = Shp,
-                            args = #'$ast¯'{op   = complex,
+                            args = #'$ast¯'{do   = complex,
                                             args = [R, I]} = InnerA} = OuterA) ->
   SignedArgs = case Sign of
     positive -> [ R,  I];
     negative -> [-R, -I]
   end,
-  OuterA#'$ast¯'{op      = Shp,
+  OuterA#'$ast¯'{do      = Shp,
                  args    = InnerA#'$ast¯'{args = SignedArgs},
                  line_no = scope_dictionary:get_line_no()};
-handle_value(Sign, #'$ast¯'{op      = #'$shape¯'{type       = Type,
+handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{type       = Type,
                                                  dimensions = 0},
                             args    = Val,
                             char_no = CharNo} = A) when Type == number  orelse
@@ -103,30 +103,42 @@ handle_value(Sign, #'$ast¯'{op      = #'$shape¯'{type       = Type,
     positive ->  Val;
     negative -> -Val
   end,
-  A#'$ast¯'{op      = Shp,
+  A#'$ast¯'{do      = Shp,
             args    = SignedVal,
             line_no = scope_dictionary:get_line_no()}.
 
 make_var({var, CharNo, _, Var}) ->
   Shp = basic_shape(CharNo, variable, scalar),
-  #'$ast¯'{op     = Shp,
+  #'$ast¯'{do     = Shp,
            args   = #'$var¯'{name    = Var,
                              char_no = CharNo,
                              line_no = scope_dictionary:get_line_no()},
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-extract(monadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
-                                                       Type == iota      orelse
-                                                       Type == rho       orelse
-                                                       Type == ravel ->
-  #'$ast¯'{op      = {monadic, Fnname},
+extract_op(monadic, {Type, CharNo, _, Fnname}, Args, Rank) when Type == forwardslash ->
+  #'$ast¯'{do      = {monadic_op, [{Fnname, Rank}]},
            args    = Args,
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()};
-extract(dyadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
-                                                      Type == rho ->
-  #'$ast¯'{op      = {dyadic, Fnname},
+extract_op(dyadic, {Type, CharNo, _, Fnname}, Args, Rank) when Type == forwardslash ->
+  io:format("Fnname is ~p Args is ~p Rank is ~p~n", [Fnname, Args, Rank]),
+  #'$ast¯'{do      = {dyadic_op, [{Fnname, Rank}]},
+           args    = Args,
+           char_no = CharNo,
+           line_no = scope_dictionary:get_line_no()}.
+
+extract_fn(monadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
+                                                          Type == iota      orelse
+                                                          Type == rho       orelse
+                                                          Type == ravel ->
+  #'$ast¯'{do      = {monadic_fn, [Fnname]},
+           args    = Args,
+           char_no = CharNo,
+           line_no = scope_dictionary:get_line_no()};
+extract_fn(dyadic, {Type, CharNo, _, Fnname}, Args) when Type == scalar_fn orelse
+                                                         Type == rho ->
+  #'$ast¯'{do      = {dyadic_fn, [Fnname]},
            args    = Args,
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
@@ -136,7 +148,7 @@ make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
            char_no  = CharNo} = V,
   B = #{binding => V, results => Expr},
   ok = scope_dictionary:puts({Var, B}),
-  #'$ast¯'{op      = 'let',
+  #'$ast¯'{do      = 'let',
            args    = [list_to_atom(Var), Expr],
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
@@ -162,11 +174,11 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
 
 % enclose a scalar results in a scalar
 maybe_enclose_vector({open_bracket, _, _, _},
-                      #'$ast¯'{op = #'$shape¯'{dimensions = 0}} = A1) ->
+                      #'$ast¯'{do = #'$shape¯'{dimensions = 0}} = A1) ->
   A1;
 maybe_enclose_vector({open_bracket, CharNo, _, _},
-                      #'$ast¯'{op = #'$shape¯'{}} = A1) ->
-  #'$ast¯'{op      = basic_shape(CharNo, array, scalar),
+                      #'$ast¯'{do = #'$shape¯'{}} = A1) ->
+  #'$ast¯'{do      = basic_shape(CharNo, array, scalar),
            args    = A1,
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.

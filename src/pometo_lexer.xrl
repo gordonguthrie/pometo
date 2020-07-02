@@ -38,10 +38,10 @@ Rules.
 
 \( : {token, {open_bracket,  TokenChars, TokenLen, "("}}.
 \) : {token, {close_bracket, TokenChars, TokenLen, ")"}}.
-\{ : {token, {open_curly,    TokenChars, TokenLen, "{"}}.
-\} : {token, {close_curly,   TokenChars, TokenLen, "}"}}.
-\[ : {token, {open_square,   TokenChars, TokenLen, "["}}.
-\] : {token, {close_square,  TokenChars, TokenLen, "]"}}.
+\{ : {token, {open_cy,       TokenChars, TokenLen, "{"}}.
+\} : {token, {close_cy,      TokenChars, TokenLen, "}"}}.
+\[ : {token, {open_sq,       TokenChars, TokenLen, "["}}.
+\] : {token, {close_sq,      TokenChars, TokenLen, "]"}}.
 
 ¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
 
@@ -76,6 +76,12 @@ Rules.
 ⍴ : {token, {rho,   TokenChars, TokenLen, "⍴"}}.
 ⍳ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
 , : {token, {ravel, TokenChars, TokenLen, ","}}.
+
+%% Hybrids
+/  : {token, {forwardslash,       TokenChars, TokenLen, "/"}}.
+\\ : {token, {backslash,          TokenChars, TokenLen, "\\"}}.
+⌿  : {token, {barredforwardslash, TokenChars, TokenLen, "⌿"}}.
+⍀  : {token, {barredbackslash,    TokenChars, TokenLen, "⍀"}}.
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 

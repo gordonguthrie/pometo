@@ -41,11 +41,11 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 	{ExpAttr, LineNo2}  = make_exports(Exports, LineNo1),
 
 	Records = [
-		reset(?Q("-record('$ast¯', {"                  ++
-											"op, "             ++
-													 "args    = [], "   ++
-													 "line_no = none, " ++
-													 "char_no = none"   ++
+		reset(?Q("-record('$ast¯', {"                   ++
+													 "do, "                   ++
+													 "args    = [], "         ++
+													 "line_no = none, "       ++
+													 "char_no = none"         ++
 													 "})."), LineNo1),
 		reset(?Q("-record('$shape¯', {"                      ++
 																	"indexed    = false, " ++
@@ -63,7 +63,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 	{PublicFns,  LineNo4, SourceMap4} = make_public_fns(Exports,    LineNo3, ModuleName, SourceMap3, ?EMPTY_RESULTS),
 	{PrivateFns, LineNo5, SourceMap5} = make_private_fns(Functions, LineNo4, ModuleName, SourceMap4, ?EMPTY_RESULTS),
 
-	% ?debugFmt("final SourceMap is ~p~n", [SourceMap5]),
+	%% ?debugFmt("final SourceMap is ~p~n", [SourceMap5]),
 
 	%% TODO turn SourceMap 5 into a lookup function for errors to map back to Pometo code
 
@@ -75,8 +75,6 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 				[{eof, LineNo5}],
 
 	% io:format("AST is ~p~n", [AST]),
-
-	% io:format("PrivateFns is ~p~n", [PrivateFns]),
 
 	case erl_lint:module(AST) of
 		{ok, []} ->
@@ -151,7 +149,7 @@ make_public_fns([{Fn, Arity, Args} | T], LineNo, ModuleName, SourceMap, Results)
 	{NewLineNo, Body} = make_export_body(ModuleName, Fn, Args, LineNo),
 	Src = atom_to_list(Fn) ++
 				make_args(Args)  ++
-				" ->"           ++
+				" ->"            ++
 				Body,
 	make_public_fns(T, NewLineNo + 1, ModuleName, NewSourceMap, [?Q(Src) | Results]).
 
@@ -182,33 +180,35 @@ make_exports(Exports, LineNo) ->
 make_modname(ModuleName, LineNo) ->
 	{[{attribute, LineNo, module, list_to_atom(ModuleName)}], LineNo + 1}.
 
-make_line(#'$ast¯'{op   = {apply_fn, {Mod, Fun}},
+make_line(#'$ast¯'{do   = {apply_fn, {Mod, Fun}},
 									 args = Args} = L)  ->
-	make_line(L#'$ast¯'{op   = apply_fn,
+	make_line(L#'$ast¯'{do   = apply_fn,
 											args = [Mod, Fun | Args]});
-make_line(#'$ast¯'{op   = {Op, Decorator},
-									 args = Args} = L)  ->
-	make_line(L#'$ast¯'{op   = Op,
-											args = [quote(Decorator) | Args]});
-make_line(#'$ast¯'{op   = #'$shape¯'{},
+make_line(#'$ast¯'{do      = {Do, Decorators},
+									 args    = Args,
+									 line_no = LNo,
+									 char_no = CNo} = L)  ->
+	make_line(L#'$ast¯'{do   = Do,
+											args = [make_fn_ast(Decorators, LNo, CNo) | Args]});
+make_line(#'$ast¯'{do   = #'$shape¯'{},
 									 args = #'$var¯'{name = Var}}) ->
 	Var;
-make_line(#'$ast¯'{op   = #'$shape¯'{dimensions = 0} = Shp,
+make_line(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = Shp,
 									 args = Arg} = L) ->
 	NewShp = make_record(Shp),
-	make_record(L#'$ast¯'{op   = NewShp,
+	make_record(L#'$ast¯'{do   = NewShp,
 												args = Arg});
-make_line(#'$ast¯'{op   = #'$shape¯'{} = Shp,
+make_line(#'$ast¯'{do   = #'$shape¯'{} = Shp,
 									 args = Args} = L) ->
 	NewShp = make_record(Shp),
 	NewArgs = apply_to_args(fun maybe_make_record/1, Args),
-	make_record(L#'$ast¯'{op   = NewShp,
-											args = NewArgs});
+	make_record(L#'$ast¯'{do   = NewShp,
+											  args = NewArgs});
 % when the variable is being set to a scalar or vector
-make_line(#'$ast¯'{op   = 'let',
-									 args = [Var, #'$ast¯'{op   = #'$shape¯'{},
+make_line(#'$ast¯'{do   = 'let',
+									 args = [Var, #'$ast¯'{do   = #'$shape¯'{},
 																				 args = Args} = A | []]}) ->
-	% strip the variable name and rename the op
+	% strip the variable name and rename the do
 	Src = case Args of
 		#'$var¯'{name = V} -> atom_to_list(Var) ++
 													" = "             ++
@@ -219,9 +219,9 @@ make_line(#'$ast¯'{op   = 'let',
 	end,
 	Src;
 % when the variable is being set to the result of an expression
-make_line(#'$ast¯'{op   = 'let',
-								 args = [Var, Args]}) ->
-	% strip the variable name and rename the op
+make_line(#'$ast¯'{do   = 'let',
+									 args = [Var, Args]}) ->
+	% strip the variable name and rename the do
 	Src = case Args of
 		#'$var¯'{name = V} -> atom_to_list(Var) ++
 													" = "             ++
@@ -231,7 +231,10 @@ make_line(#'$ast¯'{op   = 'let',
 													make_line(Args)
 	end,
 	Src;
-make_line(#'$ast¯'{op   = Op,
+make_line(#'$ast¯'{do   = do_fn,
+								 	 args = Args}) ->
+"[" ++ string:join(Args, ", ") ++ "]";
+make_line(#'$ast¯'{do   = Do,
 								 	 args = Args}) ->
 	ExpFun = fun(A, Acc) ->
 			L = make_line(A),
@@ -239,7 +242,7 @@ make_line(#'$ast¯'{op   = Op,
 	end,
 	ExpArgs = lists:foldl(ExpFun, ?EMPTY_RESULTS, Args),
 	Src = "pometo_runtime:"                         ++
-				atom_to_list(Op)                          ++
+				atom_to_list(Do)                          ++
 				"(["                                      ++
 				string:join(lists:reverse(ExpArgs), ", ") ++
 				"])",
@@ -273,12 +276,12 @@ maybe_make_record(T) when is_tuple(T) -> make_record(T);
 maybe_make_record(A) when is_atom(A)  -> atom_to_list(A);
 maybe_make_record(X)                  -> X.
 
-make_record(#'$ast¯'{op      = complex,
-									 args    = [R, I],
-									 line_no = LineNo,
-									 char_no = CharNo}) ->
+make_record(#'$ast¯'{do      = complex,
+										 args    = [R, I],
+										 line_no = LineNo,
+										 char_no = CharNo}) ->
 	"#'$ast¯'{"          ++
-	"op = complex"       ++
+	"do = complex"       ++
 	", "                 ++
 	"args = ["           ++
 	expand_arg(R)        ++
@@ -291,10 +294,10 @@ make_record(#'$ast¯'{op      = complex,
 	"char_no = "         ++
 	make_char_no(CharNo) ++
 	"}";
-make_record(#'$ast¯'{op      = Op,
-					 args    = Args,
-					 line_no = LineNo,
-					 char_no = CharNo}) ->
+make_record(#'$ast¯'{do              = Do,
+										 args            = Args,
+										 line_no         = LineNo,
+										 char_no         = CharNo}) ->
 	SrcArgs = case is_tuple(Args) of
 		true  ->
 			"args = "         ++
@@ -313,8 +316,8 @@ make_record(#'$ast¯'{op      = Op,
 			end
 	end,
 	"#'$ast¯'{"           ++
-	"op = "               ++
-	maybe_make_record(Op) ++
+	"do = "               ++
+	maybe_make_record(Do) ++
 	", "                  ++
 	SrcArgs               ++
 	"line_no = "          ++
@@ -370,6 +373,12 @@ make_indexed(Args) ->
 	NewArgs = map_over_Key_Val(WriteMapElementFn, Args, ?EMPTY_ACCUMULATOR, I),
 	"#{" ++ string:join(NewArgs, ", ") ++ "}".
 
+make_fn_ast(Args, LNo, CNo) -> NewArgs = [quote(X) || X <- Args],
+															 #'$ast¯'{do      = do_fn,
+															          args    = NewArgs,
+																				line_no = LNo,
+																				char_no = CNo}.
+
 make_dimensions(0)              -> "0";
 make_dimensions(unsized_vector) -> "unsized_vector";
 make_dimensions(Dimensions)     -> NewDs = [integer_to_list(D) || D <- Dimensions],
@@ -381,12 +390,14 @@ make_line_no(N) when is_integer(N) -> integer_to_list(N).
 make_char_no(none)                 -> "none";
 make_char_no(N) when is_integer(N) -> integer_to_list(N).
 
-quote(X) -> "\"" ++ X ++ "\"".
+quote({X, N}) when is_integer(N) -> "{\"" ++ X ++ "\", "   ++ integer_to_list(N) ++   "}";
+quote({X, Y})                    -> "{\"" ++ X ++ "\", \"" ++ atom_to_list(Y)    ++ "\"}";
+quote(X)                         -> "\"" ++ X ++ "\"".
 
-make_source_map(#'$ast¯'{op      = Op,
+make_source_map(#'$ast¯'{do      = Do,
 											 	 line_no = LNo,
 											 	 char_no = CharNo}, LineNo, SourceMap) ->
-	Desc = make_desc(Op),
+	Desc = make_desc(Do),
 	SM = #sourcemap{pometo_line_no = LNo,
 								  pometo_char_no = CharNo,
 									description    = Desc},
@@ -396,5 +407,5 @@ make_desc(#'$shape¯'{indexed    = Indexed,
 										 dimensions = Dims,
 										 type       = Type}) ->
 	io_lib:format("~p Array (indexed:~p) with shape ~p~n", [Type, Indexed, Dims]);
-make_desc({Op, Attr}) -> atom_to_list(Op) ++ "_" ++ Attr;
-make_desc(Op)         -> atom_to_list(Op).
+make_desc({Do, Attr}) -> atom_to_list(Do) ++ "_" ++ Attr;
+make_desc(Do)         -> atom_to_list(Do).

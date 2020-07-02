@@ -1,16 +1,16 @@
 -define(EMPTY_ACCUMULATOR,   []).
 -define(EMPTY_MAP,           #{}).
 -define(SPACE,               32).
--define(START_COUNTING_ARGS, 0).
+-define(START_COUNTING_ARGS, 1).
 
 -define(shp(Dim),         #'$shape¯'{dimensions = Dim}).
 -define(shape(Dim, Type), #'$shape¯'{dimensions = Dim,
-									 type       = Type}).
--define(complex_el(Args), #'$ast¯'{op   = #'$shape¯'{dimensions = 0,
-	                                                 type       = complex},
-                                   args = #'$ast¯'{op   = complex,
-                               			           args = Args}}).
--define(complex_no(Args), #'$ast¯'{op   = complex,
+									 									 type       = Type}).
+-define(complex_el(Args), #'$ast¯'{do   = #'$shape¯'{dimensions = 0,
+	                                                   type       = complex},
+                                   args = #'$ast¯'{do   = complex,
+                               			          		 args = Args}}).
+-define(complex_no(Args), #'$ast¯'{do   = complex,
                                	   args = Args}).
 
 

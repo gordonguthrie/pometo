@@ -45,33 +45,33 @@
 %%%
 
 format([]) -> [];
-format(#'$ast¯'{op   = #'$shape¯'{indexed = true} = Shp,
+format(#'$ast¯'{do   = #'$shape¯'{indexed = true} = Shp,
 								args = Args} = AST) ->
 	% if it is indexed we just unindex it before display
 	NewArgs = pometo_runtime:unindex(Args),
-	format(AST#'$ast¯'{op   = Shp#'$shape¯'{indexed = false},
+	format(AST#'$ast¯'{do   = Shp#'$shape¯'{indexed = false},
 									   args = NewArgs});
 % special case for the null return from ⍴ on a scalar
-format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 				args = []}) ->
 	"";
-format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0,
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																  type       = array},
 							  args = Args} = AST) ->
 	% promote an array scalar to a mixed vector for printing
 	NewDims = [length(Args)],
-	format(AST#'$ast¯'{op   = #'$shape¯'{dimensions = NewDims,
+	format(AST#'$ast¯'{do   = #'$shape¯'{dimensions = NewDims,
 								         type       = mixed}});
-format(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 							  args = Arg}) ->
 	#fmt_segment{strings = [String]} = fmt(Arg),
 	String;
 % if its unsized, size it and bung it back around
-format(#'$ast¯'{op   = #'$shape¯'{dimensions = unsized_vector} = Shp,
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
 								args = Args} = AST) ->
 	Dims = length(Args),
-	format(AST#'$ast¯'{op = Shp#'$shape¯'{dimensions = [Dims]}});
-format(#'$ast¯'{op   = #'$shape¯'{dimensions = Dims},
+	format(AST#'$ast¯'{do = Shp#'$shape¯'{dimensions = [Dims]}});
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = Dims},
 								args = Args} = AST) when is_list(Args) ->
 	Len = length(Dims),
 	if
@@ -100,7 +100,7 @@ chunk_format(#'$ast¯'{args = []}, _First, _Second, Acc) ->
 chunk_format(#'$ast¯'{args = Args} = AST, First, Second, Acc) ->
 	Chunk = First * Second,
 	{Chunked, Remainder} = lists:split(Chunk, Args),
-	NewAcc = format(AST#'$ast¯'{op   = #'$shape¯'{dimensions = [Second, First]},
+	NewAcc = format(AST#'$ast¯'{do   = #'$shape¯'{dimensions = [Second, First]},
 							    args = Chunked}),
 	NewAST = AST#'$ast¯'{args = Remainder},
 	chunk_format(NewAST, First, Second, [NewAcc | Acc]).
@@ -191,7 +191,7 @@ pad_lines(Lines, Width, Height, Boxing) ->
 			[Top] ++ FinalLines ++ [Bottom];
 		blankboxed ->
 			RectifiedLines = rectify(Lines, Width, ?EMPTY_ACCUMULATOR),
-			Border     = [[lists:duplicate(Width, ?SPACE)]],
+			Border         = [[lists:duplicate(Width, ?SPACE)]],
 			Border ++ RectifiedLines ++ Border
 	end,
 	H = length(Boxed),
@@ -202,8 +202,8 @@ pad_lines(Lines, Width, Height, Boxing) ->
 	PaddedLines = case HPad of
 						0 -> Boxed;
 						_ -> BlankLine  = [lists:duplicate(Width, ?SPACE)],
-							               BlankLines = lists:duplicate(HPad, BlankLine),
-							               Boxed ++ BlankLines
+							              	BlankLines = lists:duplicate(HPad, BlankLine),
+							              	Boxed ++ BlankLines
 				   end,
 	PaddedLines.
 
@@ -282,18 +282,18 @@ get_greater(_, B)            -> B.
 
 build_segments_TEST(A) -> build_segments(A).
 
-build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 	                    args = null}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
 % now handle the scalar array
-build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0,
+build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 									      type       = array},
 	                    args = Args}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, Args)}];
-build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 	                    args = Arg}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
-build_segments(#'$ast¯'{op   = #'$shape¯'{dimensions = D},
+build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = D},
 	                    args = Args}) ->
 	[LineSize | Dims] = lists:reverse(D),
 	Lines = make_lines(Args, LineSize, ?EMPTY_ACCUMULATOR),
@@ -343,18 +343,18 @@ split_line([H | T], Args) ->
 
 split_l2([],   _N, Acc) ->
 	lists:reverse(Acc);
-split_l2(List, N,  Acc) when N /= 0 -> % yes it ran away in an infinite loop here earlier
+split_l2(List, N,  Acc) when N /= 0 -> % yes it ran away in an infinite lodo here earlier
 	{First, Rest} = lists:split(N, List),
 	split_l2(Rest, N, [First | Acc]).
 
-fmt(#'$ast¯'{op   = complex,
+fmt(#'$ast¯'{do   = complex,
 	         args = [R, I]}) when R < 0 andalso
                                   I < 0 -> make_frag("¯~pJ¯~p", [abs(R), abs(I)]);
-fmt(#'$ast¯'{op   = complex,
+fmt(#'$ast¯'{do   = complex,
 	         args = [R, I]}) when R < 0 -> make_frag("¯~pJ~p",  [abs(R), abs(I)]);
-fmt(#'$ast¯'{op   = complex,
+fmt(#'$ast¯'{do   = complex,
 	         args = [R, I]}) when I < 0 -> make_frag("~pJ¯~p",  [abs(R), abs(I)]);
-fmt(#'$ast¯'{op   = complex,
+fmt(#'$ast¯'{do   = complex,
 	         args = [R, I]})            -> make_frag("~pJ~p",   [abs(R), abs(I)]);
 fmt(#'$ast¯'{} = A)                     -> [#fmt_line{segs = Strings}] = build_segments(A),
 										   {Width, Height} = get_size(Strings),

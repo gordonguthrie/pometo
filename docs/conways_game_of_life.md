@@ -33,7 +33,7 @@ Let us look at the code this way.
     * its a fold for vectors, but we don't want a fold only implementation
 * `∘.` is the outer product
     * should implement `∘` compose as well
-* `,` flattens out an array
+* ~~`,` flattens out an array~~
     * easy to implement
 * `+/` - `+/ 1 2 3` is the equivalent of `1 + 2 + 3` and we can replace `+` with `-`, `×` and any dyadic operator likewise
    * reductions are right folds - need three list traversals...
@@ -46,7 +46,7 @@ We will be on migration level 3
 
 The shorter one requires:
 
-* `⌹` the stencil
+* `⌺`
 
 ## Things I need to add
 
@@ -55,6 +55,6 @@ The shorter one requires:
 
 ## things that would easy and handy
 
-* '⍳' generates an index
-* `⍴` that returns shape
+* ~~'⍳' generates an index~~
+* ~~`⍴` that returns shape~~
 
