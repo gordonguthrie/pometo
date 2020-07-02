@@ -6,7 +6,7 @@ A normal `Pometo` shape is an eager vector - it knows how long it is:
 
 It is defined by this Erlang record:
 
-```
+```erlang
 -record('$shape¯', {
                     shaping    = eager, % [eager | lazy]
                     indexed    = false,

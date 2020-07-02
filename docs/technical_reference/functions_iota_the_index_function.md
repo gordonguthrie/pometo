@@ -1,7 +1,10 @@
 # The Index Function `⍳`
 
-## Monadic Use On Integers Scalars
+## DEVELOPERS NOTE
 
+For the moment `⍳` is returning an unindexed array - this might need to change.
+
+## Monadic Use On Integers Scalars
 
 `⍳` is a monadic function which when applied to a vector of integers or a scalar generates a matrix of indices.
 
@@ -118,6 +121,6 @@ giving:
 Error
 ⍳ 1.0
 --^
-DOMAIN ERROR (⍳ only accepts integer arguments and was called with:1.0) on line 1 at character 3
+DOMAIN ERROR (⍳ only accepts integer arguments and was called with:[1.0]) on line 1 at character 3
 ```
 

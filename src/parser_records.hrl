@@ -8,7 +8,6 @@
 
 %% special operator record
 -record('$shape¯', {
-                    shaping    = eager, % [eager | lazy]
                     indexed    = false,
                     dimensions = [],
                     forcing    = none,

@@ -36,6 +36,10 @@ The `rappel` github repository has instructions for how to get up and running wi
 
 [You can find Rappel on github](http://github.com/gordonguthrie/rappel)
 
+`Pometo` uses a `rebar3` plugin called `pometo_docs_to_tests` to turn the documentation into tests.
+
+[You can find the Pometo Docs To Tests plugin on github](http://github.com/gordonguthrie/pometo_docs_to_tests)
+
 # Contents
 
 <div>

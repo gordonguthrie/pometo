@@ -20,10 +20,13 @@
 		 lex_TEST/1,
 		 parse_TEST/1,
 		 compile_load_and_run_TEST/2,
+		 compile_load_and_run_lazy_TEST/2,
+		 compile_load_and_run_indexed_TEST/2,
 		 interpret_TEST/1,
 		 run_for_format_TEST/2
 		 ]).
 
+-define(EMPTYACC,       []).
 -define(EMPTYRESULTS,   []).
 -define(EMPTYARGS,      []).
 -define(EMPTYERRORS,    []).
@@ -33,7 +36,7 @@
 %%
 
 interpret(Str, ExternalBindings) ->
-    scope_dictionary:clear_all(),
+		scope_dictionary:clear_all(),
 	% first we need to load the external bindings into the scope dictionary
 	ok = scope_dictionary:persist_bindings(ExternalBindings),
 	BinExpr = unicode:characters_to_binary(Str, utf8),
@@ -46,9 +49,9 @@ interpret(Str, ExternalBindings) ->
 		{?EMPTYERRORS, Exprs} ->
 			Results = unicode:characters_to_binary(string:join(interpret2(Exprs, Str), "\n"), utf8),
 			{Bindings, #{expr => BinExpr, succeeded => true, results => Results}};
-	    {Errors,      _Exprs} ->
-            Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
-            {#{},      #{expr => BinExpr, succeeded => false, results => Errs}}
+			{Errors,      _Exprs} ->
+						Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
+						{#{},      #{expr => BinExpr, succeeded => false, results => Errs}}
 	end.
 
 %%
@@ -56,7 +59,7 @@ interpret(Str, ExternalBindings) ->
 %%
 
 run_for_format_TEST(Str, ModuleName) ->
-    scope_dictionary:clear_all(),
+		scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -64,26 +67,22 @@ run_for_format_TEST(Str, ModuleName) ->
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> compile_and_run3([{{run, 0, []}, Exprs}], ModuleName, Str);
-	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+		{?EMPTYERRORS, Exprs} -> compile_and_run_for_format2([{{run, 0, []}, Exprs}], ModuleName, Str);
+			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
+compile_load_and_run_indexed_TEST(Str, ModuleName) ->
+	compile_load_and_run2(Str, ModuleName, indexed).
+
+compile_load_and_run_lazy_TEST(Str, ModuleName) ->
+	compile_load_and_run2(Str, ModuleName, lazy).
 
 compile_load_and_run_TEST(Str, ModuleName) ->
-    scope_dictionary:clear_all(),
-	RawLexed = lex2(Str),
-	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
-	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
-	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
-	% its to make the test suites work and keep the output purty for users with multiple errors
-	case NormalRawExprs of
-		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
-		{?EMPTYERRORS, Exprs} -> compile_and_run2([{{run, 0, []}, Exprs}], ModuleName, Str);
-	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
-	end.
+	compile_load_and_run2(Str, ModuleName, pometo).
+
 
 interpret_TEST(Str) ->
-    scope_dictionary:clear_all(),
+		scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -92,17 +91,17 @@ interpret_TEST(Str) ->
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> interpret_TEST2(Exprs, Str);
-	    {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+		{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 parse_TEST(Str) ->
-    scope_dictionary:clear_all(),
+		scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Exprs, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	Exprs.
 
 lex_TEST(Str) ->
-    scope_dictionary:clear_all(),
+		scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Lexed, _Lines} = lists:unzip(RawLexed),
 	Lexed.
@@ -111,7 +110,40 @@ lex_TEST(Str) ->
 %%% Helper Functions
 %%%
 
-compile_and_run3(Exprs, ModuleName, Str) ->
+compile_load_and_run2(Str, ModuleName, Type) ->
+		scope_dictionary:clear_all(),
+	RawLexed = lex2(Str),
+	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
+	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
+	% its to make the test suites work and keep the output purty for users with multiple errors
+	case NormalRawExprs of
+		{?EMPTYERRORS, []}      -> []; % a line with a comment only will parse to an empty list
+		{?EMPTYERRORS, Exprs}   -> Exprs2 = case Type of
+																	lazy    -> transform(Exprs, lazy,    ?EMPTYACC);
+																	pometo  -> Exprs;
+																	indexed -> transform(Exprs, indexed, ?EMPTYACC)
+															 end,
+															 compile_and_run3([{{run, 0, []}, Exprs2}], ModuleName, Str);
+			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+	end.
+
+transform([], _, Acc) ->
+	lists:reverse(Acc);
+transform([#'$ast¯'{op = #'$shape¯'{}} = AST | T], Transform, Acc) ->
+	Transformed = case Transform of
+		lazy    -> pometo_stdlib:make_lazy(AST);
+		indexed -> pometo_runtime:make_indexed(AST)
+	end,
+	transform(T, Transform, [Transformed | Acc]);
+transform([#'$ast¯'{args = Args} = AST | T], Transform, Acc) ->
+	Transformed = case Transform of
+		lazy    -> [pometo_stdlib:make_lazy(A)     || A <- Args];
+		indexed -> [pometo_runtime:make_indexed(A) || A <- Args]
+	end,
+	transform(T, Transform, [AST#'$ast¯'{args = Transformed} | Acc]).
+
+compile_and_run_for_format2(Exprs, ModuleName, Str) ->
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
 		{module, Mod} -> case Mod:run() of
 							{error, Err} -> Err#error{expr = Str, at_line = 1, at_char = 1};
@@ -120,14 +152,14 @@ compile_and_run3(Exprs, ModuleName, Str) ->
 		{error, Errs} -> Errs
 	end.
 
-compile_and_run2(Exprs, ModuleName, Str) ->
+compile_and_run3(Exprs, ModuleName, Str) ->
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
 		{module, Mod} -> case Mod:run() of
 							{error, Err} -> FixedErr = Err#error{expr = Str},
-											RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
-											string:trim(RunTimeErrs, leading, "\n");
+															RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
+															string:trim(RunTimeErrs, leading, "\n");
 							Results      -> lists:flatten(pometo_runtime_format:format(Results))
 						 end;
 		{error, Errs} -> pometo_runtime_format:format_errors(Errs)
@@ -154,14 +186,14 @@ lex2(Str) ->
 	[lex3(L, N) || {L, N} <- Zip].
 
 lex3(Code, LineNo) ->
-    % gotta clear the scope dictionary
+		% gotta clear the scope dictionary
 	scope_dictionary:put_line_no(LineNo),
-    try
-        Lexed = pometo_lexer:get_tokens_TEST(Code),
-        {Lexed, Code}
-    catch _Type:Errs ->
-        {{errors, Errs}, Code}
-    end.
+		try
+				Lexed = pometo_lexer:get_tokens_TEST(Code),
+				{Lexed, Code}
+		catch _Type:Errs ->
+				{{errors, Errs}, Code}
+		end.
 
 parse2([], _, _LineNo, Results) ->
 	Bindings = scope_dictionary:get_bindings(),
@@ -178,7 +210,7 @@ parse2([{{ok, Lexed}, Expr} | T], Type, LineNo, Results) ->
 	case pometo_parser:parse(Lexed) of
 		{error, E} ->
 			Error = pometo_parser:make_err(E),
-		    Msg   = pometo_runtime_format:format_errors([Error#error{expr = Expr}]),
+			Msg   = pometo_runtime_format:format_errors([Error#error{expr = Expr}]),
 			parse2(T, Type, LineNo + 1, [{error, Msg} | Results]);
 		Parsed ->
 			NewRs = validate_references(Parsed, Type, Expr),
@@ -214,7 +246,7 @@ process_bindings(Parsed, Type, Expr) ->
 					NewRes = case Errors of
 						[] -> P#'$ast¯'{args = lists:reverse(NewArgs)};
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
-							  {error, pometo_runtime_format:format_errors(FullErrs)}
+								{error, pometo_runtime_format:format_errors(FullErrs)}
 					end,
 					[NewRes | Res];
 	%% the second for scalars
@@ -224,15 +256,15 @@ process_bindings(Parsed, Type, Expr) ->
 					NewRes = case Errors of
 						[] -> P#'$ast¯'{args = NewArg};
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
-							  {error, pometo_runtime_format:format_errors(FullErrs)}
+								{error, pometo_runtime_format:format_errors(FullErrs)}
 					end,
 					[NewRes | Res]
 				end,
 	_TransformedParsed = lists:foldl(ProcessFn, [], Parsed).
 
 check_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
-				   args = Arg}                       = L,
-			   {Bindings, Errors, Results}) ->
+									 args = Arg}                       = L,
+				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewBindings, NewErrs, NewArgs} = check_arg(Arg, Acc),
 	NewA2 = case NewArgs of
@@ -243,34 +275,34 @@ check_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	NewResult = L#'$ast¯'{args = NewA2},
 	{NewBindings, NewErrs ++ Errors, [NewResult] ++ Results};
 check_arg(#'$ast¯'{op   = #'$shape¯'{},
-	               args = Args}         = L, {Bindings, Errors, Results}) ->
+								 args = Args}         = L, {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{_, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
 	NewResults = case NewArgs of
 		[#'$var¯'{} = V] -> NewL = L#'$ast¯'{args = V},
-		                    [NewL | Results];
+												[NewL | Results];
 		_                -> [L    | Results]
 	end,
 	NewErrs = Errs ++ Errors,
 	{Bindings, NewErrs, NewResults};
 check_arg(#'$var¯'{name    = Var,
-	               char_no = CNo,
-	               line_no = LNo} = V, {Bindings, Errors, Results}) ->
+								 char_no = CNo,
+								 line_no = LNo} = V, {Bindings, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
 		true  -> {Bindings,  Errors, [V | Results]};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-                              msg1    = Var,
-                              msg2    = "variable is not defined",
-                              at_line = LNo,
-                              at_char = CNo},
+													msg1    = Var,
+													msg2    = "variable is not defined",
+													at_line = LNo,
+													at_char = CNo},
 				 {Bindings,  [Err | Errors], Results}
 	end;
 check_arg(V, {Bindings, Errors, Results}) ->
 	{Bindings, Errors, [V | Results]}.
 
 substitute_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0} = OrigOp,
-					    args = Arg}                       = L,
-			   {Bindings, Errors, Results}) ->
+												args = Arg}                       = L,
+				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = substitute_arg(Arg, Acc),
 	{_, Errs2, NewA2} = case NewArgs of
@@ -280,28 +312,30 @@ substitute_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0} = OrigOp,
 	end,
 	{NewArgs2, NewDims, NewType} = case NewA2 of
 		#'$ast¯'{op   = #'$shape¯'{dimensions = D,
-		                           type       = T},
+															 type       = T},
 				 args = A2} ->
 			{A2, D, T};
 		#'$ast¯'{op = complex} = A4 ->
 			{A4, 0, complex};
 		[#'$ast¯'{op   = #'$shape¯'{dimensions = D,
-		                           type       = T},
-				  args = A3}] ->
+															 type       = T},
+					args = A3}] ->
 			{A3, D, T};
 		[X2] ->
 			{X2, 0, get_type(X2)};
 		[] ->
 			{[], 0, variable} % error condition so we don't care about the result
 	end,
-	NewResults = [L#'$ast¯'{op   = OrigOp#'$shape¯'{dimensions = NewDims,
-	                                                type       = NewType},
-	                        args = NewArgs2} | Results],
+	NewShp = OrigOp#'$shape¯'{indexed    = is_map(NewArgs2),
+														dimensions = NewDims,
+														type       = NewType},
+	NewResults = [L#'$ast¯'{op   = NewShp,
+													args = NewArgs2} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$ast¯'{op   = #'$shape¯'{},
-					    args = Args}         = L,
-			   {Bindings, Errors, Results}) ->
+												args = Args}         = L,
+				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
 	{_, Errs2, NewA2} = case NewArgs of
@@ -312,22 +346,22 @@ substitute_arg(#'$ast¯'{op   = #'$shape¯'{},
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$var¯'{name    = Var,
-	                    char_no = CNo,
-	                    line_no = LNo}, {Bindings, Errors, Results}) ->
+												char_no = CNo,
+												line_no = LNo}, {Bindings, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
 		true  -> Binding = maps:get(Var, Bindings),
 				 Subst   = maps:get(results, Binding),
 				 NewA = chose_replacement(Subst),
 				 NewOp = extract_and_renumber_op(NewA, CNo, LNo),
 				 NewA2 = NewA#'$ast¯'{op      = NewOp,
-				                      char_no = CNo,
-				                      line_no = LNo},
+															char_no = CNo,
+															line_no = LNo},
 				 {Bindings, Errors,  [NewA2] ++ Results};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-                              msg1    = Var,
-                              msg2    = "variable is not defined",
-                              at_char = CNo,
-                              at_line = LNo},
+															msg1    = Var,
+															msg2    = "variable is not defined",
+															at_char = CNo,
+															at_line = LNo},
 				 {Bindings, [Err | Errors], Results}
 	end;
 substitute_arg(V, {Bindings, Errors, Results}) ->
@@ -335,15 +369,15 @@ substitute_arg(V, {Bindings, Errors, Results}) ->
 
 %% if the replacement is another variable return is
 chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
-	                       args = #'$var¯'{}} = A) ->
-	A;
+													 args = #'$var¯'{}} = AST) ->
+	AST;
 %% if the replacement is a scalar, substitute the value
 chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
-	                       args = Args}) ->
+													 args = Args}) ->
 	Args;
 %% if the replacement is a vector return that
-chose_replacement(#'$ast¯'{op   = #'$shape¯'{}} = A) ->
-	A;
+chose_replacement(#'$ast¯'{op   = #'$shape¯'{}} = AST) ->
+	AST;
 %% if the replacement is an expression run it and return the value
 chose_replacement(AST) ->
 	chose_replacement(pometo_runtime:run_ast(AST, "")).
@@ -370,6 +404,6 @@ get_type(#'$ast¯'{op = #'$shape¯'{type = T}})  -> T.
 
 extract_and_renumber_op(#'$ast¯'{op = #'$shape¯'{} = Shp}, CNo, LNo) ->
 	Shp#'$shape¯'{char_no = CNo,
-				  line_no = LNo};
+					line_no = LNo};
 extract_and_renumber_op(#'$ast¯'{op = complex}, _CNo, _LNo) ->
 	complex.

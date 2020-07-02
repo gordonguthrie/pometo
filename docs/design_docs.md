@@ -54,7 +54,7 @@ These were written for gnu apl, but nowadays dyalog is the most prominent implem
 I have written them in the DFN style (see https://en.wikipedia.org/wiki/Direct_function). There is also tradfns (https://aplwiki.com/wiki/Tradfn).
 
 Gordon sed:
-```
+```quote
 We will have both TradFns and DFNs - TradFns will correspond to Erlang and Elixir Fns and will be contained in modules (like Erlang Elixir) they will be declared private and public (like etc, etc).
 
 The scope of TradFns will be function level (ie no global variables). DFNs will be closures over immutable values (like Funs in Erlang/Elixir).
@@ -159,7 +159,7 @@ I have some very basic APL running, yay!
 
 Basically:
 
-```
+```apl
 1.1 2.2 + 3.3 4.4
 1.1 2.2 ¯ 3.3 4.4
 1.1 2.2 × 3.3 4.4
@@ -218,12 +218,12 @@ In these cases the core vals are stored in the `#'¯¯⍴¯¯'%{}` record as lis
 
 If indexing is required the list needs to be converted into an indexed map so that:
 
-```
+```erlang
 [1.1, 2.2, 3.3]
 ```
 
 becomes
-```
+```erlang
 %{1 => 1.1, 2 => 2.2, 3 => 3.3}
 ```
 
@@ -239,7 +239,7 @@ There is another non-indexed, lazy data primitive - the structured binary.
 
 In this the data is stored in a format like a C struct - a type/length indicator and then a binary, and you walk down the binary snipping off and converting bits of data:
 
-```
+```erlang
 ...
 <<Type:16/little-unsigned-integer,Length:16/little-unsigned-integer, Rest>> = Bin,
 <<RawData:16* Length/binary, Rest2>> = Rest,
@@ -276,7 +276,7 @@ The Data Structure in the compiler is a guddle - it has become a `yasl` (Yet Ano
 At the moment the records are congested:
 
 This is how expressions like `1 2 + 3 4` are stored:
-```
+```erlang
 -record(expr, {
     type,
     expression,
@@ -288,7 +288,7 @@ This is how expressions like `1 2 + 3 4` are stored:
 
 and this is a `let`
 
-```
+```erlang
 -record(let_op, {
      var,
      expression,
@@ -312,7 +312,7 @@ We need to have a unifying `ast` record that represents a realer `lisp` and it n
 
 Top level record:
 
-```
+```erlang
 -record(ast, {
           op,     [dyadic_+, monadic_+, dyadic_-, monadic_-, ←       etc, etc],
 etc, etc],
@@ -364,7 +364,7 @@ do_run_3d224d14a05bc38e76541a3a3b0b6bf35b86abab() ->
 
 In addition a source module data structure is built up:
 
-```
+```erlang
 #{1 => {sourcemap,none,none,"module attribute"},
   2 => {sourcemap,none,none,"export attribute"},
   3 => {sourcemap,none,none,"parser records import definition"},
@@ -398,7 +398,7 @@ Consideration of these immediately surfaces a strategic problem pertaining to in
 
 `Erlang` and `Elixir` and most programming languages) have a mixed latin-arabic parse direction whereas APL is traditionally pure arabic.
 
-```
+```bollocks
   ____        _ _            _
  |  _ \      | | |          | |
  | |_) | ___ | | | ___   ___| | _____

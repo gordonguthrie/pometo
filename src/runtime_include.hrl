@@ -1,6 +1,7 @@
--define(EMPTY_ACCUMULATOR, []).
--define(EMPTY_MAP,         #{}).
--define(SPACE,             32).
+-define(EMPTY_ACCUMULATOR,   []).
+-define(EMPTY_MAP,           #{}).
+-define(SPACE,               32).
+-define(START_COUNTING_ARGS, 0).
 
 -define(shp(Dim),         #'$shape¯'{dimensions = Dim}).
 -define(shape(Dim, Type), #'$shape¯'{dimensions = Dim,
