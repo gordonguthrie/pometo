@@ -2,7 +2,7 @@
 
 One of the key elements of `APL` languages is the composition of functions.
 
-# Background
+## Background
 
 Functions can be applied consequtively. Consider:
 
