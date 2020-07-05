@@ -179,8 +179,7 @@ compile_and_run3(Exprs, ModuleName, Str) ->
 							{error, Err} -> FixedErr = Err#error{expr = Str},
 															RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
 															string:trim(RunTimeErrs, leading, "\n");
-							Results      -> io:format("compiler returns ~p~n", [Results]),
-															lists:flatten(pometo_runtime_format:format(Results))
+							Results      -> lists:flatten(pometo_runtime_format:format(Results))
 						 end;
 		{error, Errs} -> pometo_runtime_format:format_errors(Errs)
 	end.
@@ -294,8 +293,10 @@ check_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 	end,
 	NewResult = L#'$ast¯'{args = NewA2},
 	{NewBindings, NewErrs ++ Errors, [NewResult] ++ Results};
-check_arg(#'$ast¯'{do   = #'$shape¯'{},
-								 args = Args}         = L, {Bindings, Errors, Results}) ->
+check_arg(#'$ast¯'{do   = Do,
+								   args = Args}         = L,
+					{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
+																						is_record(Do, '$func¯') ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{_, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
 	NewResults = case NewArgs of
@@ -353,9 +354,10 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 													args = NewArgs2} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
-substitute_arg(#'$ast¯'{do   = #'$shape¯'{},
+substitute_arg(#'$ast¯'{do   = Do,
 												args = Args}         = L,
-				 {Bindings, Errors, Results}) ->
+				 			{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
+																								is_record(Do, '$func¯')  ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
 	{_, Errs2, NewA2} = case NewArgs of

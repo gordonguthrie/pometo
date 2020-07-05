@@ -32,11 +32,11 @@ dyadic_op_RUNTIME([{"/", Rank},
 	case Ranking of
 		identical ->
 			case length(D1) of
-				1 -> pometo_runtime_dyadic_fn:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
+				1 -> pometo_runtime_dyadic:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
 				_ -> make_reduce_error(D1, LNo, CNo)
 			end;
 		unsized_vector ->
-			pometo_runtime_dyadic_fn:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
+			pometo_runtime_dyadic:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
 		_ -> rubette
 	end.
 

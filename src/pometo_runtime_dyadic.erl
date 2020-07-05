@@ -1,4 +1,4 @@
--module(pometo_runtime_dyadic_fn).
+-module(pometo_runtime_dyadic).
 
 %% exported for inclusion in compiled modules
 %% should never be called directly
@@ -8,7 +8,6 @@
 
 %% exported for use in other parts of the runtime
 -export([
-					execute_dyadic/3,
 					zip/4
 				]).
 
@@ -20,13 +19,13 @@
 
 % rho needs to know the length of the vector
 % this clause handles both a scalar and a vector on either of the LHS or the RHS
-dyadic_RUNTIME(["⍴", #'$ast¯'{do      = ?shape(N1, Type1) = Shp,
-															args    = A1,
-															line_no = LNo,
-															char_no = CNo},
-										 #'$ast¯'{do      = ?shape(N2, Type2),
-															args    = A2} = Right]) when Type1 == number  orelse
-															Type1 == boolean ->
+dyadic_RUNTIME([["⍴"], #'$ast¯'{do      = ?shape(N1, Type1) = Shp,
+																args    = A1,
+																line_no = LNo,
+																char_no = CNo},
+											 #'$ast¯'{do      = ?shape(N2, Type2),
+																args    = A2} = Right]) when Type1 == number  orelse
+																Type1 == boolean ->
 	% this casts any scalars on either side to vectors
 	NewN2 = case N2 of
 			unsized_vector -> [length(A2)];
@@ -148,6 +147,7 @@ dyadic_RUNTIME([Do, #'$ast¯'{do      = ?shp(N1),
 fn_zip(N, Val, Acc) when is_list(Acc) -> {N + 1, [Val | Acc]};
 fn_zip(N, Val, Acc) when is_map(Acc)  -> {N + 1, maps:put(N, Val, Acc)}.
 
+
 %%
 %% private fns
 %%
@@ -158,7 +158,6 @@ zip(Do, #'$ast¯'{do     = #'$shape¯'{} = Shp,
 								 char_no = CNo} = AST1,
 				#'$ast¯'{do      = #'$shape¯'{},
 								 args    = Args2} = AST2, ZipFn) ->
-	io:format("in zip (1) ~n", []),
 	Accumulator = pometo_runtime:choose_accumulator(AST1, AST2),
 	Left  = make_enumerable(Args1),
 	Right = make_enumerable(Args2),
@@ -184,9 +183,9 @@ do_zip(Left, Right, Do, LNo, CNo, ZipFn, N, Acc) ->
 
 zip_error(Do, LNo, CNo, N) ->
 	Msg1 = io_lib:format("dimensions mismatch in dyadic ~p", [Do]),
-	Msg2 = case N of
+	Msg2 = case N - 1 of
 		1 -> io_lib:format("ran out of matches after 1 element",   []);
-		_ -> io_lib:format("ran out of matches after ~p elements", [N])
+		_ -> io_lib:format("ran out of matches after ~p elements", [N - 1])
 	end,
 	Error = pometo_runtime_format:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
@@ -204,7 +203,6 @@ get_first({list, [H | T]})  -> {{list, T},       H}.
 
 
 apply2(Do, #'$ast¯'{args = Args} = AST, Singleton, Direction) ->
-	io:format("in apply Do is ~p Args is ~p Direction is ~p~n", [Do, Args, Direction]),
 	Accumulator = pometo_runtime:choose_accumulator(AST, Singleton),
 	Left  = make_enumerable(Args),
 	Val = get_singleton(Singleton),
@@ -227,54 +225,47 @@ get_singleton(#'$ast¯'{args = Map}) when is_map(Map) -> maps:get(1, Map);
 get_singleton(#'$ast¯'{args = [X]})                  -> X.
 
 % first capture the complex nos
-execute_dyadic(Do, ?complex_no(L), ?complex_no(R)) -> ?complex_no(do_complex(Do, L,      R));
-execute_dyadic(Do, ?complex_no(L), R)              -> ?complex_no(do_complex(Do, L,      [R, 0]));
-execute_dyadic(Do,  L,             ?complex_no(R)) -> ?complex_no(do_complex(Do, [L, 0], R));
+execute_dyadic(Do, ?cmplx(L), ?cmplx(R)) -> ?cmplx(do_complex(Do, L,      R));
+execute_dyadic(Do, ?cmplx(L), R)         -> ?cmplx(do_complex(Do, L,      [R, 0]));
+execute_dyadic(Do,  L,        ?cmplx(R)) -> ?cmplx(do_complex(Do, [L, 0], R));
 
 % we don't want reduce (or any axis operators) to descend into the AST
-execute_dyadic("/", L, R) -> duplicate(L, R);
+execute_dyadic(["/"], L, R) -> duplicate(L, R);
 
 %% complex arrays
-execute_dyadic(Do, #'$ast¯'{} = L, #'$ast¯'{} = R) ->
-	io:format("in execute dyadic (1) for ~p~n", [Do]),
-	pometo_runtime_dyadic_fn:dyadic_RUNTIME([Do, L, R]);
-execute_dyadic(Do, #'$ast¯'{} = L, R)              ->
-	io:format("in execute dyadic (2) for ~p~n", [Do]),
-	pometo_runtime_dyadic_fn:dyadic_RUNTIME([Do, L, make_scalar_ast(R)]);
-execute_dyadic(Do, L, #'$ast¯'{} = R) ->
-	io:format("in execute dyadic (3) for ~p~n", [Do]),
-	pometo_runtime_dyadic_fn:dyadic_RUNTIME([Do, make_scalar_ast(L), R]);
+execute_dyadic(Do, #'$ast¯'{} = L, #'$ast¯'{} = R) -> dyadic_RUNTIME([Do, L, R]);
+execute_dyadic(Do, #'$ast¯'{} = L, R)              -> dyadic_RUNTIME([Do, L, make_scalar_ast(R)]);
+execute_dyadic(Do, L,              #'$ast¯'{} = R) -> dyadic_RUNTIME([Do, make_scalar_ast(L), R]);
 
 % if a function can be applied to a complex no it
 % has to be listed after the complex execution descends into the
 % complex AST
-execute_dyadic("+", L, R) -> L + R;
-execute_dyadic("-", L, R) -> L - R;
-execute_dyadic("×", L, R) -> L * R;
-execute_dyadic("÷", L, R) -> L / R;
-execute_dyadic("|", 0, R) -> R;
-execute_dyadic("|", L, R) -> R/L.
+execute_dyadic(["+"], L, R) -> L + R;
+execute_dyadic(["-"], L, R) -> L - R;
+execute_dyadic(["×"], L, R) -> L * R;
+execute_dyadic(["÷"], L, R) -> L / R;
+execute_dyadic(["|"], 0, R) -> R;
+execute_dyadic(["|"], L, R) -> R/L.
 
 duplicate(L, R) ->
-	io:format("in duplicate L is ~p R is ~p~n", [L, R]),
 	lists:duplicate(L, R).
 
 make_scalar_ast(Arg) -> Shp = #'$shape¯'{dimensions = 0},
 												#'$ast¯'{do = Shp, args = Arg}.
 
-do_complex(Do, A1, A2) when Do == "+" orelse
-														Do == "-" ->
+do_complex([Do], A1, A2) when Do == "+" orelse
+														  Do == "-" ->
 	% call zip with dummy line and char nos because we know it won't fail
 	% and they are only needed for the error message
 	% make 'em grepable because yeah-it-can-never-get-there code ***ALWAYS*** gets executed
 	% that's the law, I didn't fuckin make it, ok? bud...
 	Left  = make_enumerable(A1),
 	Right = make_enumerable(A2),
-	{_NoArgs, Vals} = do_zip(Left, Right, Do, -98765, -98765, fun fn_zip/3, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	{_NoArgs, Vals} = do_zip(Left, Right, [Do], -98765, -98765, fun fn_zip/3, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
 	Vals;
-do_complex(Do, [Rl1, Im1], [Rl2, Im2]) when Do == "×" ->
+do_complex([Do], [Rl1, Im1], [Rl2, Im2]) when Do == "×" ->
 	[Rl1 * Rl2 - Im1 * Im2, Rl1 * Im2 + Im1 * Rl2];
-do_complex(Do, [Rl1, Im1], [Rl2, Im2]) when Do == "÷" ->
+do_complex([Do], [Rl1, Im1], [Rl2, Im2]) when Do == "÷" ->
 	Sq = Rl2 * Rl2 + Im2 * Im2,
 	Real = (Rl1 * Rl2 + Im1 * Im2)/Sq,
 	Imag = (Im1 * Rl2 - Rl1 * Im2)/Sq,

@@ -1,4 +1,4 @@
--module(pometo_runtime_monadic_fn).
+-module(pometo_runtime_monadic).
 
 %% exported for inclusion in compiled modules
 %% should never be called directly
@@ -12,35 +12,35 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-monadic_RUNTIME([",", #'$ast¯'{do   = ?shp(0) = Shp,
-															 args = Arg} = AST]) ->
+monadic_RUNTIME([[","], #'$ast¯'{do   = ?shp(0) = Shp,
+																 args = Arg} = AST]) ->
 
 	NewShp = Shp?shp([1]),
 	AST#'$ast¯'{do   = NewShp,
 							args = [Arg]};
-monadic_RUNTIME([",", #'$ast¯'{do   = ?shp(_N) = Shp,
-															 args = Args} = AST]) ->
+monadic_RUNTIME([[","], #'$ast¯'{do   = ?shp(_N) = Shp,
+																 args = Args} = AST]) ->
 	NewShp = Shp?shp([length(Args)]),
 	AST#'$ast¯'{do = NewShp};
-monadic_RUNTIME(["⍴", #'$ast¯'{do = ?shp(0) = Shp} = AST]) ->
+monadic_RUNTIME([["⍴"], #'$ast¯'{do = ?shp(0) = Shp} = AST]) ->
 	AST#'$ast¯'{do   = Shp,
 							args = ""};
 % need to know the size for ⍴ so size it and flip it back in
-monadic_RUNTIME(["⍴", #'$ast¯'{do   = ?shp(unsized_vector) = Shp,
-															 args = Args} = AST]) ->
+monadic_RUNTIME([["⍴"], #'$ast¯'{do   = ?shp(unsized_vector) = Shp,
+																 args = Args} = AST]) ->
 	Dims = [length(Args)],
-	monadic_RUNTIME(["⍴", AST#'$ast¯'{do = Shp?shp(Dims)}]);
-monadic_RUNTIME(["⍴", #'$ast¯'{do = ?shp(Dims) = Shp} = AST]) ->
+	monadic_RUNTIME([["⍴"], AST#'$ast¯'{do = Shp?shp(Dims)}]);
+monadic_RUNTIME([["⍴"], #'$ast¯'{do = ?shp(Dims) = Shp} = AST]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
 												 indexed    = false,
 												 type       = number},
 	AST#'$ast¯'{do   = NewShp,
-				args = Dims};
-monadic_RUNTIME(["⍳", #'$ast¯'{do      = ?shp(D),
-															 args    = Args,
-															 line_no = LNo,
-															 char_no = CNo}]) ->
+							args = Dims};
+monadic_RUNTIME([["⍳"], #'$ast¯'{do      = ?shp(D),
+																 args    = Args,
+																 line_no = LNo,
+																 char_no = CNo}]) ->
 	NewArgs = case D of
 					0 -> [Args];
 					_ -> Args
@@ -71,36 +71,37 @@ monadic_RUNTIME(["⍳", #'$ast¯'{do      = ?shp(D),
 	end;
 monadic_RUNTIME([Do, #'$ast¯'{do   = ?shp(0),
 															args = A} = L]) ->
-	io:format("in monadic_RUNTIME Do is ~p~n", [Do]),
-	NewA = monadic_apply(Do, A, fun execute_monadic/2),
+	NewA = do_apply(Do, A, fun execute_monadic/2),
 	L#'$ast¯'{args = NewA};
 monadic_RUNTIME([Do, #'$ast¯'{do   = #'$shape¯'{},
 															args = A} = L]) ->
 	ApplyFun = fun(X) ->
-		execute_monadic(Do, X)
+		do_apply(Do, X, fun execute_monadic/2)
 	end,
 	NewA = apply_to_args(ApplyFun, A),
-	L#'$ast¯'{args = NewA}.
+	L#'$ast¯'{args = NewA};
+monadic_RUNTIME(List) ->
+	[io:format("in monadic_RUNTIME wigging out with ~p~n", [X]) || X <- List],
+	bergamotto.
 
 %%
 %% Helper functions
 %%
 
-monadic_apply([],      Val, _Fn) -> Val;
-monadic_apply([H | T], Val, Fn)  -> A = Fn(H, Val),
-																		monadic_apply(T, A, Fn).
+do_apply([],      Val, _Fn) -> Val;
+do_apply([H | T], Val, Fn)  -> A = Fn(H, Val),
+															 do_apply(T, A, Fn).
 
 apply_to_args(Fn, Args) when is_list(Args) -> [Fn(X) || X <- Args];
 apply_to_args(Fn, Args) when is_map(Args)  -> I = maps:iterator(Args),
 																							apply_to_map_Val(Fn, Args, I).
 
-apply_to_map_Val(_Fn, Map, none) -> Map;
-apply_to_map_Val(Fn,  Map, I)    -> {K, V, NewI} = maps:next(I),
-																		NewMap = maps:put(K, Fn(V), Map),
-																		apply_to_map_Val(Fn, NewMap, NewI).
+apply_to_map_Val(_Fn, Map, none) when is_map(Map) -> Map;
+apply_to_map_Val(Fn,  Map, I)    when is_map(Map) -> {K, V, NewI} = maps:next(I),
+																										 NewMap = maps:put(K, Fn(V), Map),
+																										 apply_to_map_Val(Fn, NewMap, NewI).
 
 make_args(Args, IsScalar, LNo, CNo) ->
-
 	NewArgs = make_args2(Args),
 	%% the indices can either be scalars or vectors depending
 	%% on how many arguments are passed to ⍴
@@ -117,8 +118,8 @@ make_args(Args, IsScalar, LNo, CNo) ->
 	end.
 
 make_args2([]) -> [];
-make_args2(M) when is_map(M) -> Iterator = maps:iterator(M),
-																make_args3(Iterator);
+%make_args2(M) when is_map(M) -> Iterator = maps:iterator(M),
+%																make_args3(Iterator);
 make_args2([H | T]) 				 -> Seq = lists:seq(1, H),
 																SecondSeq = make_args2(T),
 																case SecondSeq of
@@ -127,15 +128,15 @@ make_args2([H | T]) 				 -> Seq = lists:seq(1, H),
 																										Y <- SecondSeq]
 																end.
 
-make_args3(none)     -> [];
-make_args3(Iterator) -> {_K, V, NewI} = maps:next(Iterator),
-												Seq = lists:seq(1, V),
-												SecondSeq = make_args3(NewI),
-												case SecondSeq of
-													[] -> [[X]     || X <- Seq];
-													_  -> [[X | Y] || X <- Seq,
-																						Y <- SecondSeq]
-												end.
+%make_args3(none)     -> [];
+%make_args3(Iterator) -> {_K, V, NewI} = maps:next(Iterator),
+%												Seq = lists:seq(1, V),
+%												SecondSeq = make_args3(NewI),
+%												case SecondSeq of
+%													[] -> [[X]     || X <- Seq];
+%													_  -> [[X | Y] || X <- Seq,
+%																						Y <- SecondSeq]
+%												end.
 
 %% complex nos first
 execute_monadic("+", #'$ast¯'{do   = complex,

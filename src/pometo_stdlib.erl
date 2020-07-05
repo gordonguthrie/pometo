@@ -8,6 +8,7 @@
 
 -export([
 		 debug/1,
+		 debug/2,
 		 make_lazy/1,
 		 make_indexed/1,
 		 force_indexing/1,
@@ -16,6 +17,13 @@
 
 -define(INITIALINDENT, 1).
 -define(INDENTSIZE,    2).
+
+debug(Lable, #'$ast¯'{} = AST) ->
+	io:format("~n~n>>>>>>>>>>>> ~p~n~n", [Lable]),
+	?debugFmt("~n~n>>>>>>>>>>>> ~p~n~n", [Lable]),
+	debug(AST),
+	io:format("~n~n>>>>>>>>>>>> ~n~n", []),
+	?debugFmt("~n~n>>>>>>>>>>>> ~n~n", []).
 
 debug(#'$ast¯'{line_no = LNo,
 	          	 char_no = CNo} = AST) ->
@@ -55,6 +63,7 @@ make_lazy(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
 % do work on unindexed arrays
 make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = Type} = Shp} = AST)
 	when Type /= unsized_vector ->
+	io:format("in make lazy with AST of ~p~n", [AST]),
 	NewShp = Shp#'$shape¯'{dimensions = unsized_vector},
 	AST#'$ast¯'{do = NewShp};
 % don't do anything to anything else
@@ -63,9 +72,9 @@ make_lazy(X) ->
 
 make_indexed(AST)     -> pometo_runtime:make_indexed(AST).
 
-force_indexing(AST)   -> pometo_runtime:force_indexing(AST, index).
+force_indexing(AST)   -> pometo_runtime:force_index(AST, index).
 
-force_unindexing(AST) -> pometo_runtime:force_indexing(AST, unindex).
+force_unindexing(AST) -> pometo_runtime:force_index(AST, unindex).
 
 %%
 %% Internal Functions

@@ -34,10 +34,8 @@
 -export([
 					runtime_let/1,
 					apply_fn/1,
-					dyadic_fn/1,
-					monadic_fn/1,
-					dyadic_op/1,
-					monadic_op/1
+					dyadic/1,
+					monadic/1
 				]).
 
 %%
@@ -45,32 +43,36 @@
 %%
 
 run_ast(AST, Str) ->
+	io:format("in run_ast AST is ~p~n", [AST]),
 	try run_ast2(AST)
 	catch
 		throw:E -> {error, #error{} = Err} = E,
-					 {error, Err#error{expr = Str}}
+							 {error, Err#error{expr = Str}}
 	end.
 
-run_ast2(#'$ast¯'{do   = {apply_fn, {Mod, Fn}},
-									args = [Arg]})              -> apply_fn([Mod, Fn, Arg]);
-run_ast2(#'$ast¯'{do   = #'$shape¯'{}} = AST) -> AST;
+run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
+									args = [Arg]}) ->
+	apply_fn([[{Mod, Fn}], Arg]);
+run_ast2(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
+	AST;
 run_ast2(#'$ast¯'{do   = 'let',
-					args = [_V, A | []]} = AST) 				-> NewL = AST#'$ast¯'{do   = runtime_let,
-																																		args = A},
-																								 runtime_let([NewL]);
-run_ast2(#'$ast¯'{do   = {dyadic_op, Do},
-									args = [A1, A2]})           -> dyadic_op([Do, A1, A2]);
-run_ast2(#'$ast¯'{do   = {monadic_op, Do},
-									args = [A]})                -> monadic_op([Do, A]);
-run_ast2(#'$ast¯'{do   = {dyadic_fn, Do},
-									args = [A1, A2]})           -> dyadic_fn([Do, A1, A2]);
-run_ast2(#'$ast¯'{do   = {monadic_fn, Do},
-									args = [A]})                -> monadic_fn([Do, A]);
-run_ast2(#'$ast¯'{do   = flatten_comma,
-									args = [A]})                -> #'$ast¯'{do   = #'$shape¯'{} = R,
-																													args = InnerA}      = A,
-																								 NewR = R#'$shape¯'{dimensions = length(InnerA)},
-																								 A#'$ast¯'{do = NewR}.
+									args = [_V, A | []]} = AST) ->
+	NewL = AST#'$ast¯'{do   = runtime_let,
+										 args = A},
+	runtime_let([NewL]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{do   = Do,
+																	 type = Type},
+									args = [A1, A2]}) when Type == dyadic orelse
+																				 Type == dyadic_ranked ->
+	dyadic([Do, run_ast2(A1), run_ast2(A2)]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{do   = Do,
+																	 type = Type},
+									args = [A]}) when Type == monadic orelse
+																		Type == monadic_ranked ->
+	monadic([Do, run_ast2(A)]);
+run_ast2(X) ->
+	pometo_stdlib:debug("wigging out in run ast2", X),
+	exit("rando").
 
 are_all_positive_integers([])                                 -> true;
 are_all_positive_integers([H | T]) when is_integer(H)         -> are_all_positive_integers(T);
@@ -247,15 +249,13 @@ maybe_reverse(List) when is_list(List) -> lists:reverse(List).
 %% Exported for use in compiled modules
 %%
 
-dyadic_fn(Args)  -> pometo_runtime_dyadic_fn:dyadic_RUNTIME(Args).
+dyadic(Args)  -> io:format("calling diadic with ~p~n", [Args]),
+								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
-monadic_fn(Args) -> pometo_runtime_monadic_fn:monadic_RUNTIME(Args).
-
-dyadic_op(Args)  -> pometo_runtime_dyadic_op:dyadic_op_RUNTIME(Args).
-
-monadic_op(Args) -> pometo_runtime_monadic_op:monadic_op_RUNTIME(Args).
+monadic(Args) -> io:format("calling monadic with ~p~n", [Args]),
+								 pometo_runtime_monadic:monadic_RUNTIME(Args).
 
 
-apply_fn([Mod, Fun, Arg]) -> Mod:Fun(Arg).
+apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
 
 runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).

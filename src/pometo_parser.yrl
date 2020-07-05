@@ -8,18 +8,18 @@ Scalar
 Let
 Value
 Var
-Dy_and_mon_fns
-Mon_fns
-Ops
-Hybrids
-FirstHybrids
-LastHybrids
+Fn
+Fns
+Dyadic
+Monadic
+Int
+Rank
+Args
 
 .
 
 Terminals
 
-scalar_fn
 let_op
 var
 int
@@ -32,61 +32,51 @@ open_bracket
 close_bracket
 open_sq
 close_sq
-iota
-rho
-ravel
+ambivalent
+dyadic
+monadic
+monadic_ranked
+hybrid
 stdlib
-forwardslash
-backslash
-barredforwardslash
-barredbackslash
 
 .
 
 Rootsymbol Exprs.
 Endsymbol  '$end'.
 
-Left 50  open_bracket.
-Left 50  open_sq.
 Left 100 Vector.
 Left 200 Expr.
 Left 300 Scalar.
+Left 400 open_bracket.
+Left 400 open_sq.
 
 Exprs -> Expr                  : ['$1'].
-Exprs -> Ops                   : ['$1'].
 Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
 
-Ops ->      LastHybrids  Vecs                 : extract_op(monadic, '$1', ['$2'],       last).
-Ops -> Vecs LastHybrids  Vecs                 : extract_op(dyadic,  '$2', ['$1', '$3'], last).
-Ops ->      FirstHybrids Vecs                 : extract_op(monadic, '$1', ['$2'],       first).
-Ops -> Vecs FirstHybrids Vecs                 : extract_op(dyadic,  '$2', ['$1', '$3'], first).
-Ops ->      Hybrids open_sq int close_sq Vecs : extract_op(monadic, '$1', ['$2'],       '$3').
-Ops -> Vecs Hybrids open_sq int close_sq Vecs : extract_op(dyadic,  '$2', ['$1', '$6'], '$4').
+Expr -> Dyadic      : '$1'.
+Expr -> Monadic     : '$1'.
+Expr -> Let         : '$1'.
+Expr -> Vecs        : '$1'.
+Expr -> stdlib Vecs : make_stdlib('$1', '$2').
 
-Expr -> Vecs                     : '$1'.
-Expr -> Let                      : '$1'.
-Expr -> Vecs scalar_fn      Vecs : extract_fn(dyadic,  '$2', ['$1', '$3']).
-Expr -> Vecs Dy_and_mon_fns Vecs : extract_fn(dyadic,  '$2', ['$1', '$3']).
-Expr -> Vecs Hybrids        Vecs : extract_fn(dyadic,  '$2', ['$1', '$3']).
-Expr ->      scalar_fn      Vecs : extract_fn(monadic, '$1', ['$2']).
-Expr ->      Dy_and_mon_fns Vecs : extract_fn(monadic, '$1', ['$2']).
-Expr ->      Hybrids        Vecs : extract_fn(monadic, '$1', ['$2']).
-Expr ->      Mon_fns        Vecs : extract_fn(monadic, '$1', ['$2']).
-Expr ->      stdlib         Vecs : make_stdlib('$1', '$2').
+Dyadic  -> Args Fns Args : make_dyadic('$2', '$1', '$3').
+Monadic ->      Fns Args : make_monadic('$1', '$2').
 
-Hybrids -> FirstHybrids : '$1'.
-Hybrids -> LastHybrids  : '$1'.
+Args -> Vecs : '$1'.
+Args -> Var  : '$1'.
 
-LastHybrids -> forwardslash       : '$1'.
-LastHybrids -> backslash          : '$1'.
+Fns -> Fn        : '$1'.
+Fns -> Fns Fn    : maybe_merge('$1', '$2').
 
-FirstHybrids  -> barredforwardslash : '$1'.
-FirstHybrids  -> barredbackslash    : '$1'.
+Fn -> hybrid     : make_fn_ast('$1').
+Fn -> monadic    : make_fn_ast('$1').
+Fn -> dyadic     : make_fn_ast('$1').
+Fn -> ambivalent : make_fn_ast('$1').
+Fn -> Rank       : log('$1', "$$$$$ranked is ").
 
-Dy_and_mon_fns -> rho : '$1'.
-
-Mon_fns -> ravel : '$1'.
-Mon_fns -> iota  : '$1'.
+Rank -> monadic_ranked                        : add_rank('$1', default_rank('$1')).
+Rank -> monadic_ranked open_sq Int   close_sq : add_rank('$1', '$3').
+Rank -> monadic_ranked open_sq float close_sq : add_rank('$1', '$3').
 
 Let -> Var let_op Vecs : make_let('$1', '$3').
 Let -> Var let_op Expr : make_let('$1', '$3').
@@ -94,18 +84,25 @@ Let -> Var let_op Expr : make_let('$1', '$3').
 Vecs -> Vector      : '$1'.
 Vecs -> Vecs Vector : append('$1', '$2').
 
-Vector -> Scalar        : '$1'.
-Vector -> Vector Scalar : append('$1', '$2').
-
 Scalar -> open_bracket Vector close_bracket : maybe_enclose_vector('$1', '$2').
 Scalar -> unary_negate Value                : handle_value(negative, '$2').
 Scalar -> Value                             : handle_value(positive, '$1').
+Scalar -> unary_negate int                  : handle_value(negative, make_scalar('$2', number)).
+Scalar -> int                               : handle_value(positive, make_scalar('$1', number)).
 Scalar -> Var                               : '$1'.
 
-Value -> int                  : make_scalar('$1', number).
+% a vector of ints might be a rank or it might be a vector of ints
+Vector -> Scalar                         : '$1'.
+Vector -> Vector Scalar                  : append('$1', '$2').
+Vector -> Vector Int                     : append('$1', '$2').
+
 Value -> float                : make_scalar('$1', number).
 Value -> complex_number       : make_scalar('$1', complex).
 Value -> maybe_complex_number : make_scalar('$1', complex).
+
+Int -> unary_negate int : handle_value(negative, make_scalar('$2', number)).
+Int -> int              : handle_value(positive, make_scalar('$1', number)).
+Int -> Int int          : append('$1', make_scalar('$2', number)).
 
 Var -> var : make_var('$1').
 

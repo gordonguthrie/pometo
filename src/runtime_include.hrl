@@ -10,8 +10,8 @@
 	                                                   type       = complex},
                                    args = #'$ast¯'{do   = complex,
                                			          		 args = Args}}).
--define(complex_no(Args), #'$ast¯'{do   = complex,
-                               	   args = Args}).
+-define(cmplx(Args), #'$ast¯'{do   = complex,
+                              args = Args}).
 
 
 -record(fmt_segment, {
