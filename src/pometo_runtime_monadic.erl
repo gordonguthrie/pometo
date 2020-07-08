@@ -12,35 +12,51 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-monadic_RUNTIME([[","], #'$ast¯'{do   = ?shp(0) = Shp,
-																 args = Arg} = AST]) ->
-
+monadic_RUNTIME([#'$func¯'{do = [","]},
+								 #'$ast¯'{do   = ?shp(0) = Shp,
+													args = Arg} = AST]) ->
 	NewShp = Shp?shp([1]),
 	AST#'$ast¯'{do   = NewShp,
 							args = [Arg]};
-monadic_RUNTIME([[","], #'$ast¯'{do   = ?shp(_N) = Shp,
-																 args = Args} = AST]) ->
-	NewShp = Shp?shp([length(Args)]),
-	AST#'$ast¯'{do = NewShp};
-monadic_RUNTIME([["⍴"], #'$ast¯'{do = ?shp(0) = Shp} = AST]) ->
+monadic_RUNTIME([#'$func¯'{do      = [","],
+													 rank    = Rank,
+													 line_no = LNo,
+													 char_no = CNo},
+								 #'$ast¯'{do      = ?shp(N) = Shp,
+													args    = Args} = AST]) ->
+	try
+		NewShp = rerank(N, Rank),
+		AST#'$ast¯'{do   = Shp?shp(NewShp),
+								args = Args}
+	catch throw:Errs ->
+        Msg1 = Errs,
+        Msg2 = io_lib:format("~p", [Rank]),
+        Error = pometo_runtime_format:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
+        throw({error, Error})
+   end;
+monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
+								 #'$ast¯'{do = ?shp(0) = Shp} = AST]) ->
 	AST#'$ast¯'{do   = Shp,
 							args = ""};
 % need to know the size for ⍴ so size it and flip it back in
-monadic_RUNTIME([["⍴"], #'$ast¯'{do   = ?shp(unsized_vector) = Shp,
-																 args = Args} = AST]) ->
+monadic_RUNTIME([#'$func¯'{do = ["⍴"]} = Func,
+								 #'$ast¯'{do   = ?shp(unsized_vector) = Shp,
+													args = Args} = AST]) ->
 	Dims = [length(Args)],
-	monadic_RUNTIME([["⍴"], AST#'$ast¯'{do = Shp?shp(Dims)}]);
-monadic_RUNTIME([["⍴"], #'$ast¯'{do = ?shp(Dims) = Shp} = AST]) ->
+	monadic_RUNTIME([Func, AST#'$ast¯'{do = Shp?shp(Dims)}]);
+monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
+								 #'$ast¯'{do = ?shp(Dims) = Shp} = AST]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
 												 indexed    = false,
 												 type       = number},
 	AST#'$ast¯'{do   = NewShp,
 							args = Dims};
-monadic_RUNTIME([["⍳"], #'$ast¯'{do      = ?shp(D),
-																 args    = Args,
-																 line_no = LNo,
-																 char_no = CNo}]) ->
+monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
+								 #'$ast¯'{do      = ?shp(D),
+													args    = Args,
+													line_no = LNo,
+													char_no = CNo}]) ->
 	NewArgs = case D of
 					0 -> [Args];
 					_ -> Args
@@ -69,12 +85,14 @@ monadic_RUNTIME([["⍳"], #'$ast¯'{do      = ?shp(D),
 			Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
 			throw({error, Error})
 	end;
-monadic_RUNTIME([Do, #'$ast¯'{do   = ?shp(0),
-															args = A} = L]) ->
+monadic_RUNTIME([#'$func¯'{do = Do},
+								 #'$ast¯'{do   = ?shp(0),
+													args = A} = L]) ->
 	NewA = do_apply(Do, A, fun execute_monadic/2),
 	L#'$ast¯'{args = NewA};
-monadic_RUNTIME([Do, #'$ast¯'{do   = #'$shape¯'{},
-															args = A} = L]) ->
+monadic_RUNTIME([#'$func¯'{do = Do},
+								 #'$ast¯'{do   = #'$shape¯'{},
+													args = A} = L]) ->
 	ApplyFun = fun(X) ->
 		do_apply(Do, X, fun execute_monadic/2)
 	end,
@@ -151,12 +169,34 @@ execute_monadic("÷", #'$ast¯'{do   = complex,
 															A#'$ast¯'{args = [R/Sq, -I/Sq]};
 
 %% then plain ones
-execute_monadic("+", V) -> V; % complex conjugate stub. return identity.
+execute_monadic("+", V) ->  V;
 execute_monadic("-", V) -> -1 * V;
-execute_monadic("×", V) -> signum(V); % when complex numbers are introduced, this becomes {⍵÷|⍵}.
-execute_monadic("÷", V) -> 1 / V;
-execute_monadic("|", V) -> abs(V).
+execute_monadic("×", V) ->  signum(V);
+execute_monadic("÷", V) ->  1 / V;
+execute_monadic("|", V) ->  abs(V).
 
 signum(V) when V <  0 -> -1;
-signum(V) when V == 0 -> 0;
-signum(V) when V >  0 -> 1.
+signum(V) when V == 0 ->  0;
+signum(V) when V >  0 ->  1.
+
+rerank(Dims, none) -> [pometo_runtime:get_no_of_elements_from_dims(Dims)];
+rerank(Dims, Float) when is_float(Float) ->
+	Insert = trunc(Float),
+	if
+		Insert > length(Dims) -> throw("Invalid Axis");
+		Insert < 0            -> throw("Invalid Axis");
+		el/=se                -> {Start, End} = lists:split(Insert, Dims),
+														 Start ++ [1] ++ End
+	end;
+rerank(Dims, Rank) -> rerank2(Dims, 1, Rank, ?EMPTY_ACCUMULATOR).
+
+rerank2([], _N, [], Acc) ->
+	lists:reverse(Acc);
+rerank2(Dims, N, [N], Acc) ->
+	lists:reverse(Acc) ++ Dims;
+rerank2([H1, H2 | T], N, [N, N2 | Rest], Acc)  when N2 == N + 1->
+	rerank2([H1 * H2 | T], N + 1, [N2 | Rest], Acc);
+rerank2([H1, H2 | T], N, [R1 | _Rest] = Rank, Acc) when R1 > N ->
+	rerank2([H2 | T], N + 1, Rank, [H1 | Acc]);
+rerank2(_Dims, _N, _Rank, _Acc) ->
+	throw("Invalid Axis").

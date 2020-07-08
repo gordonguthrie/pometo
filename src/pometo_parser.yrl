@@ -14,6 +14,7 @@ Dyadic
 Monadic
 Int
 Rank
+Ranked
 Args
 
 .
@@ -44,11 +45,12 @@ stdlib
 Rootsymbol Exprs.
 Endsymbol  '$end'.
 
-Left 100 Vector.
-Left 200 Expr.
-Left 300 Scalar.
-Left 400 open_bracket.
-Left 400 open_sq.
+Right 100 Vector.
+Right 200 Expr.
+Right 300 Scalar.
+Right 325 Fns.
+Right 400 open_bracket.
+Right 400 open_sq.
 
 Exprs -> Expr                  : ['$1'].
 Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
@@ -62,21 +64,23 @@ Expr -> stdlib Vecs : make_stdlib('$1', '$2').
 Dyadic  -> Args Fns Args : make_dyadic('$2', '$1', '$3').
 Monadic ->      Fns Args : make_monadic('$1', '$2').
 
-Args -> Vecs : '$1'.
-Args -> Var  : '$1'.
+Args -> Vecs    : '$1'.
+Args -> Var     : '$1'.
 
 Fns -> Fn        : '$1'.
 Fns -> Fns Fn    : maybe_merge('$1', '$2').
 
-Fn -> hybrid     : make_fn_ast('$1').
 Fn -> monadic    : make_fn_ast('$1').
 Fn -> dyadic     : make_fn_ast('$1').
 Fn -> ambivalent : make_fn_ast('$1').
-Fn -> Rank       : log('$1', "$$$$$ranked is ").
+Fn -> Rank       : '$1'.
 
-Rank -> monadic_ranked                        : add_rank('$1', default_rank('$1')).
-Rank -> monadic_ranked open_sq Int   close_sq : add_rank('$1', '$3').
-Rank -> monadic_ranked open_sq float close_sq : add_rank('$1', '$3').
+Rank -> Ranked                        : add_rank('$1', default_rank('$1')).
+Rank -> Ranked open_sq Int   close_sq : add_rank('$1', '$3').
+Rank -> Ranked open_sq float close_sq : add_rank('$1', '$3').
+
+Ranked -> monadic_ranked : '$1'.
+Ranked -> hybrid         : '$1'.
 
 Let -> Var let_op Vecs : make_let('$1', '$3').
 Let -> Var let_op Expr : make_let('$1', '$3').

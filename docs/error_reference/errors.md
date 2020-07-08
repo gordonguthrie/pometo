@@ -31,7 +31,7 @@ An `eager` vector will be tested before invoking the dyadic function and give th
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic \"+\":LHS dimensions \"3\": RHS dimensions \"2\") on line 1 at character 1
+LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:LHS dimensions \"3\": RHS dimensions \"2\") on line 1 at character 1
 ```
 
 A `lazy` vector doesn't know it its own length and is typically passed in from `Erlang` or `Elixir`. If this expression were evaluated where both the LHS and the RHS were lazy the error message would emerge from the bowels of the dyadic function slightly differently:
@@ -40,7 +40,7 @@ A `lazy` vector doesn't know it its own length and is typically passed in from `
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic \"+\":ran out of matches after 2 elements) on line 1 at character 1
+LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:ran out of matches after 2 elements) on line 1 at character 1
 ```
 
 # RANK ERROR
@@ -61,6 +61,43 @@ RANK ERROR
 1 +/ 1
 ^
 ```
+
+## Axis Operations
+
+Axis function expect an axis that matches to the shape being operated on and will throw a RANK ERROR is that is not the case:
+
+```pometo
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[3 4] C
+```
+
+Will give:
+
+```pometo_results
+Error
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[3 4] C
+--^
+RANK ERROR (Invalid Axis:[3,4]) on line 2 at character 3
+```
+
+This is true for float axis specifications also:
+
+```pometo
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[4.5] C
+```
+
+Will give:
+
+```pometo_results
+Error
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[4.5] C
+--^
+RANK ERROR (Invalid Axis:4.5) on line 2 at character 3
+```
+
 
 # SYNTAX ERROR
 

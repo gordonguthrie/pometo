@@ -173,11 +173,12 @@ make_export_body(ModuleName, Fn, Args, LineNo) ->
 
 make_do_fn(ModuleName, Fn, Args) ->
 	Hash = binary:bin_to_list(base16:encode(crypto:hash(sha, [ModuleName, atom_to_list(Fn), Args]))),
-	"do_"            ++
-	atom_to_list(Fn) ++
-	"_"              ++
-	Hash             ++
-	make_args(Args).
+	Function = "do_"            ++
+						 atom_to_list(Fn) ++
+						 "_"              ++
+						 Hash             ++
+						 make_args(Args),
+	lists:flatten(Function).
 
 make_exports(Exports, LineNo) ->
 	ReducedExports = [{Fn, Arity} || {Fn, Arity, _Args} <- Exports],
@@ -189,8 +190,8 @@ make_modname(ModuleName, LineNo) ->
 make_line(#'$ast¯'{do      = [{apply_fn, {Mod, Fun}}],
 									 args    = Args,
 									 line_no = LNo,
-									 char_no = CNo} = AST)  ->
-	make_function_call([{Mod, Fun}], Args, apply_fn, LNo, CNo);
+									 char_no = CNo})  ->
+	make_apply_function_call([{Mod, Fun}], Args, apply_fn, LNo, CNo);
 make_line(#'$ast¯'{do   = #'$shape¯'{},
 									 args = #'$var¯'{name = Var}}) ->
 	Var;
@@ -221,7 +222,7 @@ make_line(#'$ast¯'{do   = 'let',
 	Src;
 % when the variable is being set to the result of an expression
 make_line(#'$ast¯'{do   = 'let',
-									 args = [Var, Args]} = AST) ->
+									 args = [Var, Args]}) ->
 	% strip the variable name and rename the do
 	Src = case Args of
 		#'$var¯'{name = V} -> atom_to_list(Var) ++
@@ -233,32 +234,43 @@ make_line(#'$ast¯'{do   = 'let',
 	end,
 	Src;
 make_line(#'$ast¯'{do   = do_fn,
-								 	 args = Args} = AST) ->
+									 args = Args}) ->
 	"[" ++ string:join(Args, ", ") ++ "]";
-make_line(#'$ast¯'{do      = #'$func¯'{do   = Do,
-																			 type = Type},
-								 	 args    = Args,
-								 	 line_no = LNo,
-								 	 char_no = CNo}) ->
-	make_function_call(Do, Args, Type, LNo, CNo);
+make_line(#'$ast¯'{do      = #'$func¯'{}  = Func,
+									 args    = Args}) ->
+	make_function_call(Func, Args);
+make_line(#'$func¯'{} = Func) ->
+	make_record(Func);
 make_line(X) when is_atom(X) ->
 	atom_to_list(X);
 make_line(X) ->
 	X.
 
-make_function_call(Do, Args, Type, LNo, CNo) ->
-	NewArgs = make_fn_ast(Do, LNo, CNo),
+make_apply_function_call(Do, Args, Type, LNo, CNo) ->
+	Func = make_fn_ast(Do, LNo, CNo),
+	make_function_call2(Func, Args, Type).
+
+make_function_call(#'$func¯'{type = Type} = Func, Args) ->
+	make_function_call2(Func, Args, Type).
+
+make_function_call2(Func, Args, Type) ->
 	ExpFun = fun(A, Acc) ->
 			L = make_line(A),
 			[L | Acc]
 	end,
-	ExpArgs = lists:foldl(ExpFun, ?EMPTY_RESULTS, [NewArgs | Args]),
+	ExpArgs = lists:foldl(ExpFun, ?EMPTY_RESULTS, [Func | Args]),
 	Src = "pometo_runtime:"                         ++
 				atom_to_list(Type)                        ++
 				"(["                                      ++
 				string:join(lists:reverse(ExpArgs), ", ") ++
 				"])",
 	Src.
+
+make_fn_ast(Args, LNo, CNo) -> NewArgs = [quote(X) || X <- Args],
+					 #'$ast¯'{do      = do_fn,
+					          args    = NewArgs,
+										line_no = LNo,
+										char_no = CNo}.
 
 apply_to_args(Fn, Args) when is_list(Args) -> [Fn(X) || X <- Args];
 apply_to_args(Fn, Args) when is_map(Args)  -> I = maps:iterator(Args),
@@ -362,9 +374,13 @@ make_record(#'$func¯'{do             = D,
                     	rank           = Rk,
                     	line_no        = LNo,
                     	char_no        = CNo}) ->
-  "#'$func¯'"             ++
-  " do = "                ++
-  maybe_make_record(D)    ++
+	Quoted = case is_list(D) of
+			true  -> lists:flatten("[" ++ [quote(X) || X <- D] ++ "]");
+			false -> quote(D)
+	end,
+  "#'$func¯'{"            ++
+  "do = "                 ++
+  Quoted                  ++
   ", "                    ++
   "type = "               ++
   atom_to_list(T)         ++
@@ -374,6 +390,7 @@ make_record(#'$func¯'{do             = D,
   ", "                    ++
   "shape_changing = "     ++
   atom_to_list(S)         ++
+  ", "                    ++
   "rank = "               ++
   make_rank(Rk)           ++
   ", "                    ++
@@ -386,8 +403,10 @@ make_record(#'$func¯'{do             = D,
 make_record({'$var¯', V, _LineNo, _CharNo}) ->
 	V.
 
-make_rank(N) when is_number(N) -> integer_to_list(N);
-make_rank(A) when is_atom(A)   -> atom_to_list(A).
+make_rank(L) when is_list(L)    -> "[" ++ string:join([make_rank(X) || X <- L], ", ") ++ "]";
+make_rank(N) when is_integer(N) -> integer_to_list(N);
+make_rank(F) when is_float(F)   -> float_to_list(F);
+make_rank(A) when is_atom(A)    -> atom_to_list(A).
 
 expand_args(Args) -> string:join(apply_to_args(fun expand_arg/1, Args), ", ").
 
@@ -408,12 +427,6 @@ make_indexed(Args) ->
 	NewArgs = map_over_Key_Val(WriteMapElementFn, Args, ?EMPTY_ACCUMULATOR, I),
 	"#{" ++ string:join(NewArgs, ", ") ++ "}".
 
-make_fn_ast(Args, LNo, CNo) -> NewArgs = [quote(X) || X <- Args],
-															 #'$ast¯'{do      = do_fn,
-															          args    = NewArgs,
-																				line_no = LNo,
-																				char_no = CNo}.
-
 make_dimensions(0)              -> "0";
 make_dimensions(unsized_vector) -> "unsized_vector";
 make_dimensions(Dimensions)     -> NewDs = [integer_to_list(D) || D <- Dimensions],
@@ -424,6 +437,7 @@ make_line_char_no(N) when is_integer(N) -> integer_to_list(N).
 
 quote({X, Y})                    -> "{" ++ quote(X) ++ ", " ++ quote(Y) ++   "}";
 quote(N)      when is_integer(N) -> integer_to_list(N);
+quote(F)      when is_float(F)   -> float_to_list(F);
 quote(L)      when is_list(L)    -> "\"" ++ L ++ "\"";
 quote(A)      when is_atom(A)    -> atom_to_list(A).
 

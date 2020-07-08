@@ -35,7 +35,9 @@
 					runtime_let/1,
 					apply_fn/1,
 					dyadic/1,
-					monadic/1
+					monadic/1,
+					dyadic_ranked/1,
+					monadic_ranked/1
 				]).
 
 %%
@@ -60,16 +62,14 @@ run_ast2(#'$ast¯'{do   = 'let',
 	NewL = AST#'$ast¯'{do   = runtime_let,
 										 args = A},
 	runtime_let([NewL]);
-run_ast2(#'$ast¯'{do   = #'$func¯'{do   = Do,
-																	 type = Type},
-									args = [A1, A2]}) when Type == dyadic orelse
-																				 Type == dyadic_ranked ->
-	dyadic([Do, run_ast2(A1), run_ast2(A2)]);
-run_ast2(#'$ast¯'{do   = #'$func¯'{do   = Do,
-																	 type = Type},
-									args = [A]}) when Type == monadic orelse
-																		Type == monadic_ranked ->
-	monadic([Do, run_ast2(A)]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
+									args = [A1, A2]}) 										when Type == dyadic orelse
+																														 Type == dyadic_ranked ->
+	dyadic([Func, run_ast2(A1), run_ast2(A2)]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
+									args = [A]}) 													when Type == monadic orelse
+																														 Type == monadic_ranked ->
+	monadic([Func, run_ast2(A)]);
 run_ast2(X) ->
 	pometo_stdlib:debug("wigging out in run ast2", X),
 	exit("rando").
@@ -249,11 +249,18 @@ maybe_reverse(List) when is_list(List) -> lists:reverse(List).
 %% Exported for use in compiled modules
 %%
 
-dyadic(Args)  -> io:format("calling diadic with ~p~n", [Args]),
+dyadic(Args)  -> io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
 								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
-monadic(Args) -> io:format("calling monadic with ~p~n", [Args]),
+monadic(Args)  -> io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
 								 pometo_runtime_monadic:monadic_RUNTIME(Args).
+
+dyadic_ranked(Args)  -> io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
+												pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+
+
+monadic_ranked(Args)  -> io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
+												 pometo_runtime_monadic:monadic_RUNTIME(Args).
 
 
 apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).

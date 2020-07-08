@@ -9,14 +9,19 @@
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
 add_rank({Type, CharNo, _, Val},
-         #'$ast¯'{do   = #'$shape¯'{dimensions = [2]},
-                  args = Rank}) ->
+         #'$ast¯'{do   = #'$shape¯'{dimensions = D},
+                  args = Rank}) when is_list(D) ->
   make_fn_ast2(Val, Type, Rank, [], CharNo);
+add_rank({Type, CharNo, _, Val},
+         {float, _,     _, F}) ->
+  make_fn_ast2(Val, Type, F, [], CharNo);
 add_rank({Type, CharNo, _, Val}, Rank) when is_atom(Rank) ->
-  make_fn_ast2(Val, Type, Rank, [], CharNo).
+  make_fn_ast2(Val, Type, Rank, [], CharNo);
+add_rank(A, B) ->
+  io:format("in add rank with A of ~p B of ~p~n", [A, B]),
+  exit(lorgette).
 
 make_fn_ast({Type, CharNo, _, Val}) ->
-  % io:format("in make_fn_ast Type is ~p Val is ~p~n", [Type, Val]),
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
 
 maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Op1,
@@ -31,12 +36,9 @@ maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Op1,
        (Type2 == monadic        orelse
         Type2 == monadic_ranked orelse
         Type2 == ambivalent) ->
-  io:format("in maybe_merge for AST1 ~p~n- and AST2 ~p~n", [AST1, AST2]),
   case {is_shape_changing(Op1), is_shape_changing(Op2)} of
-    {false, false} -> io:format("in maybe_merge merging right~n"),
-                      AST1#'$ast¯'{do   = Func#'$func¯'{do = Op2 ++ Op1}};
-    {_,     _}     -> io:format("in maybe_merge NOT merging right~n"),
-                      AST1#'$ast¯'{args = [AST2]}
+    {false, false} -> AST1#'$ast¯'{do   = Func#'$func¯'{do = Op2 ++ Op1}};
+    {_,     _}     -> AST1#'$ast¯'{args = [AST2]}
   end.
 % maybe_merge(A, B) ->
 %  io:format("in maybe_merge (2) A is ~p~nB is ~p~n", [A, B]),
@@ -59,13 +61,12 @@ make_dyadic(#'$ast¯'{do   = #'$func¯'{do = Dos,
                                       type = Type} = Func,
                      args = Args}                    = FuncAST,
             #'$ast¯'{}                               = LeftAST,
-            #'$ast¯'{}                               = RightAST) when length(Dos) > 1          andalso
-                                                                      (Type   == dyadic        orelse
-                                                                        Type  == dyadic_ranked orelse
-                                                                        Type  == ambivalent)   ->
-  io:format("in make dyadic (1) FuncAst is ~p~n- LeftAST is ~p~n RightAST is ~p~n", [FuncAST, LeftAST, RightAST]),
+            #'$ast¯'{}                               = RightAST) when length(Dos) > 1         andalso
+                                                                      (Type  == dyadic        orelse
+                                                                        Type == dyadic_ranked orelse
+                                                                        Type == hybrid        orelse
+                                                                        Type == ambivalent)   ->
   {LeftDo, RightDo} = unmerge_dos(Dos),
-  io:format("Dos is ~ts~n- RightDo is ~ts~n- LeftDo is ~ts~n", [Dos, RightDo, LeftDo]),
   NewRightAST = case Args of
     []    -> RightAST;
     [Arg] -> descend_arg(Arg, RightAST)
@@ -81,8 +82,8 @@ make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
             #'$ast¯'{}                               = LeftAST,
             #'$ast¯'{}                               = RightAST) when Type == dyadic        orelse
                                                                       Type == dyadic_ranked orelse
+                                                                      Type == hybrid        orelse
                                                                       Type == ambivalent    ->
-  io:format("in make dyadic (2) FuncAst is ~p~n- LeftAST is ~p~n RightAST is ~p~n", [FuncAST, LeftAST, RightAST]),
   NewRightAST = case Args of
     []    -> RightAST;
     [Arg] -> descend_arg(Arg, RightAST)
@@ -105,7 +106,6 @@ make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
              #'$ast¯'{}                                  = AST) when Type == monadic        orelse
                                                                      Type == monadic_ranked orelse
                                                                      Type == ambivalent ->
-  io:format("in make monadic Func is ~p~n", [Func]),
   NewArg = case Args of
     []    -> AST;
     [Arg] -> descend_arg(Arg, AST)
@@ -125,7 +125,6 @@ make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
 
 append(#'$ast¯'{do = #'$shape¯'{} = Shp} = AST1,
         #'$ast¯'{do = #'$shape¯'{}}      = AST2) ->
-  % io:format("in append (1) AST1 is ~p~nAST2 is ~p~n", [AST1, AST2]),
   {NewType, NewDims, NewArgs} = combine_asts(AST1, AST2),
   AST1#'$ast¯'{do      = Shp#'$shape¯'{dimensions = NewDims,
                                        type       = NewType},
@@ -146,7 +145,6 @@ make_scalar({Type, CharNo, _, {R, I}}, complex) when Type == complex_number     
 make_scalar({_Token, CharNo, _, Val}, Type) when Type == number andalso
                                                  (Val == 0      orelse
                                                   Val == 1)     ->
-  % io:format("in make scalar (2) for ~p~n", [Val]),
   Shp = basic_shape(CharNo, boolean, scalar),
   #'$ast¯'{do         = Shp,
            args       = Val,
@@ -154,7 +152,6 @@ make_scalar({_Token, CharNo, _, Val}, Type) when Type == number andalso
            line_no    = scope_dictionary:get_line_no()};
 make_scalar({_Token, CharNo, _, Val}, Type) when Type == number   orelse
                                                  Type == variable ->
-  % io:format("in make scalar (3) for ~p~n", [Val]),
   Shp = basic_shape(CharNo, Type, scalar),
   #'$ast¯'{do         = Shp,
            args       = Val,
@@ -177,7 +174,6 @@ handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{type       = Type,
                             args    = Val,
                             char_no = CharNo} = A) when Type == number  orelse
                                                         Type == boolean ->
-  % io:format("in handle value (2) for ~p~n", [Val]),
   Shp = basic_shape(CharNo, number, scalar),
   SignedVal = case Sign of
     positive ->  Val;
@@ -195,56 +191,6 @@ make_var({var, CharNo, _, Var}) ->
                              line_no = scope_dictionary:get_line_no()},
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
-
-%extract_fn(monadic, {Type, CharNo, _, OpName}, Args, Rank) when Type == forwardslash ->
-%  Func = #'$func¯'{do             = OpName,
-%                   type           = monadic,
-%                   shape_changing = is_shape_changing(OpName),
-%                   rank           = Rank,
-%                   char_no        = CharNo,
-%                   line_no        = scope_dictionary:get_line_no()},
-%  #'$ast¯'{do      = Func,
-%           args    = Args,
-%           char_no = CharNo,
-%           line_no = scope_dictionary:get_line_no()};
-%extract_fn(dyadic, {Type, CharNo, _, OpName}, Args, Rank) when Type == forwardslash ->
-%  Func = #'$func¯'{do             = OpName,
-%                   type           = dyadic,
-%                   shape_changing = is_shape_changing(OpName),
-%                   rank           = Rank,
-%                   char_no        = CharNo,
-%                   line_no        = scope_dictionary:get_line_no()},
-%  #'$ast¯'{do      = Func,
-%           args    = Args,
-%           char_no = CharNo,
-%           line_no = scope_dictionary:get_line_no()}.
-
-%extract_fn(monadic, {Type, CharNo, _, FnName}, Args) when Type == scalar_fn orelse
-%                                                          Type == iota      orelse
-%                                                          Type == rho       orelse
-%                                                          Type == ravel ->
-%  % we stash the FnName in a list because if we have a set of monadics in a row that are not
-%  % shape chaging we can merge them merging the funcs into a list
-%  Func = #'$func¯'{do             = [FnName],
-%                   type           = monadic,
-%                   shape_changing = is_shape_changing(FnName),
-%                   char_no        = CharNo,
-%                   line_no        = scope_dictionary:get_line_no()},
-%  #'$ast¯'{do      = Func,
-%           args    = Args,
-%           char_no = CharNo,
-%           line_no = scope_dictionary:get_line_no()};
-%extract_fn(dyadic, {Type, CharNo, _, FnName}, Args) when Type == scalar_fn orelse
-%                                                         Type == rho ->
-%  Func = #'$func¯'{do             = FnName,
-%                   type           = dyadic,
-%                   shape_changing = is_shape_changing(FnName),
-%                   char_no        = CharNo,
-%                   line_no        = scope_dictionary:get_line_no()},
-%  #'$ast¯'{do      = Func,
-%           args    = Args,
-%           char_no = CharNo,
-%           line_no = scope_dictionary:get_line_no()}.
 
 make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   #'$var¯'{name     = Var,
@@ -278,11 +224,9 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
 % enclose a scalar results in a scalar
 maybe_enclose_vector({open_bracket, _, _, _},
                       #'$ast¯'{do = #'$shape¯'{dimensions = 0}} = A1) ->
-  % io:format("in maybe enclose vector (1) for ~p~n", [A1]),
   A1;
 maybe_enclose_vector({open_bracket, CharNo, _, _},
                       #'$ast¯'{do = #'$shape¯'{}} = A1) ->
-  % io:format("in maybe enclose vector (2) for ~p~n", [A1]),
   #'$ast¯'{do      = basic_shape(CharNo, array, scalar),
            args    = A1,
            char_no = CharNo,

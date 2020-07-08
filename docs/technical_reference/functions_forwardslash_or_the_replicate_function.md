@@ -37,6 +37,8 @@ giving:
 
 But not on the LHS.
 
+## Default Rank
+
 `/` operates on the first axis:
 
 ```pometo
@@ -45,7 +47,7 @@ But not on the LHS.
 
 Gives:
 
-```
+```pometo_results
 1 1 2 2 3 3
 4 4 5 5 6 6
 ```
@@ -63,7 +65,6 @@ results in:
 4 4 5 5 5 6 6 6 6
 ```
 
-
 ## The Barred Replicate Function `⌿`
 
 This function applies to the last axis:
@@ -73,7 +74,7 @@ This function applies to the last axis:
 ```
 
 Gives
-```
+```pometo_results
 1 2 3
 1 2 3
 4 5 6
@@ -91,7 +92,7 @@ Both `/` and `⌿` can be used with axis notation:
 2 ⌿[2] 2 3 4  ⍴ 1 2 3 4 5 6
 ```
 
-```pometo_result
+```pometo_results
 1 2 3 4
 1 2 3 4
 5 6 1 2
@@ -113,7 +114,7 @@ When used with axis notation the symbols are intechangable:
 2 /[2] 2 3 4  ⍴ 1 2 3 4 5 6
 ```
 
-```pometo_result
+```pometo_results
 1 2 3 4
 1 2 3 4
 5 6 1 2

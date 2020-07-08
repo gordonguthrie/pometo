@@ -49,11 +49,13 @@ B ← 2 3 4 5 ⍴ ⍳ 120
 ```
 
 Results in the final three dimensions being collapsed:
-```
+```pometo_results
 2 60
 ```
 
 The first and second axes `2` and `3` have been merged - the size of the array remains unchanged - `60` being `2` times `3` times `4` of course.
+
+***Note***: at the moment the rank can't be expressed as a function that returns a vector.
 
 ## Adding New Dimensions
 
@@ -66,6 +68,44 @@ C ← 2 3 4 ⍴ ⍳24
 
 Results in a new shape of:
 
-```
+```pometo_results
 2 1 3 4
+```
+
+## Error Messages
+
+***Note***: Error messages are a bit pish
+
+If the Axis are improperly specified a RANK ERROR will be thrown:
+
+```pometo
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[3 4] C
+```
+
+Will give:
+
+```pometo_results
+Error
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[3 4] C
+--^
+RANK ERROR (Invalid Axis:[3,4]) on line 2 at character 3
+```
+
+This is true for float axis specifications also:
+
+```pometo
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[4.5] C
+```
+
+Will give:
+
+```pometo_results
+Error
+C ← 2 3 4 ⍴ ⍳24
+⍴ ,[4.5] C
+--^
+RANK ERROR (Invalid Axis:4.5) on line 2 at character 3
 ```

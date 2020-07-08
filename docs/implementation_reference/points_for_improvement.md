@@ -7,4 +7,3 @@ This section outlines points where is might make sense to improve things. It is 
 The order of keys in a map is undefined but also if your keys are positive integers it is also positive integers.
 
 At some stage in the future this might change and then the very gates of hell will be ripped open, but hey! you only live once.
-
