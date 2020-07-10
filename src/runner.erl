@@ -10,7 +10,7 @@
 
 run() ->
 	Codes = [
-            "2 2 ⍴ 1 (22 22) 3 (4444 4444 4444 4444)"
+            "A ← ⍳ 120\nB ← 2 3 4 5 ⍴ B\nC ← , [2 3 4] B\n⍴ C"
           ],
 	[run3(X) || X <- Codes],
 	exit(0).
@@ -26,8 +26,8 @@ run1(Code) ->
   % io:format("parse_TEST returns~n~p~n", [Resp0]),
   Resp1 = pometo:interpret_TEST(Code),
   io:format("interpret_TEST returns~n~p~n~n~ts~n", [Resp1, Resp1]),
-  % Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
-  % io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
+  Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
+  io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
   ok.
 
 % testing format internals

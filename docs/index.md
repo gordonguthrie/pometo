@@ -4,6 +4,26 @@
 
 THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SOME INCHOATE SYMBOLS SCRAWLED WITH A HALF-BURNT STICK ON A CAVE WALL.
 
+# Status Of The Project
+
+```
+           _       _
+     /\   | |     | |
+    /  \  | |_ __ | |__   __ _
+   / /\ \ | | '_ \| '_ \ / _` |
+  / ____ \| | |_) | | | | (_| |
+ /_/__  \_\_| .__/|_| |_|\__,_|_____                    ____        _      __
+  / / |     | |               |  __ \                  / __ \      | |     \ \
+ | || |     |_|_ _ __   __ _  | |  | | _____   _____  | |  | |_ __ | |_   _ | |
+ | || |    / _` | '_ \ / _` | | |  | |/ _ \ \ / / __| | |  | | '_ \| | | | || |
+ | || |___| (_| | | | | (_| | | |__| |  __/\ V /\__ \ | |__| | | | | | |_| || |
+ | ||______\__,_|_| |_|\__, | |_____/ \___| \_/ |___/  \____/|_| |_|_|\__, || |
+  \_\                   __/ |                                          __/ /_/
+                       |___/                                          |___/
+```
+
+`Pometo` is a long way from being production usable - but if you want to help us get there, pile in.
+
 # Why is it called Pometo?
 
 `Pometo` is the Esperanto for ***little apple*** and `Pometo` is ***a little APL*** and Esperanto words are both easily pronouncable and usually available as domains.

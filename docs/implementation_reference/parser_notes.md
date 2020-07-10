@@ -1,13 +1,14 @@
 # Notes On The Implementation Of The Parser
 
 A TRADFN is:
- * a declaration
- 		* ∇
- 		* name
- 		* statement model
- * a set of statements
- * an ending
- 		* ∇
+
+* a declaration
+		* ∇
+		* name
+		* statement model
+* a set of statements
+* an ending
+		* ∇
 
  A statement model is one of these options:
 

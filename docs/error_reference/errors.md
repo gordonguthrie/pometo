@@ -20,7 +20,6 @@ http://microapl.com/apl_help/ch_020_030_030.htm
 * [`DOMAIN ERROR`](#domain-error)
 * [`INDEX ERROR`](#index-error)
 * [`LENGTH ERROR`](#length-error)
-* [`RANK ERROR`](#rank-error)
 * [`SYNTAX ERROR`](#syntax-error)
 * [`VARIABLE NOT DEFINED`](#variable-not-defined)
 * [`VARIABLE REASSIGNED`](#variable-reassigned)

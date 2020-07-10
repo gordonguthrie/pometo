@@ -7,19 +7,19 @@
 -define(shape(Dim, Type), #'$shape¯'{dimensions = Dim,
 									 									 type       = Type}).
 -define(complex_el(Args), #'$ast¯'{do   = #'$shape¯'{dimensions = 0,
-	                                                   type       = complex},
-                                   args = #'$ast¯'{do   = complex,
-                               			          		 args = Args}}).
+																										 type       = complex},
+																	 args = #'$ast¯'{do   = complex,
+																									 args = Args}}).
 -define(cmplx(Args), #'$ast¯'{do   = complex,
-                              args = Args}).
+															args = Args}).
 
 
 -record(fmt_segment, {
-					 	strings = "",
-					 	width   = 0,
-					 	height  = 1,
-					 	boxing  = none, % none, boxed, blankboxed
-					 	is_leaf = false
+						strings = "",
+						width   = 0,
+						height  = 1,
+						boxing  = none, % none, boxed, blankboxed
+						is_leaf = false
 						}).
 
 -record(fmt_line, {

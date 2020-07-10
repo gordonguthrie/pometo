@@ -205,11 +205,11 @@ pad_lines(Lines, Width, Height, Boxing) ->
 		el/=se         -> 0
 	end,
 	PaddedLines = case HPad of
-						0 -> Boxed;
-						_ -> BlankLine  = [lists:duplicate(Width, ?SPACE)],
-							              	BlankLines = lists:duplicate(HPad, BlankLine),
-							              	Boxed ++ BlankLines
-				   end,
+										0 -> Boxed;
+										_ -> BlankLine  = [lists:duplicate(Width, ?SPACE)],
+																			BlankLines = lists:duplicate(HPad, BlankLine),
+																			Boxed ++ BlankLines
+								end,
 	PaddedLines.
 
 rectify([], _Width, Acc) ->
@@ -364,11 +364,11 @@ fmt(#'$ast¯'{do   = complex,
 fmt(#'$ast¯'{do   = complex,
 						 args = [R, I]})            -> make_frag("~pJ~p",   [abs(R), abs(I)]);
 fmt(#'$ast¯'{} = A)                     -> [#fmt_line{segs = Strings}] = build_segments(A),
-																				   {Width, Height} = get_size(Strings),
-																				   #fmt_segment{strings = Strings,
-																				   							width   = Width + 2,
-																				   							height  = Height + 2,
-																				   							boxing  = boxed};
+																					 {Width, Height} = get_size(Strings),
+																						#fmt_segment{strings = Strings,
+																												 width   = Width + 2,
+																												 height  = Height + 2,
+																												 boxing  = boxed};
 fmt(X)												when X < 0 -> make_frag("¯~p", [abs(X)]);
 fmt(X)																	 -> make_frag("~p",  [X]).
 
@@ -397,20 +397,20 @@ make_error(Type, Msg1, Msg2, LineNo, CharNo) when is_list(Type)      andalso
 												  is_integer(LineNo) andalso
 												  is_integer(CharNo) ->
 	#error{
-	    	type = Type,
-			msg1 = Msg1,
-			msg2 = Msg2,
-			expr = "",
-			at_line = LineNo,
-			at_char = CharNo
+					type = Type,
+					msg1 = Msg1,
+					msg2 = Msg2,
+					expr = "",
+					at_line = LineNo,
+					at_char = CharNo
 		   }.
 
 format_error(#error{type    = T,
-					msg1    = M1,
-					msg2    = M2,
-					expr    = E,
-					at_line = AtL,
-					at_char = AtC}) ->
+										msg1    = M1,
+										msg2    = M2,
+										expr    = E,
+										at_line = AtL,
+										at_char = AtC}) ->
 	Pointer = case AtC of
 		999999 -> "";
 		none   -> "";

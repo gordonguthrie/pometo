@@ -225,8 +225,9 @@ grep -Rh "\`\`\`" docs/*
 
 and inspect the output.
 
-***NOTE***:
+***NOTES***:
 
+* sometimes you want to write examples that you don't want to turn into tests, this might be because of duplication or some other reason. You can subsitute `apl` and `apl_results` for `pometo` and `pometo_results` in your text. The code formatter has (will have) the same styles for these
 * don't write blank code block is you are just quoting some bollocks give the code block a type of `bollocks` - this makes the `grep` trick usable - a little discipline goes a long way here
 
 Go on, try writing doc tests.

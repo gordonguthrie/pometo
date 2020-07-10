@@ -356,7 +356,7 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$ast¯'{do   = Do,
 												args = Args}         = AST,
-				 			{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
+							{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
 																								is_record(Do, '$func¯')  ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),

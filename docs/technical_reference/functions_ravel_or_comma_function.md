@@ -35,7 +35,7 @@ If specified with integer indices `ravel` can also operate partially on shapes b
 ```pometo
 A ← ⍳ 24
 B ← 2 3 4 ⍴ A
-C ← ,[1 2] A
+C ← ,[1 2] B
 ⍴ C
 ```
 
@@ -47,9 +47,9 @@ The range of results can be extended:
 
 ```pometo
 A ← ⍳ 120
-B ← 2 3 4 5 ⍴ B
+B ← 2 3 4 5 ⍴ A
 C ← , [2 3 4] B
-⍴ C
+⍴ C
 ```
 
 Results in the final three dimensions being collapsed:

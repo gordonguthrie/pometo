@@ -26,7 +26,7 @@ debug(Lable, #'$ast¯'{} = AST) ->
 	?debugFmt("~n~n>>>>>>>>>>>> ~n~n", []).
 
 debug(#'$ast¯'{line_no = LNo,
-	          	 char_no = CNo} = AST) ->
+							 char_no = CNo} = AST) ->
 	Line1 = io_lib:format("In ⎕debug~n", []),
 	Line2 = debug2(AST, ?INITIALINDENT),
 	Breaker = lists:duplicate(79, "*") ++ "\n",
@@ -38,13 +38,13 @@ debug(#'$ast¯'{line_no = LNo,
            at_char = CNo}.
 
 debug2(#'$ast¯'{do      = Do,
-			  			  args    = Args,
-						    line_no = LNo,
-	    	        char_no = CNo}, Indent) ->
+								args    = Args,
+								line_no = LNo,
+								char_no = CNo}, Indent) ->
 	Padding = get_padding(Indent),
 	NumArgs = if
 		is_list(Args) -> length(Args);
-	    el/=se        -> 1
+		el/=se        -> 1
 	end,
 	Line1  = io_lib:format(Padding ++ "from line ~p at character no ~p~n", [LNo, CNo]),
 	Line2  = format_do(Do, Padding),
@@ -55,10 +55,10 @@ debug2(#'$ast¯'{do      = Do,
 														Line2,
 														Line3,
 														Line4
-											    ]).
+													]).
 
-% don't do anything scalars
-make_lazy(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
+% don't do anything to scalars
+make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = 0}} = AST) ->
 	AST;
 % do work on unindexed arrays
 make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = Type} = Shp} = AST)
@@ -94,8 +94,8 @@ print_args([H | T], Indent,  Acc) ->
 	print_args(T, Indent, [NewAcc       | Acc]).
 
 format_do(#'$shape¯'{indexed    = Index,
-	                	 dimensions = Dims,
-	                	 type       = Type}, Ind) ->
+										 dimensions = Dims,
+										 type       = Type}, Ind) ->
 	io_lib:format(Ind ++ "type: ~p (indexed:~p) with dimensions ~p~n", [Type, Index, Dims]);
 format_do(Do, Ind) ->
 	io_lib:format(Ind ++ "~p~n", [Do]).

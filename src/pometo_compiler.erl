@@ -37,7 +37,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 
 	Records = [
 	reset(?Q("-record('$ast¯', {"                        ++
-													 		"do, "                   ++
+															"do, "                   ++
 															"args    = [], "         ++
 															"line_no = none, "       ++
 															"char_no = none"         ++
@@ -205,7 +205,7 @@ make_line(#'$ast¯'{do   = #'$shape¯'{} = Shp,
 	NewShp = make_record(Shp),
 	NewArgs = apply_to_args(fun maybe_make_record/1, Args),
 	make_record(AST#'$ast¯'{do   = NewShp,
-											  	args = NewArgs});
+													args = NewArgs});
 % when the variable is being set to a scalar or vector
 make_line(#'$ast¯'{do   = 'let',
 									 args = [Var, #'$ast¯'{do   = #'$shape¯'{},
@@ -368,12 +368,12 @@ make_record(#'$shape¯'{indexed    = Indexed,
 	make_line_char_no(CharNo)  ++
 	"}";
 make_record(#'$func¯'{do             = D,
-                  		type           = T,
-                    	result         = Re,
-                    	shape_changing = S,
-                    	rank           = Rk,
-                    	line_no        = LNo,
-                    	char_no        = CNo}) ->
+											type           = T,
+											result         = Re,
+											shape_changing = S,
+											rank           = Rk,
+											line_no        = LNo,
+											char_no        = CNo}) ->
 	Quoted = case is_list(D) of
 			true  -> lists:flatten("[" ++ [quote(X) || X <- D] ++ "]");
 			false -> quote(D)
@@ -442,8 +442,8 @@ quote(L)      when is_list(L)    -> "\"" ++ L ++ "\"";
 quote(A)      when is_atom(A)    -> atom_to_list(A).
 
 make_source_map(#'$ast¯'{do      = Do,
-											 	 line_no = LNo,
-											 	 char_no = CharNo}, LineNo, SourceMap) ->
+												 line_no = LNo,
+												 char_no = CharNo}, LineNo, SourceMap) ->
 	Desc = make_desc(Do),
 	SM = #sourcemap{pometo_line_no = LNo,
 								  pometo_char_no = CharNo,
@@ -455,10 +455,10 @@ make_desc(#'$shape¯'{indexed    = Indexed,
 										 type       = Type}) ->
 	io_lib:format("~p Array (indexed:~p) with shape ~p~n", [Type, Indexed, Dims]);
 make_desc(#'$func¯'{do             = D,
-                  	type           = T,
-                  	result         = Re,
-                  	shape_changing = S,
-                  	rank           = Rk}) ->
+										type           = T,
+										result         = Re,
+										shape_changing = S,
+										rank           = Rk}) ->
 	io_lib:format("~p Func type:~p result: ~p shape changing:~p rank:~p~n", [D, T, Re, S, Rk]);
 make_desc({Do, Attr}) -> atom_to_list(Do) ++ "_" ++ Attr;
 make_desc(Do)         -> atom_to_list(Do).

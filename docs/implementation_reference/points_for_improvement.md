@@ -11,3 +11,21 @@ At some stage in the future this might change and then the very gates of hell wi
 ## The Replicate `/` function over lazy lists
 
 This does a full pass of the RHS args to get the length - that could be caught by a termination clause in iterate reducing one list scan
+
+## Sort out the CSS
+
+Not sorted for `apl` and `apl_results` in Jekyll.
+
+## Ranks handling
+
+Ranks are handled as a constant vector in the parser and not expressions that return a vector (yet)
+
+## Dialyzer
+
+mais, oui
+
+## Unused variable definitions
+
+I got an unresolved blowup that I think was a failure to handle undeclared variables in different ways
+
+Needs some tests in smoke testing
