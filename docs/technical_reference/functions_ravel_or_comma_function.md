@@ -33,8 +33,10 @@ gives
 If specified with integer indices `ravel` can also operate partially on shapes by ravelling axes using the axis notation. The following command will turn the three dimensional shape into a two dimensional one
 
 ```pometo
-A ← 2 3 4 ⍴ ⍳ 24
-⍴ ,[1 2] A
+A ← ⍳ 24
+B ← 2 3 4 ⍴ A
+C ← ,[1 2] A
+⍴ C
 ```
 
 ```pometo_results
@@ -44,8 +46,10 @@ A ← 2 3 4 ⍴ ⍳ 24
 The range of results can be extended:
 
 ```pometo
-B ← 2 3 4 5 ⍴ ⍳ 120
-⍴ , [2 3 4] B
+A ← ⍳ 120
+B ← 2 3 4 5 ⍴ B
+C ← , [2 3 4] B
+⍴ C
 ```
 
 Results in the final three dimensions being collapsed:

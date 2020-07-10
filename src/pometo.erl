@@ -88,7 +88,6 @@ compile_load_and_run_lazy_TEST(Str, ModuleName) ->
 compile_load_and_run_TEST(Str, ModuleName) ->
 	compile_load_and_run2(Str, ModuleName, pometo).
 
-
 interpret_TEST(Str) ->
 	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
@@ -279,7 +278,8 @@ process_bindings(Parsed, Type, Expr) ->
 					end,
 					[NewRes | Res]
 				end,
-	_TransformedParsed = lists:foldl(ProcessFn, ?EMPTYRESULTS, Parsed).
+	TransformedParsed = lists:foldl(ProcessFn, ?EMPTYRESULTS, Parsed),
+	TransformedParsed.
 
 check_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 									 args = Arg}                       = L,
@@ -294,21 +294,21 @@ check_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 	NewResult = L#'$ast¯'{args = NewA2},
 	{NewBindings, NewErrs ++ Errors, [NewResult] ++ Results};
 check_arg(#'$ast¯'{do   = Do,
-								   args = Args}         = L,
+								   args = Args}         = AST,
 					{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
 																						is_record(Do, '$func¯') ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{_, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
 	NewResults = case NewArgs of
-		[#'$var¯'{} = V] -> NewL = L#'$ast¯'{args = V},
-												[NewL | Results];
-		_                -> [L    | Results]
+		[#'$var¯'{} = V] -> NewAST = AST#'$ast¯'{args = V},
+												[NewAST | Results];
+		_                -> [AST    | Results]
 	end,
 	NewErrs = Errs ++ Errors,
 	{Bindings, NewErrs, NewResults};
 check_arg(#'$var¯'{name    = Var,
-								 char_no = CNo,
-								 line_no = LNo} = V, {Bindings, Errors, Results}) ->
+									 char_no = CNo,
+									 line_no = LNo} = V, {Bindings, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
 		true  -> {Bindings,  Errors, [V | Results]};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
@@ -316,13 +316,13 @@ check_arg(#'$var¯'{name    = Var,
 													msg2    = "variable is not defined",
 													at_line = LNo,
 													at_char = CNo},
-				 {Bindings,  [Err | Errors], Results}
+				 {Bindings, [Err | Errors], Results}
 	end;
 check_arg(V, {Bindings, Errors, Results}) ->
 	{Bindings, Errors, [V | Results]}.
 
 substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
-												args = Arg}                       = L,
+												args = Arg}                       = AST,
 				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = substitute_arg(Arg, Acc),
@@ -339,7 +339,7 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 		#'$ast¯'{do = complex} = A4 ->
 			{A4, 0, complex};
 		[#'$ast¯'{do   = #'$shape¯'{dimensions = D,
-															 type       = T},
+															  type       = T},
 							args = A3}] ->
 			{A3, D, T};
 		[X2] ->
@@ -350,12 +350,12 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 	NewShp = OrigDo#'$shape¯'{indexed    = is_map(NewArgs2),
 														dimensions = NewDims,
 														type       = NewType},
-	NewResults = [L#'$ast¯'{do   = NewShp,
-													args = NewArgs2} | Results],
+	NewResults = [AST#'$ast¯'{do   = NewShp,
+														args = NewArgs2} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$ast¯'{do   = Do,
-												args = Args}         = L,
+												args = Args}         = AST,
 				 			{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
 																								is_record(Do, '$func¯')  ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
@@ -364,28 +364,30 @@ substitute_arg(#'$ast¯'{do   = Do,
 		[#'$var¯'{} = V] -> substitute_arg(V, {Bindings, Errs, []});
 		_                -> {NewB, Errs, NewArgs}
 	end,
-	NewResults = [L#'$ast¯'{args = lists:reverse(NewA2)} | Results],
+	NewResults = [AST#'$ast¯'{args = lists:reverse(NewA2)} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$var¯'{name    = Var,
 												char_no = CNo,
 												line_no = LNo}, {Bindings, Errors, Results}) ->
-	case maps:is_key(Var, Bindings) of
+	Ret = case maps:is_key(Var, Bindings) of
 		true  -> Binding = maps:get(Var, Bindings),
-				 Subst   = maps:get(results, Binding),
-				 NewA = chose_replacement(Subst),
-				 NewDo = extract_and_renumber_do(NewA, CNo, LNo),
-				 NewA2 = NewA#'$ast¯'{do      = NewDo,
-															char_no = CNo,
-															line_no = LNo},
-				 {Bindings, Errors,  [NewA2] ++ Results};
+						 Subst   = maps:get(results, Binding),
+						 {_, Errs2, [NewSubst]} = substitute_arg(Subst, {Bindings, Errors, []}),
+						 NewA = chose_replacement(NewSubst),
+						 NewDo = extract_and_renumber_do(NewA, CNo, LNo),
+						 NewA2 = NewA#'$ast¯'{do      = NewDo,
+																	char_no = CNo,
+																	line_no = LNo},
+						 {Bindings, Errs2, [NewA2] ++ Results};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
 													msg1    = Var,
 													msg2    = "variable is not defined",
 													at_char = CNo,
 													at_line = LNo},
-				 {Bindings, [Err | Errors], Results}
-	end;
+						 {Bindings, [Err | Errors], Results}
+	end,
+	Ret;
 substitute_arg(V, {Bindings, Errors, Results}) ->
 	{Bindings, Errors, [V | Results]}.
 

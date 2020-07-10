@@ -63,7 +63,6 @@ make_lazy(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
 % do work on unindexed arrays
 make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = Type} = Shp} = AST)
 	when Type /= unsized_vector ->
-	io:format("in make lazy with AST of ~p~n", [AST]),
 	NewShp = Shp#'$shape¯'{dimensions = unsized_vector},
 	AST#'$ast¯'{do = NewShp};
 % don't do anything to anything else

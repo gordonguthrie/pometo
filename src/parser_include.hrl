@@ -17,9 +17,9 @@ add_rank({Type, CharNo, _, Val},
   make_fn_ast2(Val, Type, F, [], CharNo);
 add_rank({Type, CharNo, _, Val}, Rank) when is_atom(Rank) ->
   make_fn_ast2(Val, Type, Rank, [], CharNo);
-add_rank(A, B) ->
-  io:format("in add rank with A of ~p B of ~p~n", [A, B]),
-  exit(lorgette).
+add_rank({Type, CharNo, _, Val}, #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                                          args = Rank}) ->
+  make_fn_ast2(Val, Type, Rank, [], CharNo).
 
 make_fn_ast({Type, CharNo, _, Val}) ->
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
@@ -274,7 +274,11 @@ log(X, Label) ->
 is_shape_changing(["⍴"]) -> true;
 is_shape_changing(["⍳"]) -> true;
 is_shape_changing([","]) -> true;
-is_shape_changing(_)   -> false.
+is_shape_changing(_)     -> false.
 
-default_rank([","]) -> last;
-default_rank(_)   -> none.
+default_rank({_, _, _, ","})  -> none; % the ravel operator has funky ranking - it takes vectors not scalars
+default_rank({_, _, _, "/"})  -> first;
+default_rank({_, _, _, "\\"}) -> first;
+default_rank({_, _, _, "⌿"})  -> last;
+default_rank({_, _, _, "⍀"})  -> last;
+default_rank(_)               -> none.

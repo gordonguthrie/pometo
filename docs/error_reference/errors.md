@@ -15,6 +15,55 @@ However the strategic aim is to have a single point of look up of error codes an
 Generally try and conform to the style of APL-like errors:
 http://microapl.com/apl_help/ch_020_030_030.htm
 
+# Index
+
+* [`DOMAIN ERROR`](#domain-error)
+* [`INDEX ERROR`](#index-error)
+* [`LENGTH ERROR`](#length-error)
+* [`RANK ERROR`](#rank-error)
+* [`SYNTAX ERROR`](#syntax-error)
+* [`VARIABLE NOT DEFINED`](#variable-not-defined)
+* [`VARIABLE REASSIGNED`](#variable-reassigned)
+
+# DOMAIN ERROR
+
+A `DOMAIN ERROR` is thrown when an attempt is made to invoke a function with an invalid type of argument. For instance the `reduce` function `/` requires either a `scalar` or a `vector` on the LHS. Invoking it with an `array` will trigger a `DOMAIN ERROR`:
+
+```pometo
+A ← 2 3 4 ⍴ ⍳ 24
+B ← 2 2 ⍴ ⍳ 4
+B /[2] A
+```
+
+```pometo_results
+Error
+A ← 2 3 4 ⍴ ⍳ 24
+B ← 2 2 ⍴ ⍳ 4
+B /[2] A
+--^
+DOMAIN ERROR (LHS must be a vector or a scalar:It has a shape of [2,2]) on line 3 at character 3
+```
+
+# INDEX ERROR
+
+## Invalid Axis
+
+Trying to specify an Axis that is out of bounds will trigger an `INDEX ERROR`.
+
+```pometo
+A ← 2 3 4 ⍴ 1 2 3 4 5 6
+2 /[6] A
+```
+
+Gives
+```pometo_results
+Error
+A ← 2 3 4 ⍴ 1 2 3 4 5 6
+2 /[6] A
+--^
+INDEX ERROR (Invalid Axis:6) on line 2 at character 3
+```
+
 # LENGTH ERROR
 
 ## Mismatched Shape Errors
@@ -31,7 +80,7 @@ An `eager` vector will be tested before invoking the dyadic function and give th
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:LHS dimensions \"3\": RHS dimensions \"2\") on line 1 at character 1
+LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:LHS dimensions \"3\" - RHS dimensions \"2\") on line 1 at character 1
 ```
 
 A `lazy` vector doesn't know it its own length and is typically passed in from `Erlang` or `Elixir`. If this expression were evaluated where both the LHS and the RHS were lazy the error message would emerge from the bowels of the dyadic function slightly differently:
@@ -41,25 +90,6 @@ Error
 1 2 3 + 4 5
 ^
 LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:ran out of matches after 2 elements) on line 1 at character 1
-```
-
-# RANK ERROR
-
-## Rank Errors
-
-If you try and invoke an operator with operands of the wrong rank you will get an error. For example the dyadic reduce operator `\` requires the left hand operand to be of one rank lower than the right. If the RHS is a scalar then this operation is invalid dyadically.
-
-```pometo
-1 +/ 1
-```
-
-Resulting in:
-
-```pometo_results
-Error
-RANK ERROR
-1 +/ 1
-^
 ```
 
 ## Axis Operations
@@ -170,7 +200,7 @@ VARIABLE NOT DEFINED (D:variable is not defined) on line 2 at character 1
 
 ## Variable Reassigment Errors
 
-Like in `Erlang` variables in Erlang are immutable once you have run `A ← 1 2 3` then `A` has the value `1 2 3` as long as it remains in scope.
+Like in `Erlang` variables in `Pometo` are immutable once you have run `A ← 1 2 3` then `A` has the value `1 2 3` as long as it remains in scope.
 
 Redefining a variable will give you a `VARIABLE REASSIGNED` error.
 

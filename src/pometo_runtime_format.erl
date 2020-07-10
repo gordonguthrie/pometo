@@ -81,11 +81,11 @@ format(#'$ast¯'{do   = #'$shape¯'{dimensions = Dims},
 	Len = length(Dims),
 	if
 		Len <  3 -> Frags = build_segments(AST),
-				    Block = print(Frags),
-				    maybe_truncate_block(Block);
+								Block = print(Frags),
+								maybe_truncate_block(Block);
 		Len >= 3 -> [First, Second | _Rest] = lists:reverse(Dims),
-				    Block = chunk_format(AST, First, Second, ?EMPTY_ACCUMULATOR),
-				    maybe_truncate_block(Block)
+								Block = chunk_format(AST, First, Second, ?EMPTY_ACCUMULATOR),
+								maybe_truncate_block(Block)
 	end;
 format(#comment{msg     = Msg,
 								at_line = LNo,
@@ -114,13 +114,13 @@ print(List) ->
 	List2 = normalise_widths(List),
 	List3 = normalise_heights(List2, ?EMPTY_ACCUMULATOR),
 	Lines = [format_line(Line, ?EMPTY_ACCUMULATOR) || Line <- List3],
-	print(Lines, ?EMPTY_ACCUMULATOR).
+	print2(Lines, ?EMPTY_ACCUMULATOR).
 
-print([], Acc) ->
+print2([], Acc) ->
 	_Block = string:join(lists:reverse(Acc), "\n");
-print([[H] | T], Acc) ->
+print2([[H] | T], Acc) ->
 	NewAcc = string:join([io_lib:format("~ts", [X]) || X <- H], "\n"),
-	print(T, [NewAcc| Acc]).
+	print2(T, [NewAcc| Acc]).
 
 maybe_truncate_block(Block) ->
 	% the length of the block is the number_of_lines + (number_of_lines - 1)
@@ -251,7 +251,8 @@ normalise_widths(Lines) ->
 	ApplyFun = fun(Line) ->
 		apply_normal(Line, NormalisedWidths, ForceBox, ?EMPTY_ACCUMULATOR)
 	end,
-	_RenormalisedWidths = lists:map(ApplyFun, RawSegs).
+	RenormalisedWidths = lists:map(ApplyFun, RawSegs),
+	RenormalisedWidths.
 
 apply_normal([], _ForceBlank, _Normalised, Acc) ->
 	lists:reverse(Acc);
@@ -261,13 +262,13 @@ apply_normal([#fmt_segment{boxing = B1} = Seg | T], [Width | Rest], ForceBlank, 
 		_            -> B1
 	end,
 	apply_normal(T, Rest, ForceBlank, [Seg#fmt_segment{width  = Width,
-													   boxing = NewB} | Acc]).
+																										 boxing = NewB} | Acc]).
 
 normalise_segs([], [], IsBlankBoxed, Acc) -> {IsBlankBoxed, lists:reverse(Acc)};
 normalise_segs([Line | T1], [Width | T2], IsBlankBoxed, Acc) ->
 	#fmt_segment{width  = W1,
-				 boxing = B1} = Line,
-	%% it is only know that we know if we have to pad this line with a blank box
+							 boxing = B1} = Line,
+	%% it is only now that we know if we have to pad this line with a blank box
 	ActualWidth = case {B1, IsBlankBoxed} of
 					{none, true} -> W1 + 2;
 					_            -> W1
@@ -347,7 +348,9 @@ split_line([H | T], Args) ->
 
 split_l2([],   _N, Acc) ->
 	lists:reverse(Acc);
-split_l2(List, N,  Acc) when N /= 0 -> % yes it ran away in an infinite lodo here earlier
+split_l2(List, N,  Acc) when N < length(List) ->
+	split_l2([], N, [List | Acc]);
+split_l2(List, N,  Acc) when N /= 0 -> % yes it ran away in an infinite loop here earlier
 	{First, Rest} = lists:split(N, List),
 	split_l2(Rest, N, [First | Acc]).
 

@@ -136,6 +136,7 @@ giving:
 9 8 7
 6 9 8
 ```
+
 If there are too many it will chop some off:
 
 ```pometo

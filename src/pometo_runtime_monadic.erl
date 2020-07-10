@@ -25,7 +25,7 @@ monadic_RUNTIME([#'$func¯'{do      = [","],
 								 #'$ast¯'{do      = ?shp(N) = Shp,
 													args    = Args} = AST]) ->
 	try
-		NewShp = rerank(N, Rank),
+		NewShp = rerank_ravel(N, Rank),
 		AST#'$ast¯'{do   = Shp?shp(NewShp),
 								args = Args}
 	catch throw:Errs ->
@@ -179,8 +179,8 @@ signum(V) when V <  0 -> -1;
 signum(V) when V == 0 ->  0;
 signum(V) when V >  0 ->  1.
 
-rerank(Dims, none) -> [pometo_runtime:get_no_of_elements_from_dims(Dims)];
-rerank(Dims, Float) when is_float(Float) ->
+rerank_ravel(Dims, none)  -> [pometo_runtime:get_no_of_elements_from_dims(Dims)];
+rerank_ravel(Dims, Float) when is_float(Float) ->
 	Insert = trunc(Float),
 	if
 		Insert > length(Dims) -> throw("Invalid Axis");
@@ -188,15 +188,11 @@ rerank(Dims, Float) when is_float(Float) ->
 		el/=se                -> {Start, End} = lists:split(Insert, Dims),
 														 Start ++ [1] ++ End
 	end;
-rerank(Dims, Rank) -> rerank2(Dims, 1, Rank, ?EMPTY_ACCUMULATOR).
+rerank_ravel(Dims, Rank)  -> io:format("in rerank ravel with Dims of ~p Rank of ~p~n", [Dims, Rank]),
+														 rer2(Dims, 1, Rank, ?EMPTY_ACCUMULATOR).
 
-rerank2([], _N, [], Acc) ->
-	lists:reverse(Acc);
-rerank2(Dims, N, [N], Acc) ->
-	lists:reverse(Acc) ++ Dims;
-rerank2([H1, H2 | T], N, [N, N2 | Rest], Acc)  when N2 == N + 1->
-	rerank2([H1 * H2 | T], N + 1, [N2 | Rest], Acc);
-rerank2([H1, H2 | T], N, [R1 | _Rest] = Rank, Acc) when R1 > N ->
-	rerank2([H2 | T], N + 1, Rank, [H1 | Acc]);
-rerank2(_Dims, _N, _Rank, _Acc) ->
-	throw("Invalid Axis").
+rer2([],          _N,  [],          Acc)                  -> lists:reverse(Acc);
+rer2(Dims,         N,  [N],         Acc)                  -> lists:reverse(Acc) ++ Dims;
+rer2([H1, H2 | T], N,  [N, N2 | R], Acc) when N2 == N + 1 -> rer2([H1 * H2 | T], N + 1, [N2 | R], Acc);
+rer2([H1, H2 | T], N,  [R1 | R],    Acc) when R1 >  N     -> rer2([H2 | T],      N + 1, [R1 | R], [H1 | Acc]);
+rer2(_Dims,       _N, _Rank,       _Acc)                  -> throw("Invalid Axis").

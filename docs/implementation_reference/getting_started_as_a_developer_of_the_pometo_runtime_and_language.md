@@ -5,12 +5,18 @@
 The core development cycle is:
 
 * write a documentation page description the operation that you wish to add and the results it should show
+  * create your document not in the final directory but in `docs/_work_in_progress`
 	* documentation pages are turned into tests - the title of test is the filename - so your docs pages should not have the same name as anyother page
-* generate the new test suite with the command `rebar3 pometo_docs_to_tests`
+* generate the new test suite with the command `BUILDWIP=true rebar3 pometo_docs_to_tests`
     * the `pometo_docs_to_tests` `rebar3` plugin is fairly stable but does occassionally change
     * to fetch and run a new version delete the directory `_build/default/plugins/pometo_docs_to_test` and your next call of any `rebar3` command will fetch and install the latest version
+    * the normal usage (without the Environment variable `BUILDWIP`) will build the documents with the `_work_in_progress` directory.
+    * you can commit documents pages and have them merged when they are in the `_work_in_progress` directory - think of it as ***booking out*** that feature to work one
 * run the tests with `rebar3 eunit`
     * you can run a single test suite with a command like `rebar3 eunit --module=complex_numbers_tests`
+* when your code is working and the WIP test suite is passing raise a pull request
+    * it should include a `git mv` to move the docs page to its destination
+    * it should include changes to `docs/_data/contents.yml` to publish your new documents to the [main docs website](http://gordonguthrie.github.io/pometo)
 
 Code failures in tests are fairly hard to debug because the interpreter and compiler both capture and sanitize runtime errors.
 

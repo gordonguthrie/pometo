@@ -17,58 +17,31 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-dyadic_RUNTIME([#'$func¯'{do = ["/"]},
-								#'$ast¯'{do      = ?shape(D1, Type),
-												 line_no = LNo,
-												 char_no = CNo}      = AST1,
-								#'$ast¯'{do      = ?shp(D2)} = AST2]) when Type == number  orelse
-																													 Type == boolean orelse
-																													 Type == mixed   orelse
-																													 Type == complex orelse
-																													 Type == array ->
-	io:format("in dyadic_RUNTIME (1)~n- AST1 ~p~n- AST2 ~p~n", [AST1, AST2]),
-	NewAst1 = pometo_runtime:maybe_make_vector(AST1),
-	NewAst2 = pometo_runtime:maybe_make_vector(AST2),
-	Ranking = pometo_runtime:check_rank(D1, D2),
-	io:format("checked D1 ~p and D2 ~p got ~p~n", [D1, D2, Ranking]),
-	Ret = case Ranking of
-		identical ->
-			case length(D1) of
-				1 -> pometo_runtime_dyadic:zip(["/"], NewAst1, NewAst2, fun reduce_zip/3);
-				_ -> make_reduce_error(D1, LNo, CNo)
-			end;
-		unsized_vector ->
-			pometo_runtime_dyadic:zip(["/"], NewAst1, NewAst2, fun reduce_zip/3);
-		_ -> rubette
-	end,
-	io:format("Reduce the fn returns ~p~n", [Ret]),
-	Ret;
-dyadic_RUNTIME([#'$func¯'{do   = ["/"],
-													rank = Rank},
-							  #'$ast¯'{do      = ?shape(D1, Type),
-											 	 line_no = LNo,
-												 char_no = CNo}      = AST1,
-							  #'$ast¯'{do      = ?shp(D2)} = AST2]) when Type == number  orelse
-																													Type == boolean orelse
-																													Type == mixed   orelse
-																													Type == complex orelse
-																													Type == array ->
-	NewAst1 = pometo_runtime:maybe_make_vector(AST1),
-	NewAst2 = pometo_runtime:maybe_make_vector(AST2),
-	Ranking = pometo_runtime:check_rank(D1, D2),
-	io:format("checked D1 ~p and D2 ~p got ~p~n", [D1, D2, Ranking]),
-	Ret = case Ranking of
-		identical ->
-			case length(D1) of
-				1 -> pometo_runtime_dyadic:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
-				_ -> make_reduce_error(D1, LNo, CNo)
-			end;
-		unsized_vector ->
-			pometo_runtime_dyadic:zip("/", NewAst1, NewAst2, fun reduce_zip/3);
-		_ -> rubette
-	end,
-	io:format("Reduce the fn returns ~p~n", [Ret]),
-	Ret;
+dyadic_RUNTIME([#'$func¯'{do      = [Fn],
+													rank    = Rank,
+													line_no = LNo,
+													char_no = CNo},
+								#'$ast¯'{do      = ?shape(_D1, Type)} = Left,
+								#'$ast¯'{}                            = Right]) when (Type == number  orelse
+																																		  Type == boolean orelse
+																																		  Type == mixed   orelse
+																																		  Type == complex orelse
+																																		  Type == runtime orelse
+																																		  Type == array)  andalso
+																																		 (Fn == "/"       orelse
+																																		  Fn == "⌿") ->
+	NewLeft  = pometo_runtime:make_eager(pometo_runtime:maybe_cast_scalar_to_vector(Left)),
+	NewRight = pometo_runtime:make_eager(pometo_runtime:maybe_cast_scalar_to_vector(Right)),
+	#'$ast¯'{do = ?shp(NewD1)} = NewLeft,
+	#'$ast¯'{do = ?shp(NewD2)} = NewRight,
+	ActualRank = pometo_runtime:resolve_rank(NewD2, Rank),
+	ok = pometo_runtime_rank:is_rank_valid(NewRight, ActualRank, LNo, CNo),
+	_Compatability = pometo_runtime_rank:check_shape_compatible(ActualRank, NewD1, NewD2, LNo, CNo),
+	ExpandedShape = pometo_runtime_rank:iterate_over_rank(NewLeft, NewRight, ActualRank, fun replicate/7),
+	#'$ast¯'{do = Shp} = ExpandedShape,
+	NewDims = make_replacement_dims(ActualRank, Left, ExpandedShape),
+	ExpandedShape#'$ast¯'{do = Shp#'$shape¯'{dimensions = NewDims,
+																				   indexed    = true}};
 % rho needs to know the length of the vector
 % this clause handles both a scalar and a vector on either of the LHS or the RHS
 dyadic_RUNTIME([#'$func¯'{do = ["⍴"]},
@@ -161,36 +134,36 @@ dyadic_RUNTIME([#'$func¯'{}             = Func,
 								#'$ast¯'{do = ?shp(0)}  = Left,
 								#'$ast¯'{do = ?shp(_N)} = Right]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
-	apply2(Func, Right, pometo_runtime:maybe_make_vector(Left), left);
+	apply(Func, Right, pometo_runtime:maybe_cast_scalar_to_vector(Left), left, fun dyadic_fn/3);
 dyadic_RUNTIME([#'$func¯'{}             = Func,
 								#'$ast¯'{do = ?shp(_N)} = Left,
 								#'$ast¯'{do = ?shp(0)}  = Right]) ->
-	apply2(Func, Left, pometo_runtime:maybe_make_vector(Right), right);
+	apply(Func, Left, pometo_runtime:maybe_cast_scalar_to_vector(Right), right, fun dyadic_fn/3);
 %% now plain number handling
 %% this clause will match two unsized vectors or two vectors of the same size
 dyadic_RUNTIME([#'$func¯'{}            = Func,
 								#'$ast¯'{do = ?shp(N)} = Left,
 								#'$ast¯'{do = ?shp(N)} = Right]) ->
-	zip(Func, Left, Right, fun fn_zip/3);
+	zip(Func, Left, Right, fun dyadic_fn/3);
 %% this clause will handle on mixed case
 dyadic_RUNTIME([#'$func¯'{}                         = Func,
 								#'$ast¯'{do = ?shp(unsized_vector)} = Left,
 								#'$ast¯'{do = ?shp(L)}              = Right]) when is_list(L) ->
-	zip(Func, Left, Right, fun fn_zip/3);
+	zip(Func, Left, Right, fun dyadic_fn/3);
 %% this clause will handle the other
 dyadic_RUNTIME([#'$func¯'{}                         = Func,
 								#'$ast¯'{do = ?shp(L)}              = Left,
 								#'$ast¯'{do = ?shp(unsized_vector)} = Right]) when is_list(L) ->
-	zip(Func, Left, Right, fun fn_zip/3);
+	zip(Func, Left, Right, fun dyadic_fn/3);
 dyadic_RUNTIME([#'$func¯'{} = Func,
 								#'$ast¯'{do = ?shp([1])} = Left,
 								#'$ast¯'{}               = Right]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
-	apply2(Func, Right, Left, left);
+	apply(Func, Right, Left, left, fun dyadic_fn/3);
 dyadic_RUNTIME([#'$func¯'{}              = Func,
 								#'$ast¯'{}               = Left,
 								#'$ast¯'{do = ?shp([1])} = Right]) ->
-	apply2(Func, Left, Right, right);
+	apply(Func, Left, Right, right, fun dyadic_fn/3);
 dyadic_RUNTIME([#'$func¯'{do = Do},
 								#'$ast¯'{do      = ?shp(N1),
 												 line_no = LNo,
@@ -205,12 +178,12 @@ dyadic_RUNTIME([#'$func¯'{do = Do},
 		false -> get_fmt(N2)
 	end,
 	Msg1  = io_lib:format("dimensions mismatch in dyadic ~p", [Do]),
-	Msg2  = io_lib:format("LHS dimensions ~p: RHS dimensions ~p", [Lhs, Rhs]),
+	Msg2  = io_lib:format("LHS dimensions ~p - RHS dimensions ~p", [Lhs, Rhs]),
 	Error = pometo_runtime_format:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
 
-fn_zip(N, Val, Acc) when is_list(Acc) -> {N + 1, [Val | Acc]};
-fn_zip(N, Val, Acc) when is_map(Acc)  -> {N + 1, maps:put(N, Val, Acc)}.
+dyadic_fn(N, Val, Acc) when is_list(Acc) -> {N + 1, [Val | Acc]};
+dyadic_fn(N, Val, Acc) when is_map(Acc)  -> {N + 1, maps:put(N, Val, Acc)}.
 
 %%
 %% private fns
@@ -261,16 +234,11 @@ is_terminated(_)           -> false.
 make_enumerable(Map)  when is_map(Map)   -> {map,  maps:iterator(Map)};
 make_enumerable(List) when is_list(List) -> {list, List}.
 
-get_first({map, Iter})      -> {_K, Val, NewIter} = maps:next(Iter),
-															 {{map,  NewIter}, Val};
-get_first({list, [H | T]})  -> {{list, T},       H}.
-
-
-apply2(Func, #'$ast¯'{args = Args} = AST, Singleton, Direction) ->
+apply(Func, #'$ast¯'{args = Args} = AST, Singleton, Direction, ZipFn) ->
 	Accumulator = pometo_runtime:choose_accumulator(AST, Singleton),
 	Left  = make_enumerable(Args),
 	Val = get_singleton(Singleton),
-	{NoArgs, NewArgs} = do_apply(Left, Val, Direction, Func, fun fn_zip/3, ?START_COUNTING_ARGS, Accumulator),
+	{NoArgs, NewArgs} = do_apply(Left, Val, Direction, Func, ZipFn, ?START_COUNTING_ARGS, Accumulator),
 	pometo_runtime:set_return_type(maybe_make_eager(AST#'$ast¯'{args = NewArgs}, NoArgs), Accumulator).
 
 do_apply(Left, Val, Direction, Func, ZipFn, N, Acc) ->
@@ -325,7 +293,7 @@ do_complex(#'$func¯'{do = [Do]} = Func, A1, A2) when Do == "+" orelse
 	% that's the law, I didn't fuckin make it, ok? bud...
 	Left  = make_enumerable(A1),
 	Right = make_enumerable(A2),
-	{_NoArgs, Vals} = do_zip(Left, Right, Func, -98765, -98765, fun fn_zip/3, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
+	{_NoArgs, Vals} = do_zip(Left, Right, Func, -98765, -98765, fun dyadic_fn/3, ?START_COUNTING_ARGS, ?EMPTY_ACCUMULATOR),
 	Vals;
 do_complex(#'$func¯'{do = [Do]}, [Rl1, Im1], [Rl2, Im2]) when Do == "×" ->
 	[Rl1 * Rl2 - Im1 * Im2, Rl1 * Im2 + Im1 * Rl2];
@@ -340,19 +308,73 @@ maybe_make_eager(#'$ast¯'{do = #'$shape¯'{dimensions = unsized_vector} = Shp} 
 maybe_make_eager(X, _N) ->
 	X.
 
+get_first({map, Iter})      -> {_K, Val, NewIter} = maps:next(Iter),
+															 {{map,  NewIter}, Val};
+get_first({list, [H | T]})  -> {{list, T},       H}.
+
+
 get_fmt(X) ->
 	#fmt_segment{strings = [Str]} = pometo_runtime_format:fmt(X),
 	Str.
 
-reduce_zip(N, Vals, Acc) when is_list(Vals) andalso
-															is_list(Acc)         -> Len = length(Vals),
-																											{N + Len, Vals ++ Acc};
-reduce_zip(N, Val,  Acc) when is_list(Acc)         -> {N + 1, [Val | Acc]};
-reduce_zip(N, Vals, Map) when is_list(Vals) andalso
-															is_map(Map)          -> AccFun = fun(V, {K, M}) ->
-																								       {K + 1, maps:put(K, V, M)}
-																							        end,
-																							        lists:foldl(AccFun, {N, Map}, Vals);
-reduce_zip(N, Val,  Map) when is_map(Map)          -> {N + 1, maps:put(N, Val, Map)}.
+replicate(OutputN, LHS, ChunkSize, ChunkNo, RankLen, Chunk, Acc) ->
+	% '/' converts lazy to eager already
+	#'$ast¯'{do = #'$shape¯'{dimensions = Dims}} = LHS,
+	Lookup = case ChunkNo rem RankLen of
+		0 -> RankLen;
+		N -> N
+	end,
+	Mult = case Dims of
+		[1] -> pometo_runtime:get_nth(LHS, 1);
+		_   -> pometo_runtime:get_nth(LHS, Lookup)
+	end,
+	replicate2(?START_COUNTING_ARGS, OutputN, Mult + 1, ChunkSize, Chunk, Acc).
 
-make_reduce_error(_A, _B, _C) -> borquelmismo.
+replicate2(_Mult, OutputN, _Mult, _ChunkSize, _Chunk, Acc) ->
+	{OutputN, Acc};
+replicate2(N, OutputN, Mult, ChunkSize, Chunk, Acc) ->
+	{NewOutputN, NewAcc} = replicate3(OutputN, ?START_COUNTING_ARGS, ChunkSize + 1, Chunk, Acc),
+	replicate2(N + 1, NewOutputN, Mult, ChunkSize, Chunk, NewAcc).
+
+replicate3(OutputN, _ChunkSize, _ChunkSize, _Chunk, Acc) ->
+	{OutputN, Acc};
+replicate3(OutputN, N, ChunkSize, Chunk, Acc) ->
+	NewVal = maps:get(N, Chunk),
+	NewAcc = maps:put(OutputN, NewVal, Acc),
+	replicate3(OutputN + 1, N + 1, ChunkSize, Chunk, NewAcc).
+
+%dyadic_map(N, Vals, Acc) when is_list(Vals) andalso
+%															is_list(Acc)         -> Len = length(Vals),
+%																											{N + Len, Vals ++ Acc};
+%dyadic_map(N, Val,  Acc) when is_list(Acc)         -> {N + 1, [Val | Acc]};
+%dyadic_map(N, Vals, Map) when is_list(Vals) andalso
+%															is_map(Map)          -> AccFun = fun(V, {K, M}) ->
+%																								       {K + 1, maps:put(K, V, M)}
+%																							        end,
+%																							        lists:foldl(AccFun, {N, Map}, Vals);
+%dyadic_map(N, Val,  Map) when is_map(Map)          -> {N + 1, maps:put(N, Val, Map)}.
+
+make_replacement_dims(Rank, #'$ast¯'{do   = ?shp(0),
+																		 args = Args}, Right) ->
+	#'$ast¯'{do = #'$shape¯'{dimensions = D}} = Right,
+	NewDim = sumup(Args),
+	{LDim, RDim} = lists:split(Rank - 1, D),
+	case RDim of
+								[] -> LDim ++ [NewDim];
+								_  -> [H | T] = RDim,
+											LDim ++ [NewDim * H| T]
+	end;
+make_replacement_dims(Rank, #'$ast¯'{args = Args}, Right) ->
+	#'$ast¯'{do = #'$shape¯'{dimensions = D}} = Right,
+	NewDim = sumup(Args),
+	{LDim, RDim} = lists:split(Rank - 1, D),
+	case RDim of
+								[] -> LDim ++ [NewDim];
+								_  -> [_H | T] = RDim,
+											LDim ++ [NewDim| T]
+	end.
+
+sumup(List) when is_list(List) -> lists:sum(List);
+sumup(Map)  when is_map(Map)   -> {_Keys, Vals} = lists:unzip(maps:to_list(Map)),
+																	lists:sum(Vals);
+sumup(N)   when is_integer(N)  -> N.

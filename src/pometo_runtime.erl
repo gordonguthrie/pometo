@@ -6,29 +6,6 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-%% things exported for runtime
--export([
-					run_ast/2,
-					are_all_positive_integers/1,
-					product/1,
-					index/1,
-					make_indexed/1,
-					unindex/1,
-					force_index/2,
-					args_reverse/1,
-					get_no_of_elements_from_args/1,
-					get_no_of_elements_from_dims/1,
-					make_dimensions/1,
-					args_to_list/1,
-					snip_args/2,
-					extend/5,
-					check_rank/2,
-					maybe_make_vector/1,
-					choose_accumulator/2,
-					set_return_type/2,
-					maybe_reverse/1
-				]).
-
 %% exported for inclusion in compiled modules
 %% should never be called directly
 -export([
@@ -40,12 +17,58 @@
 					monadic_ranked/1
 				]).
 
+%% things exported for runtime
+-export([
+					run_ast/2,
+					are_all_positive_integers/1,
+					product/1,
+					index/1,
+					make_eager/1,
+					make_indexed/1,
+					unindex/1,
+					force_index/2,
+					args_reverse/1,
+					get_no_of_elements_from_args/1,
+					get_no_of_elements_from_dims/1,
+					make_dimensions/1,
+					args_to_list/1,
+					snip_args/2,
+					extend/5,
+					maybe_cast_scalar_to_vector/1,
+					choose_accumulator/2,
+					set_return_type/2,
+					maybe_reverse/1,
+					get_nth/2,
+					resolve_rank/2
+				]).
+
+%%
+%% Exported for use in compiled modules
+%%
+
+dyadic(Args)  -> % io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
+								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+
+monadic(Args)  -> % io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
+									pometo_runtime_monadic:monadic_RUNTIME(Args).
+
+dyadic_ranked(Args)  -> % io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
+												pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+
+
+monadic_ranked(Args)  -> % io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
+												 pometo_runtime_monadic:monadic_RUNTIME(Args).
+
+
+apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
+
+runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
+
 %%
 %% Runtime API
 %%
 
 run_ast(AST, Str) ->
-	io:format("in run_ast AST is ~p~n", [AST]),
 	try run_ast2(AST)
 	catch
 		throw:E -> {error, #error{} = Err} = E,
@@ -71,7 +94,7 @@ run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
 																														 Type == monadic_ranked ->
 	monadic([Func, run_ast2(A)]);
 run_ast2(X) ->
-	pometo_stdlib:debug("wigging out in run ast2", X),
+	pometo_stdlib:debug("wigging out in run ast2 ~p~n", [X]),
 	exit("rando").
 
 are_all_positive_integers([])                                 -> true;
@@ -100,8 +123,12 @@ index(Args) ->
 	end,
 	lists:foldl(IndexFn, {1, #{}}, Args).
 
-% Maps have a list order when all keys are indexes
-unindex(Args) when is_map(Args) -> List = maps:to_list(Args),
+make_eager(#'$ast¯'{do    = #'$shape¯'{dimensions = unsized_vector} = Shp,
+										args = Args} = AST) ->
+	AST#'$ast¯'{do = Shp#'$shape¯'{dimensions = [length(Args)]}};
+make_eager(X) -> X.
+
+unindex(Args) when is_map(Args) -> List = lists:sort(maps:to_list(Args)),
 									 {_Keys, Vals} = lists:unzip(List),
 									 Vals.
 
@@ -140,7 +167,8 @@ args_rev2(Iter, Acc) -> {_K, V, NextI} = maps:next(Iter),
 
 get_no_of_elements_from_dims(0)       -> 1;
 get_no_of_elements_from_dims([N])     -> N;
-get_no_of_elements_from_dims([H | T]) -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T).
+get_no_of_elements_from_dims([H | T]) -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T);
+get_no_of_elements_from_dims([])      -> 1. % if you reduce dims by rank and get the last it is an empty vector
 
 get_no_of_elements_from_args(0)                    -> 0;
 get_no_of_elements_from_args([N])                  -> N;
@@ -191,34 +219,11 @@ extend2(Iter, Map,  N, End, Acc) 							-> {_K, V, I} = maps:next(Iter),
 																								 NewAcc = maps:put(N, V, Acc),
 																								 extend2(I, Map, N + 1, End, NewAcc).
 
-check_rank(D1, D1) 						 when is_list(D1)							 -> identical;
-check_rank(unsized_vector, D1) when is_list(D1) 						 -> unsized_vector;
-check_rank(D1, unsized_vector) when is_list(D1)              -> unsized_vector;
-check_rank(unsized_vector, unsized_vector)                   -> unsized_vector;
-check_rank(D1, D2) 						 when is_list(D1) andalso
-																		is_list(D2) andalso
-																		length(D1) == length(D2) -> invalid_rank;
-check_rank(D1, D2) 						 when is_list(D1) andalso
-																		is_list(D2) andalso
-																		length(D1) > length(D2)  -> {D, _Discard} = lists:split(length(D2), D1),
-																																case D of
-																																	D2 -> subrank;
-																																	_  -> invalid_rank
-																																end;
-check_rank(D1, D2) 						 when is_list(D1) andalso
-																		is_list(D2) andalso
-																		length(D1) < length(D2)  -> {D, _Discard} = lists:split(length(D1), D2),
-																																case D of
-																																	D1 -> superrank;
-																																	_  -> invalid_rank
-																																end;
-check_rank(_, _)            	    													 -> notvectors.
-
-maybe_make_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-										 args = A} = AST) ->
+maybe_cast_scalar_to_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+																		 args = A} = AST) ->
 	AST#'$ast¯'{do   = #'$shape¯'{dimensions = [1]},
 							args = [A]};
-maybe_make_vector(X) ->
+maybe_cast_scalar_to_vector(X) ->
 	X.
 
 %% anybody is forced index, everbody is forced index
@@ -245,24 +250,18 @@ set_return_type(#'$ast¯'{do = Shp} = AST, List) when is_list(List) -> AST#'$ast
 maybe_reverse(Map)  when is_map(Map)   -> Map;
 maybe_reverse(List) when is_list(List) -> lists:reverse(List).
 
-%%
-%% Exported for use in compiled modules
-%%
+get_nth(#'$ast¯'{args = L},  N) when is_list(L) -> lists:nth(N, L);
+get_nth(#'$ast¯'{args = M},  N) when is_map(M)  -> maps:get(N, M).
 
-dyadic(Args)  -> io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
-								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+resolve_rank(NewD2, Rank) ->
+	case Rank of
+		none  -> get_length(NewD2);
+		first -> get_length(NewD2);
+		last  -> 1;
+		_     -> Rank
+	end.
 
-monadic(Args)  -> io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
-								 pometo_runtime_monadic:monadic_RUNTIME(Args).
-
-dyadic_ranked(Args)  -> io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
-												pometo_runtime_dyadic:dyadic_RUNTIME(Args).
-
-
-monadic_ranked(Args)  -> io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
-												 pometo_runtime_monadic:monadic_RUNTIME(Args).
+get_length(unsized_vector)    -> 1;
+get_length(L) when is_list(L) -> length(L).
 
 
-apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
-
-runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
