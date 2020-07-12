@@ -38,44 +38,62 @@ Rules.
 
 \( : {token, {open_bracket,  TokenChars, TokenLen, "("}}.
 \) : {token, {close_bracket, TokenChars, TokenLen, ")"}}.
-\{ : {token, {open_curly,    TokenChars, TokenLen, "{"}}.
-\} : {token, {close_curly,   TokenChars, TokenLen, "}"}}.
-\[ : {token, {open_square,   TokenChars, TokenLen, "["}}.
-\] : {token, {close_square,  TokenChars, TokenLen, "]"}}.
+\{ : {token, {open_cy,       TokenChars, TokenLen, "{"}}.
+\} : {token, {close_cy,      TokenChars, TokenLen, "}"}}.
+\[ : {token, {open_sq,       TokenChars, TokenLen, "["}}.
+\] : {token, {close_sq,      TokenChars, TokenLen, "]"}}.
 
 ¯ : {token, {unary_negate, TokenChars, TokenLen, "¯"}}.
 
-\+ : {token, {scalar_fn, TokenChars, TokenLen, "+"}}.
--  : {token, {scalar_fn, TokenChars, TokenLen, "-"}}.
-×  : {token, {scalar_fn, TokenChars, TokenLen, "×"}}.
-÷  : {token, {scalar_fn, TokenChars, TokenLen, "÷"}}.
+%% Hybrids can be either functions or operators depending on context
+%% * all Hybrids take rank
+%% * all Hybrids are monadic operators but dyadic functions
+
+/  : {token, {hybrid, TokenChars, TokenLen, "/"}}.
+\\ : {token, {hybrid, TokenChars, TokenLen, "\\"}}.
+⌿  : {token, {hybrid, TokenChars, TokenLen, "⌿"}}.
+⍀  : {token, {hybrid, TokenChars, TokenLen, "⍀"}}.
+
+%% Implemented Functions that don't take rank
+
+\+ : {token, {ambivalent, TokenChars, TokenLen, "+"}}.
+-  : {token, {ambivalent, TokenChars, TokenLen, "-"}}.
+×  : {token, {ambivalent, TokenChars, TokenLen, "×"}}.
+÷  : {token, {ambivalent, TokenChars, TokenLen, "÷"}}.
+
+⍴ : {token, {ambivalent, TokenChars, TokenLen, "⍴"}}.
+
+⍳ : {token, {monadic, TokenChars, TokenLen, "⍳"}}.
+
+%% Implemented Functions that do take rank
+, : {token, {monadic_ranked, TokenChars, TokenLen, ","}}.
+
+%% Not Yet Implemented Functions
+%% yeah, yeah bud we will get round to you
+\| : {token, {ambivalent, TokenChars, TokenLen, "|"}}.
+⌊  : {token, {ambivalent, TokenChars, TokenLen, "⌊"}}.
+⌈  : {token, {ambivalent, TokenChars, TokenLen, "⌈"}}.
+\* : {token, {ambivalent, TokenChars, TokenLen, "*"}}.
+⍟  : {token, {ambivalent, TokenChars, TokenLen, "⍟"}}.
+○  : {token, {ambivalent, TokenChars, TokenLen, "○"}}.
+!  : {token, {ambivalent, TokenChars, TokenLen, "!"}}.
+~  : {token, {ambivalent, TokenChars, TokenLen, "~"}}.
+\? : {token, {ambivalent, TokenChars, TokenLen, "?"}}.
+∊  : {token, {ambivalent, TokenChars, TokenLen, "∊"}}.
 
 %% yeah, yeah bud we will get round to you
-\| : {token, {scalar_fn, TokenChars, TokenLen, "|"}}.
-⌊  : {token, {scalar_fn, TokenChars, TokenLen, "⌊"}}.
-⌈  : {token, {scalar_fn, TokenChars, TokenLen, "⌈"}}.
-\* : {token, {scalar_fn, TokenChars, TokenLen, "*"}}.
-⍟  : {token, {scalar_fn, TokenChars, TokenLen, "⍟"}}.
-○  : {token, {scalar_fn, TokenChars, TokenLen, "○"}}.
-!  : {token, {scalar_fn, TokenChars, TokenLen, "!"}}.
-~  : {token, {scalar_fn, TokenChars, TokenLen, "~"}}.
-\? : {token, {scalar_fn, TokenChars, TokenLen, "?"}}.
-∊  : {token, {scalar_fn, TokenChars, TokenLen, "∊"}}.
-∧  : {token, {scalar_fn, TokenChars, TokenLen, "∧"}}.
-∨  : {token, {scalar_fn, TokenChars, TokenLen, "∨"}}.
-⍲  : {token, {scalar_fn, TokenChars, TokenLen, "⍲"}}.
-⍱  : {token, {scalar_fn, TokenChars, TokenLen, "⍱"}}.
-<  : {token, {scalar_fn, TokenChars, TokenLen, "<"}}.
-≤  : {token, {scalar_fn, TokenChars, TokenLen, "≤"}}.
-=  : {token, {scalar_fn, TokenChars, TokenLen, "="}}.
-≥  : {token, {scalar_fn, TokenChars, TokenLen, "≥"}}.
->  : {token, {scalar_fn, TokenChars, TokenLen, ">"}}.
-≠  : {token, {scalar_fn, TokenChars, TokenLen, "≠"}}.
+∧  : {token, {dyadic, TokenChars, TokenLen, "∧"}}.
+∨  : {token, {dyadic, TokenChars, TokenLen, "∨"}}.
+⍲  : {token, {dyadic, TokenChars, TokenLen, "⍲"}}.
+⍱  : {token, {dyadic, TokenChars, TokenLen, "⍱"}}.
+<  : {token, {dyadic, TokenChars, TokenLen, "<"}}.
+≤  : {token, {dyadic, TokenChars, TokenLen, "≤"}}.
+=  : {token, {dyadic, TokenChars, TokenLen, "="}}.
+≥  : {token, {dyadic, TokenChars, TokenLen, "≥"}}.
+>  : {token, {dyadic, TokenChars, TokenLen, ">"}}.
+≠  : {token, {dyadic, TokenChars, TokenLen, "≠"}}.
 
-% Functions
-⍴ : {token, {rho,   TokenChars, TokenLen, "⍴"}}.
-⍳ : {token, {iota,  TokenChars, TokenLen, "⍳"}}.
-, : {token, {ravel, TokenChars, TokenLen, ","}}.
+%% Bits and Bobs
 
 ← : {token, {let_op, TokenChars, TokenLen, "←"}}. % let is a reserved word in Erlang
 

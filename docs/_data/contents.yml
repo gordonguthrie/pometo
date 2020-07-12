@@ -11,6 +11,8 @@ toc:
         url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
+      - page: The Forwardslash/Reduce operator /
+        url:  technical_reference/operators_forwardslash_or_the_reduce_operator.html
       - page: The Identity/Complex Conjugate/Plus function +
         url:  technical_reference/functions_the_identity_complex_conjugate_plus_function.html
       - page: The Negation/Minus function -

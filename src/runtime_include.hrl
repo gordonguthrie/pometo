@@ -1,25 +1,25 @@
 -define(EMPTY_ACCUMULATOR,   []).
 -define(EMPTY_MAP,           #{}).
 -define(SPACE,               32).
--define(START_COUNTING_ARGS, 0).
+-define(START_COUNTING_ARGS, 1).
 
 -define(shp(Dim),         #'$shape¯'{dimensions = Dim}).
 -define(shape(Dim, Type), #'$shape¯'{dimensions = Dim,
-									 type       = Type}).
--define(complex_el(Args), #'$ast¯'{op   = #'$shape¯'{dimensions = 0,
-	                                                 type       = complex},
-                                   args = #'$ast¯'{op   = complex,
-                               			           args = Args}}).
--define(complex_no(Args), #'$ast¯'{op   = complex,
-                               	   args = Args}).
+									 									 type       = Type}).
+-define(complex_el(Args), #'$ast¯'{do   = #'$shape¯'{dimensions = 0,
+																										 type       = complex},
+																	 args = #'$ast¯'{do   = complex,
+																									 args = Args}}).
+-define(cmplx(Args), #'$ast¯'{do   = complex,
+															args = Args}).
 
 
 -record(fmt_segment, {
-					 	strings = "",
-					 	width   = 0,
-					 	height  = 1,
-					 	boxing  = none, % none, boxed, blankboxed
-					 	is_leaf = false
+						strings = "",
+						width   = 0,
+						height  = 1,
+						boxing  = none, % none, boxed, blankboxed
+						is_leaf = false
 						}).
 
 -record(fmt_line, {

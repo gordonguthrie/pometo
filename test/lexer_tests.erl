@@ -31,11 +31,11 @@ basic_plus_lexer_test_() ->
     Str = "1.1 2.2 + 3.3 4.4 ",
     [{ok, Got}] = pometo:lex_TEST(Str),
     Exp = [
-            {float,     1,  "1.1", 1.1},
-            {float,     5,  "2.2", 2.2},
-            {scalar_fn, 9,  "+",  "+"},
-            {float,     11, "3.3", 3.3},
-            {float,     15, "4.4", 4.4}
+            {float,      1,  "1.1", 1.1},
+            {float,      5,  "2.2", 2.2},
+            {ambivalent, 9,  "+",  "+"},
+            {float,      11, "3.3", 3.3},
+            {float,      15, "4.4", 4.4}
             ],
     % ?debugFmt("in basic_plus_lexer_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).

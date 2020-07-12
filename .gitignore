@@ -6,6 +6,7 @@ pometo_parser.erl
 pometo_lexer.erl
 .DS_Store
 erl_crash.dump
+rebar3.crashdump
 test/generated_tests
 docs/_site
 docs/Gemfile.lock

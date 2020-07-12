@@ -15,7 +15,7 @@ basic_imaginary_number_lexer_test_() ->
            {complex_number,20,"¯3J4",{-3,4}},
            {complex_number,25,"5J¯6",{5,-6}},
            {complex_number,30,"¯7j¯7",{-7,-7}},
-           {scalar_fn,36,"-","-"},
+           {ambivalent,36,"-","-"},
            {maybe_complex_number,37,"2J2",{2,2}}],
     % ?debugFmt("in basic_imaginary_number_lexer_test_~nGot ~p~nExp ~p~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).

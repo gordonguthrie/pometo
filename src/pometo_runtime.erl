@@ -6,32 +6,63 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-%% things exported for runtime
--export([
-				  run_ast/2,
-				  are_all_positive_integers/1,
-				  product/1,
-				  index/1,
-				  make_indexed/1,
-				  unindex/1,
-				  force_index/2,
-				  args_reverse/1,
-				  get_no_of_elements_from_args/1,
-				  get_no_of_elements_from_dims/1,
-				  make_dimensions/1,
-					args_to_list/1,
-					snip_args/2,
-					extend/5
-				]).
-
 %% exported for inclusion in compiled modules
 %% should never be called directly
 -export([
 					runtime_let/1,
 					apply_fn/1,
 					dyadic/1,
-					monadic/1
+					monadic/1,
+					dyadic_ranked/1,
+					monadic_ranked/1
 				]).
+
+%% things exported for runtime
+-export([
+					run_ast/2,
+					are_all_positive_integers/1,
+					product/1,
+					index/1,
+					make_eager/1,
+					make_indexed/1,
+					unindex/1,
+					force_index/2,
+					args_reverse/1,
+					get_no_of_elements_from_args/1,
+					get_no_of_elements_from_dims/1,
+					make_dimensions/1,
+					args_to_list/1,
+					snip_args/2,
+					extend/5,
+					maybe_cast_scalar_to_vector/1,
+					choose_accumulator/2,
+					set_return_type/2,
+					maybe_reverse/1,
+					get_nth/2,
+					resolve_rank/2
+				]).
+
+%%
+%% Exported for use in compiled modules
+%%
+
+dyadic(Args)  -> % io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
+								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+
+monadic(Args)  -> % io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
+									pometo_runtime_monadic:monadic_RUNTIME(Args).
+
+dyadic_ranked(Args)  -> % io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
+												pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+
+
+monadic_ranked(Args)  -> % io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
+												 pometo_runtime_monadic:monadic_RUNTIME(Args).
+
+
+apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
+
+runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
 
 %%
 %% Runtime API
@@ -41,25 +72,30 @@ run_ast(AST, Str) ->
 	try run_ast2(AST)
 	catch
 		throw:E -> {error, #error{} = Err} = E,
-				   {error, Err#error{expr = Str}}
+							 {error, Err#error{expr = Str}}
 	end.
 
-run_ast2(#'$ast¯'{op   = {apply_fn, {Mod, Fn}},
-								  args = [Arg]})              -> apply_fn([Mod, Fn, Arg]);
-run_ast2(#'$ast¯'{op   = #'$shape¯'{}} = AST) -> AST;
-run_ast2(#'$ast¯'{op   = 'let',
-				  args = [_V, A | []]} = AST) 				-> NewL = AST#'$ast¯'{op   = runtime_let,
-																																	  args = A},
-																								 runtime_let([NewL]);
-run_ast2(#'$ast¯'{op   = {dyadic, Op},
-								  args = [A1, A2]})           -> dyadic([Op, A1, A2]);
-run_ast2(#'$ast¯'{op   = {monadic, Op},
-								  args = [A]})                -> monadic([Op, A]);
-run_ast2(#'$ast¯'{op   = flatten_comma,
-								  args = [A]})                -> #'$ast¯'{op   = #'$shape¯'{} = R,
-																												  args = InnerA}      = A,
-																								 NewR = R#'$shape¯'{dimensions = length(InnerA)},
-																								 A#'$ast¯'{op = NewR}.
+run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
+									args = [Arg]}) ->
+	apply_fn([[{Mod, Fn}], Arg]);
+run_ast2(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
+	AST;
+run_ast2(#'$ast¯'{do   = 'let',
+									args = [_V, A | []]} = AST) ->
+	NewL = AST#'$ast¯'{do   = runtime_let,
+										 args = A},
+	runtime_let([NewL]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
+									args = [A1, A2]}) 										when Type == dyadic orelse
+																														 Type == dyadic_ranked ->
+	dyadic([Func, run_ast2(A1), run_ast2(A2)]);
+run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
+									args = [A]}) 													when Type == monadic orelse
+																														 Type == monadic_ranked ->
+	monadic([Func, run_ast2(A)]);
+run_ast2(X) ->
+	pometo_stdlib:debug("wigging out in run ast2 ~p~n", [X]),
+	exit("rando").
 
 are_all_positive_integers([])                                 -> true;
 are_all_positive_integers([H | T]) when is_integer(H)         -> are_all_positive_integers(T);
@@ -87,30 +123,34 @@ index(Args) ->
 	end,
 	lists:foldl(IndexFn, {1, #{}}, Args).
 
-% Maps have a list order when all keys are indexes
-unindex(Args) when is_map(Args) -> List = maps:to_list(Args),
-								   {_Keys, Vals} = lists:unzip(List),
-								   Vals.
+make_eager(#'$ast¯'{do    = #'$shape¯'{dimensions = unsized_vector} = Shp,
+										args = Args} = AST) ->
+	AST#'$ast¯'{do = Shp#'$shape¯'{dimensions = [length(Args)]}};
+make_eager(X) -> X.
+
+unindex(Args) when is_map(Args) -> List = lists:sort(maps:to_list(Args)),
+									 {_Keys, Vals} = lists:unzip(List),
+									 Vals.
 
 % don't do anything scalars
-force_index(#'$ast¯'{op   = #'$shape¯'{dimensions = 0}} = AST, _) ->
+force_index(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST, _) ->
 	AST;
 % do work on unindexed arrays
-force_index(#'$ast¯'{op   = #'$shape¯'{} = Shp} = AST, Forcing) when Forcing == index  orelse
+force_index(#'$ast¯'{do   = #'$shape¯'{} = Shp} = AST, Forcing) when Forcing == index  orelse
 																																		 Forcing == unindex ->
-	AST#'$ast¯'{op = Shp#'$shape¯'{forcing = Forcing}};
+	AST#'$ast¯'{do = Shp#'$shape¯'{forcing = Forcing}};
 % don't do anything to anything else
 force_index(X, _) ->
 	X.
 
 % don't do anything scalars
-make_indexed(#'$ast¯'{op   = #'$shape¯'{dimensions = 0}} = AST) ->
+make_indexed(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
 	AST;
 % do work on unindexed arrays
-make_indexed(#'$ast¯'{op   = #'$shape¯'{indexed = false} = Shp,
-										  args = Args} = AST) ->
+make_indexed(#'$ast¯'{do   = #'$shape¯'{indexed = false} = Shp,
+											args = Args} = AST) ->
 	{_Len, NewArgs} = pometo_runtime:index(Args),
-	AST#'$ast¯'{op   = Shp#'$shape¯'{indexed = true},
+	AST#'$ast¯'{do   = Shp#'$shape¯'{indexed = true},
 							args = NewArgs};
 % don't do anything to anything else
 make_indexed(X) ->
@@ -127,13 +167,14 @@ args_rev2(Iter, Acc) -> {_K, V, NextI} = maps:next(Iter),
 
 get_no_of_elements_from_dims(0)       -> 1;
 get_no_of_elements_from_dims([N])     -> N;
-get_no_of_elements_from_dims([H | T]) -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T).
+get_no_of_elements_from_dims([H | T]) -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T);
+get_no_of_elements_from_dims([])      -> 1. % if you reduce dims by rank and get the last it is an empty vector
 
 get_no_of_elements_from_args(0)                    -> 0;
 get_no_of_elements_from_args([N])                  -> N;
 get_no_of_elements_from_args([H | T])              -> lists:foldl(fun(X, Acc) -> X * Acc end, H, T);
 get_no_of_elements_from_args(Map) when is_map(Map) -> Iter = maps:iterator(Map),
-																								      get_no_of_elems2(Iter, 1).
+																											get_no_of_elems2(Iter, 1).
 get_no_of_elems2(none, Acc) -> Acc;
 get_no_of_elems2(Iter, Acc) -> {_K, V, I} = maps:next(Iter),
 															 get_no_of_elems2(I, V * Acc).
@@ -160,7 +201,7 @@ snip_args(Map, N)  when is_map(Map)   -> Iter = maps:iterator(Map),
 
 snip_map(_Iter, N,  N, Acc) -> Acc;
 snip_map(Iter,  _K, N, Acc) -> {NewK, V, NewI} = maps:next(Iter),
-                               snip_map(NewI, NewK, N, maps:put(NewK, V, Acc)).
+															 snip_map(NewI, NewK, N, maps:put(NewK, V, Acc)).
 
 extend(List, _Start, N, TopUp, _Rem) when is_list(List) -> lists:flatten(lists:duplicate(N, List)) ++ TopUp;
 extend(Map,  Start,  N, TopUp, Rem)  when is_map(Map)   ->
@@ -178,14 +219,49 @@ extend2(Iter, Map,  N, End, Acc) 							-> {_K, V, I} = maps:next(Iter),
 																								 NewAcc = maps:put(N, V, Acc),
 																								 extend2(I, Map, N + 1, End, NewAcc).
 
-%%
-%% Exported for use in compiled modules
-%%
+maybe_cast_scalar_to_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+																		 args = A} = AST) ->
+	AST#'$ast¯'{do   = #'$shape¯'{dimensions = [1]},
+							args = [A]};
+maybe_cast_scalar_to_vector(X) ->
+	X.
 
-dyadic(Args)  -> pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+%% anybody is forced index, everbody is forced index
+choose_accumulator(#'$ast¯'{do = #'$shape¯'{forcing = F1}},
+									 #'$ast¯'{do = #'$shape¯'{forcing = F2}}) when F1 == index orelse
+																																 F2 == index         -> #{};
+% if one is forced unindex and the other one isn't then force unindex
+choose_accumulator(#'$ast¯'{do = #'$shape¯'{forcing = F1}},
+									 #'$ast¯'{do = #'$shape¯'{forcing = F2}}) when F1 == unindex orelse
+																																 F2 == unindex       -> [];
+choose_accumulator(#'$ast¯'{do = #'$shape¯'{forcing = F1}},
+									 #'$ast¯'{do = #'$shape¯'{forcing = F2}}) when F1 == unindex orelse
+																																 F2 == unindex       -> [];
+% if there are no forcing hints and at least one is indexed lets index
+choose_accumulator(#'$ast¯'{do = #'$shape¯'{indexed = I1}},
+									 #'$ast¯'{do = #'$shape¯'{indexed = I2}}) when I1 == true orelse
+																																 I2 == true					 -> #{};
+% otherwise unindex
+choose_accumulator(_AST1, _AST2)																		 								 -> [].
 
-monadic(Args) -> pometo_runtime_monadic:monadic_RUNTIME(Args).
+set_return_type(#'$ast¯'{do = Shp} = AST, Map)  when is_map(Map)   -> AST#'$ast¯'{do = Shp#'$shape¯'{indexed = true}};
+set_return_type(#'$ast¯'{do = Shp} = AST, List) when is_list(List) -> AST#'$ast¯'{do = Shp#'$shape¯'{indexed = false}}.
 
-apply_fn([Mod, Fun, Arg]) -> Mod:Fun(Arg).
+maybe_reverse(Map)  when is_map(Map)   -> Map;
+maybe_reverse(List) when is_list(List) -> lists:reverse(List).
 
-runtime_let([#'$ast¯'{op = runtime_let, args = Args}]) -> run_ast2(Args).
+get_nth(#'$ast¯'{args = L},  N) when is_list(L) -> lists:nth(N, L);
+get_nth(#'$ast¯'{args = M},  N) when is_map(M)  -> maps:get(N, M).
+
+resolve_rank(NewD2, Rank) ->
+	case Rank of
+		none  -> get_length(NewD2);
+		first -> get_length(NewD2);
+		last  -> 1;
+		_     -> Rank
+	end.
+
+get_length(unsized_vector)    -> 1;
+get_length(L) when is_list(L) -> length(L).
+
+

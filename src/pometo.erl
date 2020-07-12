@@ -22,6 +22,8 @@
 		 compile_load_and_run_TEST/2,
 		 compile_load_and_run_lazy_TEST/2,
 		 compile_load_and_run_indexed_TEST/2,
+		 compile_load_and_run_force_index_TEST/2,
+		 compile_load_and_run_force_unindex_TEST/2,
 		 interpret_TEST/1,
 		 run_for_format_TEST/2
 		 ]).
@@ -36,7 +38,7 @@
 %%
 
 interpret(Str, ExternalBindings) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	% first we need to load the external bindings into the scope dictionary
 	ok = scope_dictionary:persist_bindings(ExternalBindings),
 	BinExpr = unicode:characters_to_binary(Str, utf8),
@@ -59,7 +61,7 @@ interpret(Str, ExternalBindings) ->
 %%
 
 run_for_format_TEST(Str, ModuleName) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -71,6 +73,12 @@ run_for_format_TEST(Str, ModuleName) ->
 			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
+compile_load_and_run_force_index_TEST(Str, ModuleName) ->
+	compile_load_and_run2(Str, ModuleName, force_index).
+
+compile_load_and_run_force_unindex_TEST(Str, ModuleName) ->
+	compile_load_and_run2(Str, ModuleName, force_unindex).
+
 compile_load_and_run_indexed_TEST(Str, ModuleName) ->
 	compile_load_and_run2(Str, ModuleName, indexed).
 
@@ -80,9 +88,8 @@ compile_load_and_run_lazy_TEST(Str, ModuleName) ->
 compile_load_and_run_TEST(Str, ModuleName) ->
 	compile_load_and_run2(Str, ModuleName, pometo).
 
-
 interpret_TEST(Str) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -95,13 +102,13 @@ interpret_TEST(Str) ->
 	end.
 
 parse_TEST(Str) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Exprs, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	Exprs.
 
 lex_TEST(Str) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Lexed, _Lines} = lists:unzip(RawLexed),
 	Lexed.
@@ -111,7 +118,7 @@ lex_TEST(Str) ->
 %%%
 
 compile_load_and_run2(Str, ModuleName, Type) ->
-		scope_dictionary:clear_all(),
+	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
@@ -120,9 +127,11 @@ compile_load_and_run2(Str, ModuleName, Type) ->
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}      -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs}   -> Exprs2 = case Type of
-																	lazy    -> transform(Exprs, lazy,    ?EMPTYACC);
-																	pometo  -> Exprs;
-																	indexed -> transform(Exprs, indexed, ?EMPTYACC)
+																	lazy          -> transform(Exprs, lazy,          ?EMPTYACC);
+																	indexed       -> transform(Exprs, indexed,       ?EMPTYACC);
+																	force_index   -> transform(Exprs, force_index,   ?EMPTYACC);
+																	force_unindex -> transform(Exprs, force_unindex, ?EMPTYACC);
+																	pometo        -> Exprs
 															 end,
 															 compile_and_run3([{{run, 0, []}, Exprs2}], ModuleName, Str);
 			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
@@ -130,18 +139,27 @@ compile_load_and_run2(Str, ModuleName, Type) ->
 
 transform([], _, Acc) ->
 	lists:reverse(Acc);
-transform([#'$ast¯'{op = #'$shape¯'{}} = AST | T], Transform, Acc) ->
+transform([#'$ast¯'{do = #'$shape¯'{}} = AST | T], Transform, Acc) ->
 	Transformed = case Transform of
-		lazy    -> pometo_stdlib:make_lazy(AST);
-		indexed -> pometo_runtime:make_indexed(AST)
+		lazy          -> pometo_stdlib:make_lazy(AST);
+		indexed       -> pometo_runtime:make_indexed(AST);
+		force_index   -> pometo_runtime:force_index(AST, index);
+		force_unindex -> index_then_force_unindex(AST)
+
 	end,
 	transform(T, Transform, [Transformed | Acc]);
 transform([#'$ast¯'{args = Args} = AST | T], Transform, Acc) ->
 	Transformed = case Transform of
-		lazy    -> [pometo_stdlib:make_lazy(A)     || A <- Args];
-		indexed -> [pometo_runtime:make_indexed(A) || A <- Args]
+		lazy          -> [pometo_stdlib:make_lazy(A)           || A <- Args];
+		indexed       -> [pometo_runtime:make_indexed(A)       || A <- Args];
+		force_index   -> [pometo_runtime:force_index(A, index) || A <- Args];
+		force_unindex -> [index_then_force_unindex(A)          || A <- Args]
 	end,
 	transform(T, Transform, [AST#'$ast¯'{args = Transformed} | Acc]).
+
+index_then_force_unindex(AST) ->
+	NewAst = pometo_runtime:make_indexed(AST),
+	pometo_runtime:force_index(NewAst, unindex).
 
 compile_and_run_for_format2(Exprs, ModuleName, Str) ->
 	case pometo_compiler:compile(Exprs, ModuleName, Str) of
@@ -186,14 +204,14 @@ lex2(Str) ->
 	[lex3(L, N) || {L, N} <- Zip].
 
 lex3(Code, LineNo) ->
-		% gotta clear the scope dictionary
+	% gotta clear the scope dictionary
 	scope_dictionary:put_line_no(LineNo),
-		try
-				Lexed = pometo_lexer:get_tokens_TEST(Code),
-				{Lexed, Code}
-		catch _Type:Errs ->
-				{{errors, Errs}, Code}
-		end.
+	try
+			Lexed = pometo_lexer:get_tokens_TEST(Code),
+			{Lexed, Code}
+	catch _Type:Errs ->
+			{{errors, Errs}, Code}
+	end.
 
 parse2([], _, _LineNo, Results) ->
 	Bindings = scope_dictionary:get_bindings(),
@@ -234,7 +252,7 @@ validate_references({ok, Parsed}, Type, Expr) ->
 process_bindings(Parsed, Type, Expr) ->
 	BindingsToBeApplied = scope_dictionary:get_bindings(),
 	ok = scope_dictionary:consolidate_bindings(),
-	OpFun = case Type of
+	DoFun = case Type of
 		interpreted -> fun substitute_arg/2;
 		compiled    -> fun check_arg/2
 	end,
@@ -242,27 +260,28 @@ process_bindings(Parsed, Type, Expr) ->
 	%% the first for vectors
 	ProcessFn = fun(#'$ast¯'{args = Args} = P, Res) when is_list(Args)->
 					Acc = {BindingsToBeApplied, ?EMPTYERRORS, ?EMPTYRESULTS},
-					{_, Errors, NewArgs} = lists:foldl(OpFun, Acc, Args),
+					{_, Errors, NewArgs} = lists:foldl(DoFun, Acc, Args),
 					NewRes = case Errors of
 						[] -> P#'$ast¯'{args = lists:reverse(NewArgs)};
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
-								{error, pometo_runtime_format:format_errors(FullErrs)}
+									{error, pometo_runtime_format:format_errors(FullErrs)}
 					end,
 					[NewRes | Res];
 	%% the second for scalars
 				(#'$ast¯'{args = Arg} = P, Res) ->
 					Acc = {BindingsToBeApplied, ?EMPTYERRORS, ?EMPTYRESULTS},
-					{_, Errors, [NewArg]} = lists:foldl(OpFun, Acc, [Arg]),
+					{_, Errors, [NewArg]} = lists:foldl(DoFun, Acc, [Arg]),
 					NewRes = case Errors of
 						[] -> P#'$ast¯'{args = NewArg};
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
-								{error, pometo_runtime_format:format_errors(FullErrs)}
+									{error, pometo_runtime_format:format_errors(FullErrs)}
 					end,
 					[NewRes | Res]
 				end,
-	_TransformedParsed = lists:foldl(ProcessFn, [], Parsed).
+	TransformedParsed = lists:foldl(ProcessFn, ?EMPTYRESULTS, Parsed),
+	TransformedParsed.
 
-check_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+check_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 									 args = Arg}                       = L,
 				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
@@ -274,20 +293,22 @@ check_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
 	end,
 	NewResult = L#'$ast¯'{args = NewA2},
 	{NewBindings, NewErrs ++ Errors, [NewResult] ++ Results};
-check_arg(#'$ast¯'{op   = #'$shape¯'{},
-								 args = Args}         = L, {Bindings, Errors, Results}) ->
+check_arg(#'$ast¯'{do   = Do,
+								   args = Args}         = AST,
+					{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
+																						is_record(Do, '$func¯') ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{_, Errs, NewArgs} = lists:foldl(fun check_arg/2, Acc, Args),
 	NewResults = case NewArgs of
-		[#'$var¯'{} = V] -> NewL = L#'$ast¯'{args = V},
-												[NewL | Results];
-		_                -> [L    | Results]
+		[#'$var¯'{} = V] -> NewAST = AST#'$ast¯'{args = V},
+												[NewAST | Results];
+		_                -> [AST    | Results]
 	end,
 	NewErrs = Errs ++ Errors,
 	{Bindings, NewErrs, NewResults};
 check_arg(#'$var¯'{name    = Var,
-								 char_no = CNo,
-								 line_no = LNo} = V, {Bindings, Errors, Results}) ->
+									 char_no = CNo,
+									 line_no = LNo} = V, {Bindings, Errors, Results}) ->
 	case maps:is_key(Var, Bindings) of
 		true  -> {Bindings,  Errors, [V | Results]};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
@@ -295,13 +316,13 @@ check_arg(#'$var¯'{name    = Var,
 													msg2    = "variable is not defined",
 													at_line = LNo,
 													at_char = CNo},
-				 {Bindings,  [Err | Errors], Results}
+				 {Bindings, [Err | Errors], Results}
 	end;
 check_arg(V, {Bindings, Errors, Results}) ->
 	{Bindings, Errors, [V | Results]}.
 
-substitute_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0} = OrigOp,
-												args = Arg}                       = L,
+substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
+												args = Arg}                       = AST,
 				 {Bindings, Errors, Results}) ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = substitute_arg(Arg, Acc),
@@ -311,72 +332,75 @@ substitute_arg(#'$ast¯'{op   = #'$shape¯'{dimensions = 0} = OrigOp,
 		X1                                 -> {NewB, Errs, X1}
 	end,
 	{NewArgs2, NewDims, NewType} = case NewA2 of
-		#'$ast¯'{op   = #'$shape¯'{dimensions = D,
+		#'$ast¯'{do   = #'$shape¯'{dimensions = D,
 															 type       = T},
-				 args = A2} ->
+						 args = A2} ->
 			{A2, D, T};
-		#'$ast¯'{op = complex} = A4 ->
+		#'$ast¯'{do = complex} = A4 ->
 			{A4, 0, complex};
-		[#'$ast¯'{op   = #'$shape¯'{dimensions = D,
-															 type       = T},
-					args = A3}] ->
+		[#'$ast¯'{do   = #'$shape¯'{dimensions = D,
+															  type       = T},
+							args = A3}] ->
 			{A3, D, T};
 		[X2] ->
 			{X2, 0, get_type(X2)};
 		[] ->
 			{[], 0, variable} % error condition so we don't care about the result
 	end,
-	NewShp = OrigOp#'$shape¯'{indexed    = is_map(NewArgs2),
+	NewShp = OrigDo#'$shape¯'{indexed    = is_map(NewArgs2),
 														dimensions = NewDims,
 														type       = NewType},
-	NewResults = [L#'$ast¯'{op   = NewShp,
-													args = NewArgs2} | Results],
+	NewResults = [AST#'$ast¯'{do   = NewShp,
+														args = NewArgs2} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
-substitute_arg(#'$ast¯'{op   = #'$shape¯'{},
-												args = Args}         = L,
-				 {Bindings, Errors, Results}) ->
+substitute_arg(#'$ast¯'{do   = Do,
+												args = Args}         = AST,
+							{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
+																								is_record(Do, '$func¯')  ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
 	{_, Errs2, NewA2} = case NewArgs of
 		[#'$var¯'{} = V] -> substitute_arg(V, {Bindings, Errs, []});
 		_                -> {NewB, Errs, NewArgs}
 	end,
-	NewResults = [L#'$ast¯'{args = lists:reverse(NewA2)} | Results],
+	NewResults = [AST#'$ast¯'{args = lists:reverse(NewA2)} | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$var¯'{name    = Var,
 												char_no = CNo,
 												line_no = LNo}, {Bindings, Errors, Results}) ->
-	case maps:is_key(Var, Bindings) of
+	Ret = case maps:is_key(Var, Bindings) of
 		true  -> Binding = maps:get(Var, Bindings),
-				 Subst   = maps:get(results, Binding),
-				 NewA = chose_replacement(Subst),
-				 NewOp = extract_and_renumber_op(NewA, CNo, LNo),
-				 NewA2 = NewA#'$ast¯'{op      = NewOp,
-															char_no = CNo,
-															line_no = LNo},
-				 {Bindings, Errors,  [NewA2] ++ Results};
+						 Subst   = maps:get(results, Binding),
+						 {_, Errs2, [NewSubst]} = substitute_arg(Subst, {Bindings, Errors, []}),
+						 NewA = chose_replacement(NewSubst),
+						 NewDo = extract_and_renumber_do(NewA, CNo, LNo),
+						 NewA2 = NewA#'$ast¯'{do      = NewDo,
+																	char_no = CNo,
+																	line_no = LNo},
+						 {Bindings, Errs2, [NewA2] ++ Results};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-															msg1    = Var,
-															msg2    = "variable is not defined",
-															at_char = CNo,
-															at_line = LNo},
-				 {Bindings, [Err | Errors], Results}
-	end;
+													msg1    = Var,
+													msg2    = "variable is not defined",
+													at_char = CNo,
+													at_line = LNo},
+						 {Bindings, [Err | Errors], Results}
+	end,
+	Ret;
 substitute_arg(V, {Bindings, Errors, Results}) ->
 	{Bindings, Errors, [V | Results]}.
 
 %% if the replacement is another variable return is
-chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 													 args = #'$var¯'{}} = AST) ->
 	AST;
 %% if the replacement is a scalar, substitute the value
-chose_replacement(#'$ast¯'{op   = #'$shape¯'{dimensions = 0},
+chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 													 args = Args}) ->
 	Args;
 %% if the replacement is a vector return that
-chose_replacement(#'$ast¯'{op   = #'$shape¯'{}} = AST) ->
+chose_replacement(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
 	AST;
 %% if the replacement is an expression run it and return the value
 chose_replacement(AST) ->
@@ -399,11 +423,10 @@ normalise([Lines | T], Errs, Results) ->
 get_type(0)                                    -> boolean;
 get_type(1)                                    -> boolean;
 get_type(N) when is_number(N)                  -> number;
-get_type(#'$ast¯'{op = #'$shape¯'{type = T}})  -> T.
+get_type(#'$ast¯'{do = #'$shape¯'{type = T}})  -> T.
 
-
-extract_and_renumber_op(#'$ast¯'{op = #'$shape¯'{} = Shp}, CNo, LNo) ->
+extract_and_renumber_do(#'$ast¯'{do = #'$shape¯'{} = Shp}, CNo, LNo) ->
 	Shp#'$shape¯'{char_no = CNo,
-					line_no = LNo};
-extract_and_renumber_op(#'$ast¯'{op = complex}, _CNo, _LNo) ->
+								line_no = LNo};
+extract_and_renumber_do(#'$ast¯'{do = complex}, _CNo, _LNo) ->
 	complex.

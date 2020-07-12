@@ -33,7 +33,6 @@ basic_fragments_scalar_edge_case_test_() ->
     % ?debugFmt("in basic_fragments_scalar_edge_case_test_~nGot ~p~nExp ~p~n", [Got, Exp]),
     ?_assertEqual(Exp, Got).
 
-
 basic_fragments_vector_test_() ->
     Shape = pometo:run_for_format_TEST("1.1 2.2", "basic_fragments_vector_test_"),
     Got = pometo_runtime_format:build_segments_TEST(Shape),
@@ -95,14 +94,14 @@ basic_rhoed_fragments_nested_vector_test_() ->
     Got = pometo_runtime_format:build_segments_TEST(Shape),
     Exp = [
             line([
-                    leaf(["1"], 1, 1),
+                    leaf(["1"], 1, 3),
                     node([
                             leaf(["22"], 2, 1),
                             leaf(["22"], 2, 1)
                           ], 7, 3, boxed)
                 ]),
             line([
-                    leaf(["3"], 1, 1),
+                    leaf(["3"], 1, 3),
                     node([
                             leaf(["4444"], 4, 1),
                             leaf(["4444"], 4, 1),

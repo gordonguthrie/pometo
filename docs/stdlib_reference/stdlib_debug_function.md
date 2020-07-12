@@ -8,11 +8,11 @@
 
 It prints to the shell using `io:format`, and to `eunit` using `?debugFmt` and also returns a comment (primarily for use in `Rappel`) which is printed out. The nature and format of the comment is undefined, or rather at the `Pometo` runtime developers convenience and is subject to change. It prints what it prints. Feel free to customise it for your development needs.
 
-```pometo_dont_run
+```apl
 ⎕debug 1 2 (1 2) 3 4 (5 (6 7)) 8
 ```
 
-```pometo_results
+```erlang
 In ⎕debug
 *******************************************************************************
   from line 1 at character no 8
