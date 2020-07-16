@@ -146,10 +146,10 @@ double_nested_format_test_() ->
 
 basic_one_line_bust_measure_format_test_() ->
     Str = "MyVariable ← 1 2 3 4 5 6 7 8 9 0" ++
-    	              " 1 2 3 4 5 6 7 8 9 0"   ++
-    	              " 1 2 3 4 5 6 7 8 9 0"   ++
-    	              " 1 2 3 4 5 6 7 8 9 0\n" ++
-    	   "MyVariable + 1",
+                    " 1 2 3 4 5 6 7 8 9 0"   ++
+                    " 1 2 3 4 5 6 7 8 9 0"   ++
+                    " 1 2 3 4 5 6 7 8 9 0\n" ++
+         "MyVariable + 1",
     Got = pometo:interpret_TEST(Str),
     Exp = "2 3 4 5 6 7 8 9 10 1 2 3 4 5 6 7 8 9 10 1 2 3 4 5 6 7 8 9 10 [20 chars deleted ]",
     % ?debugFmt("in basic_one_line_bust_measure_format_test_~nGot~n~ts~nExp~n~ts~n", [Got, Exp]),
@@ -157,9 +157,9 @@ basic_one_line_bust_measure_format_test_() ->
 
 basic_nested_bust_measure_format_test_() ->
     Str = "MyVariable ← (1 2 3 4 5 6 7 8 9 0" ++
-    	              " 1 2 3 4 5 6 7 8 9 0"    ++
-    	              " 1 2 3 4 5 6 7 8 9 0"    ++
-    	              " 1 2 3 4 5 6 7 8 9 0)"   ++
+                    " 1 2 3 4 5 6 7 8 9 0"    ++
+                    " 1 2 3 4 5 6 7 8 9 0"    ++
+                    " 1 2 3 4 5 6 7 8 9 0)"   ++
                     "(1 2 3 4 5 6 7 8 9 0"    ++
                     " 1 2 3 4 5 6 7 8 9 0"    ++
                     " 1 2 3 4 5 6 7 8 9 0"    ++

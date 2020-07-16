@@ -39,25 +39,37 @@
 					set_return_type/2,
 					maybe_reverse/1,
 					get_nth/2,
-					resolve_rank/2
+					resolve_rank/2,
+					foldl/3,
+					get_first/1,
+					is_terminated/1,
+					make_enumerable/1,
+					make_axes/1,
+					make_count/1,
+					increment_count/2,
+					make_index_from_count/2,
+					eliminate_rank/2,
+					resize_axes/2,
+					offset_count/3,
+					axes_to_dims/1,
+					delete_dim_from_count/2
 				]).
 
 %%
 %% Exported for use in compiled modules
 %%
 
-dyadic(Args)  -> % io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
-								 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+dyadic(Args) -> % io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
+								pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
-monadic(Args)  -> % io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
-									pometo_runtime_monadic:monadic_RUNTIME(Args).
+monadic(Args) -> % io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
+								 pometo_runtime_monadic:monadic_RUNTIME(Args).
 
-dyadic_ranked(Args)  -> % io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
-												pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+dyadic_ranked(Args) -> % io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
+											 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
 
-
-monadic_ranked(Args)  -> % io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
-												 pometo_runtime_monadic:monadic_RUNTIME(Args).
+monadic_ranked(Args) -> io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
+												pometo_runtime_monadic:monadic_RUNTIME(Args).
 
 
 apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
@@ -86,16 +98,13 @@ run_ast2(#'$ast¯'{do   = 'let',
 										 args = A},
 	runtime_let([NewL]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-									args = [A1, A2]}) 										when Type == dyadic orelse
+									args = [A1, A2]}) 										when Type == dyadic        orelse
 																														 Type == dyadic_ranked ->
 	dyadic([Func, run_ast2(A1), run_ast2(A2)]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-									args = [A]}) 													when Type == monadic orelse
+									args = [A]}) 													when Type == monadic        orelse
 																														 Type == monadic_ranked ->
-	monadic([Func, run_ast2(A)]);
-run_ast2(X) ->
-	pometo_stdlib:debug("wigging out in run ast2 ~p~n", [X]),
-	exit("rando").
+	monadic([Func, run_ast2(A)]).
 
 are_all_positive_integers([])                                 -> true;
 are_all_positive_integers([H | T]) when is_integer(H)         -> are_all_positive_integers(T);
@@ -264,4 +273,110 @@ resolve_rank(NewD2, Rank) ->
 get_length(unsized_vector)    -> 1;
 get_length(L) when is_list(L) -> length(L).
 
+foldl(ApplyFn, [H | Rest] = List, _Len) when is_list(List) -> lists:foldl(ApplyFn, H, Rest);
+foldl(ApplyFn, Map,                Len) when is_map(Map)   -> Acc = maps:get(1, Map),
+																															mapfold(ApplyFn, Map, 2, Len, Acc).
 
+mapfold(_ApplyFn, _Map, Len, Len, Acc) -> Acc;
+mapfold(ApplyFn,  Map,  N,   Len, Acc) -> io:format("in map fold Map is ~p~n- N is ~p Len is ~p~n", [Map, N, Len]),
+																					Val = maps:get(N, Map),
+																					NewAcc = ApplyFn(Val, Acc),
+																					mapfold(ApplyFn, Map, N + 1, Len, NewAcc).
+
+is_terminated({map, none}) -> true;
+is_terminated({list, []})  -> true;
+is_terminated(_)           -> false.
+
+make_enumerable(Map)  when is_map(Map)   -> {map,  maps:iterator(Map)};
+make_enumerable(List) when is_list(List) -> {list, List}.
+
+
+get_first({map, Iter})      -> {_K, Val, NewIter} = maps:next(Iter),
+															 {{map,  NewIter}, Val};
+get_first({list, [H | T]})  -> {{list, T},       H}.
+
+make_axes(List) -> Keys = lists:seq(1, length(List)),
+									 maps:from_list(lists:zip(Keys, List)).
+
+make_count(N) -> Keys = lists:seq(1, N),
+								 Vals = lists:duplicate(N, 1),
+								 {N, maps:from_list(lists:zip(Keys, Vals))}.
+
+increment_count({N, Count}, Axes) ->
+	increment_count2({N, N, Count}, Axes).
+
+increment_count2({N, Orig, Count}, Axes) ->
+	Val = maps:get(N, Count),
+	Max = maps:get(N, Axes),
+	if
+		Val == Max ->
+			if
+				N == 1 ->
+				'$eof';
+			el/=se ->
+				NewCount = maps:put(N, 1, Count),
+				increment_count2({N - 1, Orig, NewCount}, Axes)
+			end;
+		el/=se ->
+			NewCount = maps:put(N, Val + 1, Count),
+			{Orig, NewCount}
+	end.
+
+make_index_from_count({N, Count}, Axes) ->
+	io:format("    in make_index_from_count N is ~p Count is ~p Axes is ~p~n", [N, Count, Axes]),
+	StartingIndex = 0,
+	make_index_from_count2(N, Count, 1, Axes, StartingIndex).
+
+make_index_from_count2(0, _Count, _CurrentSize, _Axes, Index) ->
+	Index + 1;
+make_index_from_count2(N, Count, CurrentSize, Axes, Index) ->
+	Current  = maps:get(N, Count),
+	AxisSize = maps:get(N, Axes),
+	if
+		Current > AxisSize ->
+			out_of_bounds;
+		Current =< 0 ->
+			out_of_bounds;
+		el/=se ->
+			{NewSize, Incr} = case AxisSize of
+					0 -> {CurrentSize,            0};
+					_ -> {AxisSize * CurrentSize, (Current - 1) * CurrentSize}
+			end,
+			make_index_from_count2(N - 1, Count, NewSize, Axes, Incr + Index)
+	end.
+
+eliminate_rank(Rank, D) ->
+	{Left, [_ | Right]} = lists:split(Rank - 1, D),
+	Left ++ Right.
+
+resize_axes([], Axes) ->
+	Axes;
+resize_axes([{delete, Rank} | T], Axes) ->
+	Dims = axes_to_dims(Axes),
+	NewDims = eliminate_rank(Rank, Dims),
+	NewAxes = make_axes(NewDims),
+	resize_axes(T, NewAxes);
+resize_axes([{Adjustment, Rank} | T], Axes) ->
+	OldVal  = maps:get(Rank, Axes),
+	NewVal  = OldVal + Adjustment,
+	NewAxes = maps:put(Rank, NewVal, Axes),
+	resize_axes(T, NewAxes).
+
+offset_count(Offset, Rank, {N, Count}) ->
+	OldVal = maps:get(Rank, Count),
+	NewVal = OldVal + Offset,
+	if
+		NewVal =< 0 -> out_of_bounds;
+		el/=se      -> NewCount = maps:put(Rank, NewVal, Count),
+									 {N, NewCount}
+	end.
+
+axes_to_dims(Map) when is_map(Map) -> {_Keys, Vals} = lists:unzip(lists:sort(maps:to_list(Map))),
+																			Vals.
+
+delete_dim_from_count(Rank, {N, Count}) ->
+	% conceptually Counts are <the same> as axes so we can reuse existing fns
+	Elements    = axes_to_dims(Count),
+	NewElements = eliminate_rank(Rank, Elements),
+	NewCount    = make_axes(NewElements),
+	{N - 1, NewCount}.

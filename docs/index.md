@@ -2,9 +2,9 @@
 
 `Pometo` is the the little `APL` for the `BEAM`, an auxiliary language to complement and use in your `Erlang`, `Elixir` and `LFE` applications.
 
-THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SOME INCHOATE SYMBOLS SCRAWLED WITH A HALF-BURNT STICK ON A CAVE WALL.
-
 # Status Of The Project
+
+THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SOME INCHOATE SYMBOLS SCRAWLED WITH A HALF-BURNT STICK ON A CAVE WALL.
 
 ```
            _       _

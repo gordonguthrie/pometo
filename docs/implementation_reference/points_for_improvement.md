@@ -29,3 +29,9 @@ mais, oui
 I got an unresolved blowup that I think was a failure to handle undeclared variables in different ways
 
 Needs some tests in smoke testing
+
+## Zeros And Negative Ranks
+
+Writing the reduce operator which has a special case of 0 operand exposed that needs to be handled separately exposed a weakness in our documentation. We need to collect all the use cases and review all documents to ensure that they cover them.
+
+Ditto for negative ranks which sometimes work

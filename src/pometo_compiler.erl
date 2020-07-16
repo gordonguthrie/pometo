@@ -50,19 +50,26 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 																"line_no    = none,"   ++
 																"char_no    = none"    ++
 																"})."), LineNo1 + 1),
-	reset(?Q("-record('$func¯', {"                            ++
-															 "do             = false, "   ++
-															 "type           = [],"       ++
-															 "result         = explicit," ++
-															 "shape_changing = false ,"   ++
-															 "rank           = last ,"    ++
-															 "line_no        = none,"     ++
-															 "char_no        = none"      ++
-															 "})."), LineNo1 + 2)
+	reset(?Q("-record('$func¯', {"                             ++
+															 "do             = false, "    ++
+															 "type           = [],"        ++
+															 "construction   = primitive," ++
+															 "result         = explicit,"  ++
+															 "shape_changing = false ,"    ++
+															 "rank           = last ,"     ++
+															 "line_no        = none,"      ++
+															 "char_no        = none"       ++
+															 "})."), LineNo1 + 2),
+	reset(?Q("-record('$op¯', {"                 ++
+														 "op, "            ++
+														 "fns     = [],"   ++
+														 "line_no = none," ++
+														 "char_no = none"  ++
+														 "})."), LineNo1 + 3)
 		],
 
 	SourceMap3 = SourceMap2#{LineNo2 => #sourcemap{description = "parser records import definition"}},
-	LineNo3 = LineNo2 + 3,
+	LineNo3 = LineNo2 + 4,
 
 	{PublicFns,  LineNo4, SourceMap4} = make_public_fns(Exports,    LineNo3, ModuleName, SourceMap3, ?EMPTY_RESULTS),
 	{PrivateFns, LineNo5, SourceMap5} = make_private_fns(Functions, LineNo4, ModuleName, SourceMap4, ?EMPTY_RESULTS),
@@ -400,6 +407,24 @@ make_record(#'$func¯'{do             = D,
 	"char_no = "            ++
 	make_line_char_no(CNo)  ++
   "}";
+make_record(#'$op¯'{op      = O,
+										fns     = F,
+										line_no = LNo,
+										char_no = CNo}) ->
+	Fns = lists:flatten("[" ++ [quote(X) || X <- F] ++ "]"),
+  "#'$op¯'{"              ++
+  "op = "                 ++
+  quote(O)                ++
+  ", "                    ++
+  "fns = "                ++
+  Fns                     ++
+  ", "                    ++
+	"line_no = "            ++
+	make_line_char_no(LNo)  ++
+	", "                    ++
+	"char_no = "            ++
+	make_line_char_no(CNo)  ++
+  "}";
 make_record({'$var¯', V, _LineNo, _CharNo}) ->
 	V.
 
@@ -435,7 +460,8 @@ make_dimensions(Dimensions)     -> NewDs = [integer_to_list(D) || D <- Dimension
 make_line_char_no(none)                 -> "none";
 make_line_char_no(N) when is_integer(N) -> integer_to_list(N).
 
-quote({X, Y})                    -> "{" ++ quote(X) ++ ", " ++ quote(Y) ++   "}";
+quote(#'$op¯'{} = Op)            -> make_record(Op);
+quote({X, Y})                    -> "{" ++ quote(X) ++ ", " ++ quote(Y) ++ "}";
 quote(N)      when is_integer(N) -> integer_to_list(N);
 quote(F)      when is_float(F)   -> float_to_list(F);
 quote(L)      when is_list(L)    -> "\"" ++ L ++ "\"";

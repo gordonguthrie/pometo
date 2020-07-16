@@ -155,6 +155,7 @@ Which gives:
 This forms a `dyadic fork` (or `dyadic fgh fork`) `((5 - 10),(5 ÷ 10))`
 
 Lets break that execution sequence down:
+
 | Function     | Sign | Type   | LHS Argument | RHS Argument | Result          |
 |--------------|------|--------|--------------|--------------|-----------------|
 |reciprocal    | `÷`  | dyadic | 'scalar'  5  | `scalar` 10  | `scalar` 0.5    |

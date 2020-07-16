@@ -1,3 +1,4 @@
+
 Nonterminals
 
 Exprs
@@ -8,6 +9,7 @@ Scalar
 Let
 Value
 Var
+PrimitiveFn
 Fn
 Fns
 Dyadic
@@ -16,6 +18,9 @@ Int
 Rank
 Ranked
 Args
+Op
+OpRanked
+OpFn
 
 .
 
@@ -49,8 +54,9 @@ Right 100 Vector.
 Right 200 Expr.
 Right 300 Scalar.
 Right 325 Fns.
-Right 400 open_bracket.
-Right 400 open_sq.
+Right 400 OpFn.
+Right 500 open_bracket.
+Right 500 open_sq.
 
 Exprs -> Expr                  : ['$1'].
 Exprs -> Let                   : ['$1'].
@@ -70,17 +76,28 @@ Args -> Var     : '$1'.
 Fns -> Fn        : '$1'.
 Fns -> Fns Fn    : maybe_merge('$1', '$2').
 
-Fn -> monadic    : make_fn_ast('$1').
-Fn -> dyadic     : make_fn_ast('$1').
-Fn -> ambivalent : make_fn_ast('$1').
-Fn -> Rank       : '$1'.
+Fn -> PrimitiveFn : '$1'.
+Fn -> Rank        : '$1'.
+Fn -> OpFn        : '$1'.
 
+OpFn -> PrimitiveFn Op : op_to_fn('$1', '$2').
+OpFn -> Rank        Op : op_to_fn('$1', '$2').
+
+PrimitiveFn -> monadic       : make_fn_ast('$1').
+PrimitiveFn -> dyadic        : make_fn_ast('$1').
+PrimitiveFn -> ambivalent    : make_fn_ast('$1').
+
+Op -> OpRanked : '$1'.
+
+Rank -> OpRanked                      : '$1'.
 Rank -> Ranked                        : add_rank('$1', default_rank('$1')).
 Rank -> Ranked open_sq Int   close_sq : add_rank('$1', '$3').
 Rank -> Ranked open_sq float close_sq : add_rank('$1', '$3').
 
 Ranked -> monadic_ranked : '$1'.
-Ranked -> hybrid         : '$1'.
+
+OpRanked -> hybrid                      : add_rank('$1', default_rank('$1')).
+OpRanked -> hybrid open_sq Int close_sq : add_rank('$1', '$3').
 
 Let -> Var let_op Vecs    : make_let('$1', '$3').
 Let -> Var let_op Expr    : make_let('$1', '$3').

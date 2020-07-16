@@ -8,6 +8,23 @@
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
+op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do}   = Func,
+                  args    = []}                  = AST1,
+         #'$ast¯'{do      = #'$func¯'{do   = [Op],
+                                      rank = Rank},
+                  line_no = LNo,
+                  char_no = CNo}) ->
+  IsChanging = is_op_shape_changing(Op),
+  NewOp = #'$op¯'{op      = Op,
+                  fns     = Do,
+                  line_no = LNo,
+                  char_no = CNo},
+  AST1#'$ast¯'{do = Func#'$func¯'{do             = [NewOp],
+                                  type           = ambivalent,
+                                  construction   = operator,
+                                  rank           = Rank,
+                                  shape_changing = IsChanging}}.
+
 add_rank({Type, CharNo, _, Val},
          #'$ast¯'{do   = #'$shape¯'{dimensions = D},
                   args = Rank}) when is_list(D) ->
@@ -24,10 +41,10 @@ add_rank({Type, CharNo, _, Val}, #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 make_fn_ast({Type, CharNo, _, Val}) ->
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
 
-maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Op1,
+maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Fn1,
                                       type = Type1} = Func,
                      args = []}                     = AST1,
-            #'$ast¯'{do   = #'$func¯'{do   = Op2,
+            #'$ast¯'{do   = #'$func¯'{do   = Fn2,
                                       type = Type2},
                      args = []}                     = AST2)
   when (Type1 == monadic        orelse
@@ -36,18 +53,16 @@ maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Op1,
        (Type2 == monadic        orelse
         Type2 == monadic_ranked orelse
         Type2 == ambivalent) ->
-  case {is_shape_changing(Op1), is_shape_changing(Op2)} of
-    {false, false} -> AST1#'$ast¯'{do   = Func#'$func¯'{do = Op2 ++ Op1}};
-    {_,     _}     -> AST1#'$ast¯'{args = [AST2]}
+  case {is_primitive_fn_shape_changing(Fn1), is_primitive_fn_shape_changing(Fn2)} of
+    {false, false} -> AST1#'$ast¯'{do   = Func#'$func¯'{do = Fn2 ++ Fn1}};
+    {_,     _}     -> NewAST2 = make_monadic(AST2),
+                      AST1#'$ast¯'{args = [NewAST2]}
   end.
-% maybe_merge(A, B) ->
-%  io:format("in maybe_merge (2) A is ~p~nB is ~p~n", [A, B]),
-%  rillette.
 
-make_fn_ast2(Op, Type, Rank, Args, CharNo) ->
-  Func = #'$func¯'{do             = [Op],
+make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
+  Func = #'$func¯'{do             = [Fn],
                    type           = Type,
-                   shape_changing = is_shape_changing(Op),
+                   shape_changing = is_primitive_fn_shape_changing(Fn),
                    rank           = Rank,
                    char_no        = CharNo,
                    line_no        = scope_dictionary:get_line_no()},
@@ -57,24 +72,24 @@ make_fn_ast2(Op, Type, Rank, Args, CharNo) ->
            line_no = scope_dictionary:get_line_no()}.
 
 % we might have merged up some functions on the RHS, so demerge them...
-make_dyadic(#'$ast¯'{do   = #'$func¯'{do = Dos,
+make_dyadic(#'$ast¯'{do   = #'$func¯'{do   = Dos,
                                       type = Type} = Func,
                      args = Args}                    = FuncAST,
             #'$ast¯'{}                               = LeftAST,
             #'$ast¯'{}                               = RightAST) when length(Dos) > 1         andalso
                                                                       (Type  == dyadic        orelse
-                                                                        Type == dyadic_ranked orelse
-                                                                        Type == hybrid        orelse
-                                                                        Type == ambivalent)   ->
+                                                                       Type == dyadic_ranked orelse
+                                                                       Type == hybrid        orelse
+                                                                       Type == ambivalent)   ->
   {LeftDo, RightDo} = unmerge_dos(Dos),
   NewRightAST = case Args of
     []    -> RightAST;
     [Arg] -> descend_arg(Arg, RightAST)
   end,
-  Monadic = FuncAST#'$ast¯'{do   = Func#'$func¯'{do = RightDo,
+  Monadic = FuncAST#'$ast¯'{do   = Func#'$func¯'{do   = RightDo,
                                                  type = monadic},
                             args = [NewRightAST]},
-  FuncAST#'$ast¯'{do   = Func#'$func¯'{do = LeftDo,
+  FuncAST#'$ast¯'{do   = Func#'$func¯'{do   = LeftDo,
                                        type = dyadic},
                   args = [LeftAST, Monadic]};
 make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
@@ -112,9 +127,6 @@ make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
                   args = [NewArg]}.
-%make_monadic(A, B) ->
-%  io:format("in make monadic A is ~p B is ~p~n", [A, B]),
-%  rillette.
 
 % this works
 make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
@@ -271,10 +283,13 @@ log(X, Label) ->
   ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
   X.
 
-is_shape_changing(["⍴"]) -> true;
-is_shape_changing(["⍳"]) -> true;
-is_shape_changing([","]) -> true;
-is_shape_changing(_)     -> false.
+is_op_shape_changing("/") -> true;
+is_op_shape_changing(_)   -> false.
+
+is_primitive_fn_shape_changing(["⍴"]) -> true;
+is_primitive_fn_shape_changing(["⍳"]) -> true;
+is_primitive_fn_shape_changing([","]) -> true;
+is_primitive_fn_shape_changing(_)     -> false.
 
 default_rank({_, _, _, ","})  -> none; % the ravel operator has funky ranking - it takes vectors not scalars
 default_rank({_, _, _, "/"})  -> first;
@@ -282,3 +297,5 @@ default_rank({_, _, _, "\\"}) -> first;
 default_rank({_, _, _, "⌿"})  -> last;
 default_rank({_, _, _, "⍀"})  -> last;
 default_rank(_)               -> none.
+
+make_monadic(#'$ast¯'{do = #'$func¯'{} = Func} = AST) -> AST#'$ast¯'{do = Func#'$func¯'{type = monadic}}.
