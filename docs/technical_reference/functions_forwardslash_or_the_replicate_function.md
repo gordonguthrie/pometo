@@ -8,8 +8,6 @@
 
 When used dyadically with constants the LHS must be a number or boolean scalar or a scalar array containing only numbers or booleans.
 
-The right ha
-
 ```pometo
 3 4 / 5 6
 ```
@@ -36,6 +34,17 @@ giving:
 ```
 
 But not on the LHS.
+
+The scalar zero returns a null scalar.
+
+```pometo
+0 / 1 2 3
+```
+
+Giving:
+```pometo_results
+
+```
 
 ## Default Rank With Scalars on the LHS
 
@@ -89,7 +98,7 @@ Gives
 
 The same caveats pertain with regard the length of the LHS - except this must match the last dimension.
 
-## Use With Axes  With Scalars on the LHS
+## Use With Axes With Scalars on the LHS
 
 Both `/` and `⌿` can be used with axis notation:
 

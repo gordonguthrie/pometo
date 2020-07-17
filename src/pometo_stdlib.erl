@@ -46,10 +46,14 @@ debug2(#'$ast¯'{do      = Do,
 		is_list(Args) -> length(Args);
 		el/=se        -> 1
 	end,
+	NewArgs = if
+								is_list(Args) -> Args;
+								el/=se        -> [Args]
+	end,
 	Line1  = io_lib:format(Padding ++ "from line ~p at character no ~p~n", [LNo, CNo]),
 	Line2  = format_do(Do, Padding),
 	Line3  = io_lib:format(Padding ++ "arguments: ~p~n", [NumArgs]),
-	Line4  = print_args(Args, Indent + 1, ?EMPTY_ACCUMULATOR),
+	Line4  = print_args(NewArgs, Indent + 1, ?EMPTY_ACCUMULATOR),
 	_Lines = lists:flatten([
 														Line1,
 														Line2,
@@ -93,9 +97,17 @@ print_args([H | T], Indent,  Acc) ->
 	NewAcc = Padding ++ io_lib:format("~p~n", [H]),
 	print_args(T, Indent, [NewAcc       | Acc]).
 
+format_do(#'$func¯'{do             = Do,
+                    type           = Type,
+                    construction   = C,
+                    result         = Res,
+                    shape_changing = S,
+                    rank           = Rank}, Ind) ->
+	io_lib:format(Ind ++ "Function: ~p type: ~p construction: ~p result: ~p shape_changing: ~p rank: ~p~n",
+		[Do, Type, C, Res, S, Rank]);
 format_do(#'$shape¯'{indexed    = Index,
 										 dimensions = Dims,
 										 type       = Type}, Ind) ->
-	io_lib:format(Ind ++ "type: ~p (indexed:~p) with dimensions ~p~n", [Type, Index, Dims]);
+	io_lib:format(Ind ++ "Shape: type: ~p (indexed:~p) with dimensions ~p~n", [Type, Index, Dims]);
 format_do(Do, Ind) ->
 	io_lib:format(Ind ++ "~p~n", [Do]).

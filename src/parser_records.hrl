@@ -18,14 +18,22 @@
 
 %% special func record
 -record('$func¯', {
-                    do                        :: string() | [string()],
-                    type                      :: niladic | monadic | dyadic | ambivalent,
-                    result         = explicit :: none | surpressed | explicit,
-                    shape_changing = false    :: boolean(),
-                    rank           = none     :: first | last | Integer,
-                    line_no        = none     :: none | Integer,
-                    char_no        = none     :: none | Integer
+                    do                         :: string() | [string()],
+                    type                       :: niladic | monadic | dyadic | ambivalent,
+                    construction   = primitive :: primitive | operator | atop | fork_fgh | fork_Agh,
+                    result         = explicit  :: none | surpressed | explicit,
+                    shape_changing = false     :: boolean(),
+                    rank           = none      :: first | last | Integer,
+                    line_no        = none      :: none | Integer,
+                    char_no        = none      :: none | Integer
                    }).
+
+%% special operator record
+-record('$op¯', {op             :: string(),
+                 fns     = []   :: [string()],
+                 line_no = none :: none | Integer,
+                 char_no = none :: none | Integer
+                 }).
 
 % leaf records
 -record('$var¯', {

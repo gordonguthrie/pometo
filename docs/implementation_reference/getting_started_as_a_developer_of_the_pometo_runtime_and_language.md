@@ -1,12 +1,37 @@
 # Getting Started As A Developer Of The Pometo Runtime And Language
 
-## Basic Dev Cycle
+## Understanding Pometo
+
+`Pometo` is a reimplementation of a venerable programming language paradigm `apl` (which stands for ***Another Programming Language*** imagine the brass neck of that for a name?).
+
+The aim is to make a janus-faced, pure-functional, auxiliary (or lambda) language:
+
+* looking towards `Erlang`, `Elixir` and `LFE` it is a native `BEAM` language that can handle native data types
+* looking towards `apl` it is a ***normal*** `apl` implementation
+
+We therefore have some ***prejudices***:
+
+* conforming to the current version of Dyalog APL (18.0) requires no special decision making
+* deviating from or extending the language from that base requires an explicit decision to do so
+* `Pometo` is not a concurrent language - it runs inside a single `BEAM` process - concurrency comes from being embedded inside an application writen in `Erlang`, `Elixir` or `LFE`. This means that `Pometo` will ***never*** have what are traditionally thought of as core `BEAM` features:
+   * no OTP/supervision trees
+   * no message passing
+   * no side effects - it is a pure functional language
+
+There are some great Dyalog resources:
+
+* [a manual](https://www.dyalog.com/uploads/documents/MasteringDyalogAPL.pdf)
+* [a live `REPL`](https://tryapl.org/)
+* [a live help site](http://help.dyalog.com/18.0/index.htm)
+
+## Basic Dev Cycle Of APL Features
 
 The core development cycle is:
 
 * write a documentation page description the operation that you wish to add and the results it should show
   * create your document not in the final directory but in `docs/_work_in_progress`
-	* documentation pages are turned into tests - the title of test is the filename - so your docs pages should not have the same name as anyother page
+	* documentation pages are turned into tests - the title of test is the filename - so your docs page should not have the same name as any other page
+  * feel free to raise a PR on your new docs page and get a review before starting work on implementing it
 * generate the new test suite with the command `BUILDWIP=true rebar3 pometo_docs_to_tests`
     * the `pometo_docs_to_tests` `rebar3` plugin is fairly stable but does occassionally change
     * to fetch and run a new version delete the directory `_build/default/plugins/pometo_docs_to_test` and your next call of any `rebar3` command will fetch and install the latest version
@@ -30,6 +55,16 @@ These two output methods don't work with each other `io:format`s don't show when
 
 This can tend to lead to dirty code with extra `io:format`s and `?debugFmt`s littering the code. Please check your diffs before submitting a PR.
 
+## Basic Dev Cycle For Non-Conformant With Dyalog Features
+
+It is the same basic dev cycle with one pre-step.
+
+Please add a section at the end of the design docs page in the docs directory explaining:
+
+* what you want to do
+* why not conforming to Dyalog APL 18.0 is a good idea
+* why you want to extend the language or add new features to make it work better with `Erlang`, `Elixir` and `LFE`.
+
 ## How To Write Docs Pages As Tests
 
 Docs pages have a simple format.
@@ -49,6 +84,8 @@ The next markdown code section MUST be marked up as a `pometo_results` code bloc
 If the code you are writing generates run time errors when trying to iterate over vectors you will find that `lazy` vectors and `eager` ones generate slightly different error messages.
 
 For an example see the discussion of `LENGTH ERROR` in [the Errors Reference](../error_reference/errors.md).
+
+***IMPORTANT***: if the output contains quoted strings they must be escaped in the documentation.
 
 In this case you can add an optional third markdown code section marked as `pometo_lazy` code block:
 
@@ -101,46 +138,59 @@ There is a commented out function called `print_src` in `pometo_compiler.erl` an
 One of the modules that is tested by tests generated from this docs page looks like this:
 
 ```erlang
--module(compile_force_unindex_runner).
+-module(how_to_write_docs_pages_as_tests_1_compiler).
 
 -export([run/0]).
 
 -record('$ast¯',
-        {do, args = [], line_no = none, char_no = none}).
+  {do, args = [], line_no = none, char_no = none}).
 
 -record('$shape¯',
-        {indexed = false, dimensions = [], forcing = none,
-         type = none, line_no = none, char_no = none}).
+  {indexed = false, dimensions = [], forcing = none,
+   type = none, line_no = none, char_no = none}).
+
+-record('$func¯',
+  {do = false, type = [], construction = primitive,
+   result = explicit, shape_changing = false, rank = last,
+   line_no = none, char_no = none}).
+
+-record('$op¯',
+  {op, fns = [], line_no = none, char_no = none}).
 
 run() ->
-    try do_run_626ba65308c458161d889bc0d22f4c49e7e7be41()
+    try do_run_11cdad4092f75b9358d539fc59d9f522ca8187eb()
     catch
       E -> io:format("throwing ~p~n", [E]), E
     end.
 
-do_run_626ba65308c458161d889bc0d22f4c49e7e7be41() ->
-    pometo_runtime:dyadic_fn(["+",
-                              #'$ast¯'{do =
-                                           #'$shape¯'{indexed = false,
-                                                      dimensions = 0,
-                                                      forcing = none,
-                                                      type = number,
-                                                      line_no = 1, char_no = 1},
-                                       args = 1, line_no = 1, char_no = 1},
-                              #'$ast¯'{do =
-                                           #'$shape¯'{indexed = false,
-                                                      dimensions = 0,
-                                                      forcing = none,
-                                                      type = number,
-                                                      line_no = 1, char_no = 5},
-                                       args = 2, line_no = 1, char_no = 5}]).
+do_run_11cdad4092f75b9358d539fc59d9f522ca8187eb() ->
+    pometo_runtime:dyadic([#'$func¯'{do = ["+"],
+             type = dyadic, result = explicit,
+             shape_changing = false, rank = none,
+             line_no = 1, char_no = 3},
+         #'$ast¯'{do =
+          #'$shape¯'{indexed = false,
+               dimensions = 0,
+               forcing = none,
+               type = number, line_no = 1,
+               char_no = 1},
+            args = 1, line_no = 1, char_no = 1},
+         #'$ast¯'{do =
+          #'$shape¯'{indexed = false,
+               dimensions = 0,
+               forcing = none,
+               type = number, line_no = 1,
+               char_no = 5},
+            args = 2, line_no = 1, char_no = 5}]).
 ```
+
+There is already a ***convention*** in 'Erlang'/'Elixir' that `OPT` uses `atom`s that start with `$` and you should generally not do that in your code. We extend that convention here. All `Pometo` runtime `atom`s start with `$` and end with the `apl` negative number symbol `¯` hence `$ast¯`, `$shape¯`, `$var¯`, `$func¯` and `$op¯`. It is not thought that there are many `atom`s out in the wild in existing `Erlang` and `Elixir` codebases that contain this signature `apl` symbol. (Hashtag famous last words, of course.)
 
 There is a different module generated for the 5 non-interpreter tests. In this case 3 of the 5 are identical as making an AST `lazy` or `indexed` is a null op if it doesn't contain arrays (as this test doesn't - operating only on scalars).
 
 In the fullness of time there will be pre-and post-handling code and source map look up around the public function. (Currently the source map is being built but is not integrated - you can inspect it if you poke around the compiler).
 
-There is a build output formatted which will be rolled into the compiler generated post-processing bloc when that is ready - it is shown in red on the diagram.
+There is a build output formatter which will be rolled into the compiler generated post-processing bloc when that is ready - it is shown in red on the diagram.
 
 All tests go through the lexer and parser equally. There are handwritten tests in `test/` that check the basic functionality of the lexer, lexer post-lex passes, interpreter and compiler. The tests generated from docs focus on testing the runtime element of the toolchain.
 
@@ -158,7 +208,9 @@ The compiler understands when indexing is needed and will coerce a transformatio
 
 The test suite is thus organised around these paths. For the `lazy`, `indexed`, `force index` and `force unindex` we chose to push the code down the compiler side - that's arbitrary - we could have pushed it down the intepreted side just as easily - the invocation of the runtime is identical in both cases.
 
-We force the `lazy`, `indexed`, `force index` and `force unindex` paths by inserting some transforms between the AST and the compiler. These transforms don't affect the ***syntax*** of the AST - they twiddle the values of some of the data contained within shapes in the AST.
+We force the `lazy`, `indexed`, `force index` and `force unindex` paths by inserting some transforms between the AST and the compiler. These transforms don't affect the ***syntax*** of the AST - they twiddle the values of fields contained within the `$shape¯` records in the AST that determine the internal data representation and, if necessary, restructure the arguments from simple lists to indexed maps.
+
+This is what a generated test suite looks like: the same inputs and outputs striped across 6 execution paths:
 
 ```erlang
 %%% DO NOT EDIT this test suite is generated by the pometo_docs_to_test rebar3 plugin
@@ -236,7 +288,15 @@ Go on, try writing doc tests.
 
 The goal is to build documentation as we go along so any features added to the system need to have associated documentation (and hence tests-generated-from-the-documentation) written as we go along.
 
-Documentation is stored in a structured set of directories under `docs/`. To add a page to the table of contents please edit `docs/_data/contents.yml`.
+Documentation is stored in a structured set of directories under `docs/`. To add a page to the table of contents please edit `docs/_data/contents.yml`. Please follow the basic dev cycle:
+
+* create new docs in the `_work_in_progress` directory.
+* write your code until the tests all pass
+* raise a PR that includes:
+    * migrating the docs page to its final place
+    * adding an entry in the `contents.yml` to make sure the docs page appears in the published docs page
+
+Feel free to raise a PR to review a new docs page in the WIP directory befoer starting coding it up.
 
 Please manually check that the documentation builds before you commit your change. (There is one known and unavoidable problem: two left curly brackets side by side is interpreted as a template command and you need to write your `apl` a bit more spaced out - `{ {`.
 

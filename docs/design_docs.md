@@ -482,3 +482,88 @@ Array's can also be:
 * lazy
 
 A lazy array representation is one in which it doesn't know its shape - it is a vector of indeterminate length - again any pass over a lazy array might convert it to an eager one.
+
+## Using Indices And Counts To Implement Reduction
+
+Trying to design algos for arbritrary matrix ops ***on the fly*** against pre-written tests has proved to be painful and inefficient.
+
+What has proven to work is using handwritten stepwise execution plans.
+
+This is one such for diadic reduction. Normally one writes from the simple to the complex, but for matrix ops it turns out that this just involves rewritting and rewritting and rewritting - so in this instance we treat the ***simple*** as degenerate cases of the ***normal***
+
+```apl
+A ← ⍳ 24
+B ← 2 3 4 ⍴ A
+n2 +/[2] B
+```
+
+B is:
+
+```apl
+ 1  2  3  4
+ 5  6  7  8
+ 9 10 11 12
+
+13 14 15 16
+17 18 19 20
+21 22 23 24
+```
+
+The result should be:
+
+```apl
+ 6  8 10 12
+14 16 18 20
+
+30 32 34 36
+38 40 42 44
+```
+
+or:
+
+```apl
+(1 + 5) (2 +  6) (3 +  7) (4 +  8)
+(5 + 9) (6 + 10) (7 + 11) (8 + 12)
+
+(13 + 17) (14 + 18) (15 + 19) (16 + 20)
+(17 + 21) (18 + 22) (19 + 23) (20 + 24)
+```
+
+
+We represent the count as:
+
+`{1, 1, 1}` where the positions correspond to the axis `[2 3 4]` so we are counting arabic style right-to-left.
+
+So as we iterate. The counts are different - based on different axes.
+
+```bollocks
+Old Count                          New Count
+---------                          ---------
+{1, 1, 1} -> needs to be pushed to {1, 1, 1} -> 1
+                                   {1, 0, 1} -> supressed
+{1, 1, 2} -> needs to be pushed to {1, 1, 2} -> 2
+                                   {1, 0, 2} -> supressed
+...
+{1, 2, 1} -> needs to be pushed to {1, 1, 1} -> 1 + 5 -> 6
+                                   {1, 2, 1} -> 5
+...
+{1, 3, 1} -> needs to be pushed to {1, 1, 1} -> 1 + 5 -> 6
+                                   {1, 2, 1} -> 5
+...
+{2, 1, 1} -> needs to be pushed to {2, 1, 1} -> 13
+                                   {2, 0, 1} -> supressed
+{2, 1, 2} -> needs to be pushed to {2, 1, 2} -> 14
+                                   {2, 0, 2} -> supressed
+...
+{2, 2, 1} -> needs to be pushed to {2, 2, 1} -> 18
+                                   {2, 1, 1} -> 13 + 17 -> 30
+```
+The supression criteria is the count being `=< 0` in the shifted rank.
+
+Summary:
+
+* we do a single sweep of the matrix in order (so can be a list or an index map)
+* we calculate the location of the data point in the new world (so it must be an index map)
+* we make the operation which can be:
+   * EITHER an initialisation (the key is non-existant in the index map)
+   * OR a dyadic operation - the existing value on the left, the new value on the right

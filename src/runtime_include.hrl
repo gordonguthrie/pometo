@@ -13,7 +13,13 @@
 -define(cmplx(Args), #'$ast¯'{do   = complex,
 															args = Args}).
 
+%% ranking records
+-record(rank_fns, {optional_LHS = none,
+									 iteration_fn        :: Fun,
+									 inner_fn     = none :: none | Fun
+									}).
 
+%% formatting records
 -record(fmt_segment, {
 						strings = "",
 						width   = 0,

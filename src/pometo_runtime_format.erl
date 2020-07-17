@@ -3,26 +3,25 @@
 -include_lib("eunit/include/eunit.hrl").
 
 -include("parser_records.hrl").
--include("errors.hrl").
 -include("comments.hrl").
+-include("errors.hrl").
 -include("runtime_include.hrl").
 
 %% things exported for runtime
 -export([
-		  format/1,
-		  format_errors/1,
-		  make_error/5
-		]).
+					format/1,
+					format_errors/1
+				]).
 
 %% runtime utility functions
 -export([
-		 fmt/1
-		]).
+					fmt/1
+				]).
 
 %% exports for testing
 -export([
-		  build_segments_TEST/1
-		]).
+					build_segments_TEST/1
+				]).
 
 %% the size we allow the formated output to be
 -define(DISPLAYWIDTH,  80).
@@ -53,18 +52,23 @@ format(#'$ast¯'{do   = #'$shape¯'{indexed = true} = Shp,
 									   args = NewArgs});
 % special case for the null return from ⍴ on a scalar
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-				args = []}) ->
+								args = []}) ->
+	"";
+% special case for the null return from ⍴ on a vectors
+format(#'$ast¯'{do   = #'$shape¯'{dimensions = [0]},
+								args = Args}) when Args == []  orelse
+																	 Args == #{} ->
 	"";
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																  type       = array},
 							  args = Args} = AST) ->
-	% promote an array scalar to a mixed vector for printing
+% promote an array scalar to a mixed vector for printing
 	NewDims = [length(Args)],
 	format(AST#'$ast¯'{do   = #'$shape¯'{dimensions = NewDims,
-								         type       = mixed}});
+																			 type       = mixed}});
 % scalar array first
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-							  args = #'$ast¯'{do = #'$shape¯'{}} = InnerAST}) ->
+								args = #'$ast¯'{do = #'$shape¯'{}} = InnerAST}) ->
 	format(InnerAST);
 % now a normal scalar (including complex nos)
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
@@ -390,20 +394,6 @@ make_frag(Text, Args) ->
 	#fmt_segment{strings = [String],
 	             width   = Width,
 	             is_leaf = true}.
-
-make_error(Type, Msg1, Msg2, LineNo, CharNo) when is_list(Type)      andalso
-												  is_list(Msg1)      andalso
-												  is_list(Msg2)      andalso
-												  is_integer(LineNo) andalso
-												  is_integer(CharNo) ->
-	#error{
-					type = Type,
-					msg1 = Msg1,
-					msg2 = Msg2,
-					expr = "",
-					at_line = LineNo,
-					at_char = CharNo
-		   }.
 
 format_error(#error{type    = T,
 										msg1    = M1,

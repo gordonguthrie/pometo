@@ -11,21 +11,23 @@ toc:
         url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
-      - page: The Forwardslash/Reduce operator /
-        url:  technical_reference/operators_forwardslash_or_the_reduce_operator.html
-      - page: The Identity/Complex Conjugate/Plus function +
+      - page: The Replicate functions `/` and `⌿`
+        url:  technical_reference/functions_forwardslash_or_the_replicate_function.html
+      - page: The Identity/Complex Conjugate/Plus function `+`
         url:  technical_reference/functions_the_identity_complex_conjugate_plus_function.html
-      - page: The Negation/Minus function -
+      - page: The Negation/Minus function `-`
         url:  technical_reference/functions_the_negation_minus_function.html
-      - page: The Direction/Multiply function ×
+      - page: The Direction/Multiply function `×`
         url:  technical_reference/functions_the_direction_multiply_function.html
-      - page: The Reciprocal/Divide function ÷
+      - page: The Reciprocal/Divide function `÷`
         url:  technical_reference/functions_the_reciprocal_divide_function.html
-      - page: The Rho/Shape function ⍴
+      - page: The Rho/Shape function `⍴`
         url:  technical_reference/functions_rho_the_shape_function.html
-      - page: The Iota/Index function ⍳
+      - page: The Iota/Index function `⍳`
         url:  technical_reference/functions_iota_the_index_function.html
-      - page: The Ravel/Comma function ,
+      - page: The Ravel/Comma function `,`
+        url:  technical_reference/functions_ravel_or_comma_function.html
+      - page: The Reduce operators `/` and `⌿`
         url:  technical_reference/functions_ravel_or_comma_function.html
   - title: StdLib Reference
     subfolderitems:

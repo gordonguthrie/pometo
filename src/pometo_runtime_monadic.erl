@@ -31,7 +31,7 @@ monadic_RUNTIME([#'$func¯'{do      = [","],
 	catch throw:Errs ->
         Msg1 = Errs,
         Msg2 = io_lib:format("~p", [Rank]),
-        Error = pometo_runtime_format:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
+        Error = pometo_runtime_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
         throw({error, Error})
    end;
 monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
@@ -82,25 +82,60 @@ monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
 		false ->
 			Msg1 = "⍳ only accepts integer arguments and was called with",
 			Msg2 = io_lib:format("~p", [pometo_runtime:args_to_list(Args)]),
-			Error = pometo_runtime_format:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
+			Error = pometo_runtime_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
 			throw({error, Error})
+	end;
+monadic_RUNTIME([#'$func¯'{do = [#'$op¯'{op = Op}]} = Func,
+								 #'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST]) when Op == "/" orelse
+																																					Op == "⌿" ->
+	NewAST = pometo_runtime:maybe_cast_scalar_to_vector(AST),
+	monadic_RUNTIME([Func, NewAST]);
+monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
+													 rank = Rank} = Func,
+								 #'$ast¯'{do   = #'$shape¯'{} = Shp} = Right]) when Op == "/" orelse
+																																		Op == "⌿" ->
+	NewRight   = pometo_runtime:make_eager(pometo_runtime:maybe_cast_scalar_to_vector(Right)),
+	#'$ast¯'{do = #'$shape¯'{dimensions = NewD}} = NewRight,
+	ActualRank = pometo_runtime:resolve_rank(NewD, Rank),
+	Axes       = pometo_runtime:make_axes(NewD),
+	NewAxes    = pometo_runtime:resize_axes([{delete, ActualRank}], Axes),
+	NewFunc    = Func#'$func¯'{do = Fns},
+	% we don't use axis in monadic reduce but other ops/fns might
+	IterationFn = fun(Val, Count, _Axes, Acc) ->
+		NewCount = pometo_runtime:delete_dim_from_count(ActualRank, Count),
+		Index    = pometo_runtime:make_index_from_count(NewCount, NewAxes),
+		case maps:is_key(Index, Acc) of
+			true ->  OldVal = maps:get(Index, Acc),
+							 NewVal = pometo_runtime_dyadic:execute_dyadic(NewFunc, OldVal, Val),
+							 maps:put(Index, NewVal, Acc);
+			false -> maps:put(Index, Val, Acc)
+		end
+	end,
+	RankFns = #rank_fns{iteration_fn = IterationFn},
+	NewArgs = pometo_runtime_rank:iterate_by_axis(NewRight, ActualRank, RankFns),
+	NewDims = pometo_runtime:eliminate_rank(ActualRank, NewD),
+	case NewDims of
+		[] -> NewArg = maps:get(1, NewArgs),
+					Right#'$ast¯'{do 	 = Shp#'$shape¯'{dimensions = 0,
+																						 indexed    = false},
+												args = NewArg};
+		_ -> Right#'$ast¯'{do 	 = Shp#'$shape¯'{dimensions = NewDims,
+																						 indexed    = true},
+											 args = NewArgs}
 	end;
 monadic_RUNTIME([#'$func¯'{do = Do},
 								 #'$ast¯'{do   = ?shp(0),
-													args = A} = L]) ->
+													args = A} = AST]) ->
 	NewA = do_apply(Do, A, fun execute_monadic/2),
-	L#'$ast¯'{args = NewA};
+	AST#'$ast¯'{args = NewA};
 monadic_RUNTIME([#'$func¯'{do = Do},
 								 #'$ast¯'{do   = #'$shape¯'{},
-													args = A} = L]) ->
+													args = A} = AST]) ->
 	ApplyFun = fun(X) ->
 		do_apply(Do, X, fun execute_monadic/2)
 	end,
 	NewA = apply_to_args(ApplyFun, A),
-	L#'$ast¯'{args = NewA};
-monadic_RUNTIME(List) ->
-	[io:format("in monadic_RUNTIME wigging out with ~p~n", [X]) || X <- List],
-	bergamotto.
+	AST#'$ast¯'{args = NewA}.
 
 %%
 %% Helper functions
@@ -146,16 +181,6 @@ make_args2([H | T]) 				 -> Seq = lists:seq(1, H),
 																										Y <- SecondSeq]
 																end.
 
-%make_args3(none)     -> [];
-%make_args3(Iterator) -> {_K, V, NewI} = maps:next(Iterator),
-%												Seq = lists:seq(1, V),
-%												SecondSeq = make_args3(NewI),
-%												case SecondSeq of
-%													[] -> [[X]     || X <- Seq];
-%													_  -> [[X | Y] || X <- Seq,
-%																						Y <- SecondSeq]
-%												end.
-
 %% complex nos first
 execute_monadic("+", #'$ast¯'{do   = complex,
 															args = [R, I]} = A) -> A#'$ast¯'{args = [ R, -I]};
@@ -188,8 +213,7 @@ rerank_ravel(Dims, Float) when is_float(Float) ->
 		el/=se                -> {Start, End} = lists:split(Insert, Dims),
 														 Start ++ [1] ++ End
 	end;
-rerank_ravel(Dims, Rank)  -> io:format("in rerank ravel with Dims of ~p Rank of ~p~n", [Dims, Rank]),
-														 rer2(Dims, 1, Rank, ?EMPTY_ACCUMULATOR).
+rerank_ravel(Dims, Rank)  -> rer2(Dims, 1, Rank, ?EMPTY_ACCUMULATOR).
 
 rer2([],          _N,  [],          Acc)                  -> lists:reverse(Acc);
 rer2(Dims,         N,  [N],         Acc)                  -> lists:reverse(Acc) ++ Dims;
