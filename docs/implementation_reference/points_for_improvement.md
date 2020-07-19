@@ -35,3 +35,7 @@ Needs some tests in smoke testing
 Writing the reduce operator which has a special case of 0 operand exposed that needs to be handled separately exposed a weakness in our documentation. We need to collect all the use cases and review all documents to ensure that they cover them.
 
 Ditto for negative ranks which sometimes work
+
+## Pometo Github Pages
+
+The logo doesn't appear when you run Jekyll locally but does on the Github pages. This is because it uses an absolute path.
