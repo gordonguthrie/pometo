@@ -42,6 +42,9 @@ The core development cycle is:
 * when your code is working and the WIP test suite is passing raise a pull request
     * it should include a `git mv` to move the docs page to its destination
     * it should include changes to `docs/_data/contents.yml` to publish your new documents to the [main docs website](http://gordonguthrie.github.io/pometo)
+    * you should run Jekyll and check that the site builds correctly (Note the logo won't appear when running locally).
+        * to run Jekyll locally `cd` to `/docs` and run the batch file `run_jekyll.sh` - the docs site will build and can be seen on `http://localhost:5000`
+    * if you have implemented a new symbol you need to make that symbol available in `rappel` the `pometo` REPL. (This involves deleting a line of embedded CSS please see the section [Enabling New Symbols In Rappel](#enabling_new_symbols_in_rappel)
 
 Code failures in tests are fairly hard to debug because the interpreter and compiler both capture and sanitize runtime errors.
 
@@ -54,6 +57,26 @@ There is a pain here - to see debugging output when running test suites you need
 These two output methods don't work with each other `io:format`s don't show when running tests and `?debugFmt`s don't show when running code :-(
 
 This can tend to lead to dirty code with extra `io:format`s and `?debugFmt`s littering the code. Please check your diffs before submitting a PR.
+
+To make this easier there is a `debug` function in `pometo_stdlib` which takes complex nested `$ast¯` and other records and prints them nicely. It also has a single macro which can be used to switch printing from `io:format` to `?debugFmt`.
+
+## Enabling New Symbols In Rappel
+
+The `rappel` REPL has a javascript keyboard to help enter symbols:
+
+![Current Javascript Keyboard](../images/apl_javascript_keyboard.png)
+
+There is a full keyboard but most of the symbols are hidden because are for symbols that have not been implmeneted yet.
+
+![Current Javascript Keyboard](../images/hidden_apl_javascript_keyboard.png)
+
+First find out what symbol you want to make visible by starting `pometo` and cracking open the web inspector:
+
+![APL Keyboard In Web Inspector](../images/apl_keyboard_in_web_inspector.png)
+
+Then go into `app.js` for `rappel` and delete the embedded CSS line:
+
+![Embedded CSS Lines In Rappel](../images/css_for_apl_keyboard.png)
 
 ## Basic Dev Cycle For Non-Conformant With Dyalog Features
 
