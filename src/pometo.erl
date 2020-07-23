@@ -1,10 +1,5 @@
 -module(pometo).
 
--include_lib("eunit/include/eunit.hrl").
-
--include("parser_records.hrl").
--include("errors.hrl").
-
 %%%
 %%% production exports
 %%%
@@ -19,14 +14,19 @@
 -export([
 		 lex_TEST/1,
 		 parse_TEST/1,
+		 interpret_TEST/1,
+		 run_for_format_TEST/2,
 		 compile_load_and_run_TEST/2,
 		 compile_load_and_run_lazy_TEST/2,
 		 compile_load_and_run_indexed_TEST/2,
 		 compile_load_and_run_force_index_TEST/2,
-		 compile_load_and_run_force_unindex_TEST/2,
-		 interpret_TEST/1,
-		 run_for_format_TEST/2
+		 compile_load_and_run_force_unindex_TEST/2
 		 ]).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-include("parser_records.hrl").
+-include("errors.hrl").
 
 -define(EMPTYACC,       []).
 -define(EMPTYRESULTS,   []).
@@ -141,7 +141,7 @@ transform([], _, Acc) ->
 	lists:reverse(Acc);
 transform([#'$ast¯'{do = #'$shape¯'{}} = AST | T], Transform, Acc) ->
 	Transformed = case Transform of
-		lazy          -> pometo_stdlib:make_lazy(AST);
+		lazy          -> pometo_stdlib:make_lazy([AST]);
 		indexed       -> pometo_runtime:make_indexed(AST);
 		force_index   -> pometo_runtime:force_index(AST, index);
 		force_unindex -> index_then_force_unindex(AST)
@@ -150,7 +150,7 @@ transform([#'$ast¯'{do = #'$shape¯'{}} = AST | T], Transform, Acc) ->
 	transform(T, Transform, [Transformed | Acc]);
 transform([#'$ast¯'{args = Args} = AST | T], Transform, Acc) ->
 	Transformed = case Transform of
-		lazy          -> [pometo_stdlib:make_lazy(A)           || A <- Args];
+		lazy          -> [pometo_stdlib:make_lazy([A])         || A <- Args];
 		indexed       -> [pometo_runtime:make_indexed(A)       || A <- Args];
 		force_index   -> [pometo_runtime:force_index(A, index) || A <- Args];
 		force_unindex -> [index_then_force_unindex(A)          || A <- Args]
@@ -178,7 +178,8 @@ compile_and_run3(Exprs, ModuleName, Str) ->
 							{error, Err} -> FixedErr = Err#error{expr = Str},
 															RunTimeErrs = pometo_runtime_format:format_errors([FixedErr]),
 															string:trim(RunTimeErrs, leading, "\n");
-							Results      -> lists:flatten(pometo_runtime_format:format(Results))
+							Results      -> Formatted = pometo_runtime_format:format(Results),
+															lists:flatten(Formatted)
 						 end;
 		{error, Errs} -> pometo_runtime_format:format_errors(Errs)
 	end.
@@ -312,7 +313,7 @@ check_arg(#'$var¯'{name    = Var,
 	case maps:is_key(Var, Bindings) of
 		true  -> {Bindings,  Errors, [V | Results]};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-													msg1    = Var,
+													msg1    = unpostfix(Var),
 													msg2    = "variable is not defined",
 													at_line = LNo,
 													at_char = CNo},
@@ -334,30 +335,32 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 	{NewArgs2, NewDims, NewType} = case NewA2 of
 		#'$ast¯'{do   = #'$shape¯'{dimensions = D,
 															 type       = T},
-						 args = A2} ->
-			{A2, D, T};
-		#'$ast¯'{do = complex} = A4 ->
-			{A4, 0, complex};
-		[#'$ast¯'{do   = #'$shape¯'{dimensions = D,
-															  type       = T},
-							args = A3}] ->
-			{A3, D, T};
-		[X2] ->
-			{X2, 0, get_type(X2)};
+						 args = A2} 												-> {A2, D, T};
+		#'$ast¯'{do = complex} = A4 								-> {A4, 0, complex};
+		#'$ast¯'{do = #'$func¯'{}} = A4							-> {A4, 0, func};
+		#'$ast¯'{do = [{apply_fn, _}]} = A4		      -> #'$ast¯'{do = App} = A4,
+																									 {A4, 0, App};
+		[X2] 																				-> {X2, 0, get_type(X2)};
 		[] ->
 			{[], 0, variable} % error condition so we don't care about the result
 	end,
-	NewShp = OrigDo#'$shape¯'{indexed    = is_map(NewArgs2),
-														dimensions = NewDims,
-														type       = NewType},
-	NewResults = [AST#'$ast¯'{do   = NewShp,
-														args = NewArgs2} | Results],
+	NewR = case NewType of
+			func             -> NewA2;
+			_ 							 -> NewShp = OrigDo#'$shape¯'{indexed    = is_map(NewArgs2),
+																										dimensions = NewDims,
+																										type       = NewType},
+													AST#'$ast¯'{do   = NewShp,
+																			args = NewArgs2}
+	end,
+	NewResults = [NewR | Results],
 	NewErrs = Errs2 ++ Errors,
 	{Bindings, NewErrs, NewResults};
 substitute_arg(#'$ast¯'{do   = Do,
 												args = Args}         = AST,
 							{Bindings, Errors, Results}) when is_record(Do, '$shape¯') orelse
-																								is_record(Do, '$func¯')  ->
+																								is_record(Do, '$func¯')  orelse
+																								Do == defer_evaluation   orelse
+																								element(1, hd(Do)) == apply_fn ->
 	Acc = {Bindings, ?EMPTYERRORS, ?EMPTYRESULTS},
 	{NewB, Errs, NewArgs} = lists:foldl(fun substitute_arg/2, Acc, Args),
 	{_, Errs2, NewA2} = case NewArgs of
@@ -375,13 +378,28 @@ substitute_arg(#'$var¯'{name    = Var,
 						 Subst   = maps:get(results, Binding),
 						 {_, Errs2, [NewSubst]} = substitute_arg(Subst, {Bindings, Errors, []}),
 						 NewA = chose_replacement(NewSubst),
-						 NewDo = extract_and_renumber_do(NewA, CNo, LNo),
-						 NewA2 = NewA#'$ast¯'{do      = NewDo,
-																	char_no = CNo,
-																	line_no = LNo},
-						 {Bindings, Errs2, [NewA2] ++ Results};
+						 {ShouldMakeNewDo, MaybeVal} = case NewA of
+								 #'$ast¯'{do   = defer_evaluation,
+													args = InnerArgs}					-> [D] = InnerArgs,
+																											 {true, D};
+								 #'$ast¯'{}												  -> {false, none};
+								 N                                  -> {true, N}
+						 end,
+						 NewA2 = case ShouldMakeNewDo of
+								true  -> MaybeVal;
+								false	-> NewDo = extract_and_renumber_do(NewA, CNo, LNo),
+												 NewA#'$ast¯'{do      = NewDo,
+																			char_no = CNo,
+																			line_no = LNo}
+						 end,
+						 NewR = case {NewA2, Results} of
+								{L, []} when is_list(L) -> L;
+								{L, R}  when is_list(L) -> L ++ R;
+								{X, R}                  -> [X] ++ R
+						 end,
+						 {Bindings, Errs2, NewR};
 		false -> Err = #error{type    = "VARIABLE NOT DEFINED",
-													msg1    = Var,
+													msg1    = unpostfix(Var),
 													msg2    = "variable is not defined",
 													at_char = CNo,
 													at_line = LNo},
@@ -399,6 +417,15 @@ chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 													 args = Args}) ->
 	Args;
+%% if the replacement is a function, substitute the value
+chose_replacement(#'$func¯'{line_no = LNo,
+														char_no = CNo} = Func) ->
+	#'$ast¯'{do      = Func,
+					 line_no = LNo,
+					 char_no = CNo};
+%% if the replacement is defer_evaluation then don't evaluate it
+chose_replacement(#'$ast¯'{do = defer_evaluation} = AST) ->
+	AST;
 %% if the replacement is a vector return that
 chose_replacement(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
 	AST;
@@ -429,4 +456,6 @@ extract_and_renumber_do(#'$ast¯'{do = #'$shape¯'{} = Shp}, CNo, LNo) ->
 	Shp#'$shape¯'{char_no = CNo,
 								line_no = LNo};
 extract_and_renumber_do(#'$ast¯'{do = complex}, _CNo, _LNo) ->
-	complex.
+	complex;
+extract_and_renumber_do(#'$ast¯'{do = #'$func¯'{} = Func}, _CNo, _LNo) ->
+	Func.

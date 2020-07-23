@@ -38,26 +38,113 @@ An Ambivalent Function is one that might be Monadic or Dyadic depending on conte
 | Explicit   | R←(A op B)Y   | R←X(A op B)Y   | R←{X}(A op B)Y   |
 | Suppressed | {R}←(A op B)Y | {R}←X(A op B)Y | {R}←{X}(A op B)Y |
 
-A STATEMENT is:
 
-	* an EXPR
-	* a LABEL
-	* a SEPARATOR
-	* A COMMENT
+## Trains, Right Associate Funcs, Runtime Evaluation
 
-An EXPR is:
-	* an ARRAY EXPR
-	* a FUNCTION EXPR
-	* (this include FUNCTION ASSIGNEMENT - ie LETs)
+Trains bring us problems.
 
-A LET is:
+We can chain things into random vectors:
 
-	* a Vector
-	* a FN
-	* the result of evaluating a FN
+```pometo
+A ← 1 2
+B ← 3 4
+A B A 4 5
+```
 
-At the lowest level we need:
+Which is an array:
 
-Funs -> Fun
-Funs -> Fun Op
-Funs -> Funs Fun
+```pometo_results
+1 2 3 4 1 2 4 5 - blah-blah with boxes
+```
+
+But if A was a function:
+
+```pometo
+A ← -
+B ← 3 4
+A B A 4 5
+```
+
+This is the equivalent of:
+
+```apl
+- 3 4 - 4 5
+```
+
+It evaluates as:
+
+```pometo_results
+1 1
+```
+
+The execution sequence is:
+
+| Function | Sign | Type    | LHS Argument  | RHS Argument    | Result          |
+|----------|------|---------|---------------|-----------------|-----------------|
+|minus     | `-`  | dyadic  | `array` [3 4] | `array` [ 4  5] | `array` [¯1 ¯1] |
+|minus     | `+`  | monadic |               | `array` [¯1 ¯1] | `array` [ 1  1] |
+
+For sufficiently complex stuff the bottom line cannot be evaluated until run time:
+
+```pometo
+A ← 1
+B ← 2
+C ← 3
+A B C 4
+```
+
+```pometo_results
+1 2 3 4
+```
+
+But...
+
+```pometo
+A ← +
+B ← ÷
+C ← -
+A B C 4
+```
+
+```pometo_results
+¯0.25
+```
+
+And...
+
+```pometo
+A ← 2
+B ← ÷
+C ← -
+A B C 4
+```
+
+```pometo_results
+¯0.5
+```
+
+This goes for trains of trains
+
+```pometo
+-+÷-+÷10
+```
+
+Giving:
+
+```pometo_results
+10
+```
+
+But
+
+```pometo
+F ← -+÷
+-+÷F 10
+```
+
+Resulting in:
+
+```pometo_results
+0.101010101
+```
+

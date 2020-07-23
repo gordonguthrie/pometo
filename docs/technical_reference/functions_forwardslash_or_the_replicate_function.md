@@ -78,7 +78,7 @@ results in:
 4 4 5 5 5 6 6 6 6
 ```
 
-## The Barred Replicate Function `⌿`  With Scalars on the LHS
+## The Barred Replicate Function `⌿`  With Vectors on the LHS
 
 This function applies to the last axis:
 

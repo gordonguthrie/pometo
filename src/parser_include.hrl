@@ -8,6 +8,94 @@
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
+make_fn_array(#'$ast¯'{do      = Do1,
+                       char_no = CNo} = LHS,
+              #'$ast¯'{do      = Do2} = RHS) ->
+  Type = case {Do1, Do2} of
+      {#'$func¯'{}, #'$func¯'{}} -> func;
+      {_,           _}           -> maybe_func
+  end,
+  #'$ast¯'{do      = #'$shape¯'{dimensions = [2],
+                                type       = Type,
+                                char_no    = CNo,
+                                line_no    = scope_dictionary:get_line_no()},
+           args    = [LHS, RHS],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()}.
+
+add_to_fn_array(#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
+                                           type       = Type},
+                         args = Args} = LHS,
+                #'$ast¯'{do   = Do1}  = RHS) ->
+  NewType = case {Do1, Type} of
+      {#'$func¯'{}, func} -> func;
+      {_,           _}    -> maybe_func
+  end,
+  LHS#'$ast¯'{do   = #'$shape¯'{dimensions = [N + 1],
+                                type       = NewType},
+              args = Args ++ [RHS]}.
+
+make_monadic_train(Fns, AST) ->
+  #'$ast¯'{char_no = CNo} = Fns,
+  #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_monadic_train}}],
+           args    = [Fns, AST],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()}.
+
+make_dyadic_train(Fns, LHS, RHS) ->
+  #'$ast¯'{char_no = CNo} = Fns,
+  #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_dyadic_train}}],
+           args    = [Fns, LHS, RHS],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()}.
+
+
+%  VarName = make_scoped_var("w"),
+%  LetW = make_train_let(VarName, AST),
+%  RightFns = lists:reverse(Fns),
+%  [chunk_monadic(RightFns, LetW)].
+
+% we are chunking on a reversed list so Right is to the Left, right, don't get left behind...
+% chunk_monadic([RHS, LHS],             Var) -> make_monadic_atop(LHS, RHS, Var);
+% chunk_monadic([RHS, Mid, LHS],        Var) -> make_monadic_fork(LHS, Mid, RHS, Var);
+% chunk_monadic([RHS, Mid, LHS | Rest], Var) -> NewRHS = make_monadic_fork(LHS, Mid, RHS, Var),
+%                                              chunk_monadic([NewRHS | Rest], Var).
+
+% make_monadic_atop(#'$ast¯'{args = []} = LHS,
+%                  #'$ast¯'{args = []} = RHS,
+%                  Var) ->
+%  NewR = RHS#'$ast¯'{args = [Var]},
+%  LHS#'$ast¯'{args = [NewR]}.
+
+% fgh fork
+% make_monadic_fork(#'$ast¯'{args = []} = LHS,
+%                 #'$ast¯'{args = []} = Mid,
+%                  #'$ast¯'{args = []} = RHS,
+%                  Var) ->
+%  NewLHS  = LHS#'$ast¯'{args = [Var]},
+%  NewRHS  = RHS#'$ast¯'{args = [Var]},
+%  _NewMid = Mid#'$ast¯'{args = [NewLHS, NewRHS]};
+% Agh fork
+% make_monadic_fork(#'$ast¯'{args    = #'$var¯'{}} = LHS,
+%                  #'$ast¯'{args    = [],
+%                           char_no = CNo}         = Mid,
+%                  #'$ast¯'{args    = []}          = RHS,
+%                  Var) ->
+%  #'$ast¯'{do      = resolve_monadic_fork,
+%           args    = [Var, LHS, Mid, RHS],
+%           char_no = CNo,
+%           line_no = scope_dictionary:get_line_no()}.
+
+% make_scoped_var(Name) ->
+%  Scope = scope_dictionary:get_new_scope(),
+%  lists:flatten(make_varname("Var") ++ "_" ++ Scope ++ "_" ++ Name).
+
+% make_train_let(Name, #'$ast¯'{char_no = CNo} = AST)->
+%  Var = #'$var¯'{name    = Name,
+%                 char_no = CNo,
+%                 line_no = scope_dictionary:get_line_no()},
+%  make_let(#'$ast¯'{args = Var}, AST).
+
 op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do}   = Func,
                   args    = []}                  = AST1,
          #'$ast¯'{do      = #'$func¯'{do   = [Op],
@@ -41,23 +129,6 @@ add_rank({Type, CharNo, _, Val}, #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 make_fn_ast({Type, CharNo, _, Val}) ->
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
 
-maybe_merge(#'$ast¯'{do   = #'$func¯'{do   = Fn1,
-                                      type = Type1} = Func,
-                     args = []}                     = AST1,
-            #'$ast¯'{do   = #'$func¯'{do   = Fn2,
-                                      type = Type2},
-                     args = []}                     = AST2)
-  when (Type1 == monadic        orelse
-        Type1 == monadic_ranked orelse
-        Type1 == ambivalent)    andalso
-       (Type2 == monadic        orelse
-        Type2 == monadic_ranked orelse
-        Type2 == ambivalent) ->
-  case {is_primitive_fn_shape_changing(Fn1), is_primitive_fn_shape_changing(Fn2)} of
-    {false, false} -> AST1#'$ast¯'{do   = Func#'$func¯'{do = Fn2 ++ Fn1}};
-    {_,     _}     -> NewAST2 = make_monadic(AST2),
-                      AST1#'$ast¯'{args = [NewAST2]}
-  end.
 
 make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
   Func = #'$func¯'{do             = [Fn],
@@ -71,27 +142,6 @@ make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-% we might have merged up some functions on the RHS, so demerge them...
-make_dyadic(#'$ast¯'{do   = #'$func¯'{do   = Dos,
-                                      type = Type} = Func,
-                     args = Args}                    = FuncAST,
-            #'$ast¯'{}                               = LeftAST,
-            #'$ast¯'{}                               = RightAST) when length(Dos) > 1         andalso
-                                                                      (Type  == dyadic        orelse
-                                                                       Type == dyadic_ranked orelse
-                                                                       Type == hybrid        orelse
-                                                                       Type == ambivalent)   ->
-  {LeftDo, RightDo} = unmerge_dos(Dos),
-  NewRightAST = case Args of
-    []    -> RightAST;
-    [Arg] -> descend_arg(Arg, RightAST)
-  end,
-  Monadic = FuncAST#'$ast¯'{do   = Func#'$func¯'{do   = RightDo,
-                                                 type = monadic},
-                            args = [NewRightAST]},
-  FuncAST#'$ast¯'{do   = Func#'$func¯'{do   = LeftDo,
-                                       type = dyadic},
-                  args = [LeftAST, Monadic]};
 make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                      args = Args}                    = FuncAST,
             #'$ast¯'{}                               = LeftAST,
@@ -101,34 +151,62 @@ make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                                                                       Type == ambivalent    ->
   NewRightAST = case Args of
     []    -> RightAST;
-    [Arg] -> descend_arg(Arg, RightAST)
+    [Arg] -> descend_arg(Arg, [RightAST])
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
-                  args = [LeftAST, NewRightAST]}.
+                  args = [LeftAST, NewRightAST]};
+make_dyadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, LHS, RHS) ->
+  NewFunc = make_right_associative(Funcs),
+  #'$ast¯'{do   = Func,
+           args = Args} = NewFunc,
+  NewArgs = [LHS | [descend_arg(X, [RHS]) || X <- Args]],
+  NewAST = NewFunc#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
+                           args = NewArgs},
+  NewAST.
 
-unmerge_dos(Dos) ->
-  Len = length(Dos),
-  {RightDo, LeftDo} = lists:split(Len - 1, Dos),
-  % Dos are arsey-backwards
-  {LeftDo, RightDo}.
-
-descend_arg(#'$ast¯'{args = []}     = AST, NewArg) -> AST#'$ast¯'{args = [NewArg]};
-descend_arg(#'$ast¯'{args = [AST2]} = AST, NewArg) -> NewArg2 = descend_arg(AST2, NewArg),
-                                                      AST#'$ast¯'{args = [NewArg2]}.
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = []}   = AST, NewArgs) ->
+  AST#'$ast¯'{args = NewArgs};
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = #'$var¯'{}} = AST, _NewArg) ->
+  AST;
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = Args} = AST, NewArgs) when is_list(Args) ->
+  NewArgs = [descend_arg(X, NewArgs) || X <- Args],
+  AST#'$ast¯'{args = NewArgs};
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = Arg} = AST, NewArgs) ->
+  NewArg = descend_arg(Arg, NewArgs),
+  AST#'$ast¯'{args = NewArg};
+descend_arg(#'$ast¯'{} = AST, _NewArg) ->
+  AST.
 
 make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-                      args = Args}                         = FuncAST,
+                      args = Args}                       = FuncAST,
              #'$ast¯'{}                                  = AST) when Type == monadic        orelse
                                                                      Type == monadic_ranked orelse
                                                                      Type == ambivalent ->
   NewArg = case Args of
     []    -> AST;
-    [Arg] -> descend_arg(Arg, AST)
+    [Arg] -> descend_arg(Arg, [AST])
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                  args = [NewArg]}.
+                  args = [NewArg]};
+make_monadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, RHS) ->
+  NewFunc = make_right_associative(Funcs),
+  make_monadic(NewFunc, RHS).
 
-% this works
+make_right_associative(#'$ast¯'{do   = #'$shape¯'{type = func},
+                                args = Funcs}) ->
+  make_right_assoc2(lists:reverse(Funcs)).
+
+make_right_assoc2([Final]) -> Final;
+make_right_assoc2([RHS, LHS | Rest]) ->
+  #'$ast¯'{do = #'$func¯'{} = Func} = LHS,
+  NewHead = LHS#'$ast¯'{do   = Func#'$func¯'{type = monadic},
+                        args = [RHS]},
+  make_right_assoc2([NewHead | Rest]).
+
 make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
   #'$ast¯'{do      = [{apply_fn, {Mod, Fn}}],
            args    = [A],
@@ -198,19 +276,33 @@ handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{type       = Type,
 make_var({var, CharNo, _, Var}) ->
   Shp = basic_shape(CharNo, variable, scalar),
   #'$ast¯'{do     = Shp,
-           args   = #'$var¯'{name    = Var,
+           args   = #'$var¯'{name    = make_varname(Var),
                              char_no = CharNo,
                              line_no = scope_dictionary:get_line_no()},
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
+
+make_varname(Var) -> lists:flatten(Var ++ "_" ++ scope_dictionary:get_current_scope()).
+
+make_let_fn(#'$ast¯'{args = #'$var¯'{}} = AST, #'$ast¯'{do = #'$shape¯'{type = Type}} = RHS)
+  when Type == func       orelse
+       Type == maybe_func ->
+  NewExpr = make_defer_execution(RHS),
+  make_let(AST, NewExpr).
 
 make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   #'$var¯'{name     = Var,
            char_no  = CharNo} = V,
   B = #{binding => V, results => Expr},
   ok = scope_dictionary:puts({Var, B}),
-  #'$ast¯'{do      = 'let',
+  #'$ast¯'{do      = 'let_op',
            args    = [list_to_atom(Var), Expr],
+           char_no = CharNo,
+           line_no = scope_dictionary:get_line_no()}.
+
+make_defer_execution(#'$ast¯'{char_no = CharNo} = AST) ->
+  #'$ast¯'{do      = defer_evaluation,
+           args    = [AST],
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
@@ -227,7 +319,7 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
   #'$var¯'{char_no = C2} = maps:get(binding, B2),
   Msg2 = io_lib:format("was previously assigned on line ~p at char ~p", [L1, C1]),
   #error{type    = "VARIABLE REASSIGNED",
-         msg1    = Var,
+         msg1    = unpostfix(Var),
          msg2    = Msg2,
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
@@ -298,4 +390,4 @@ default_rank({_, _, _, "⌿"})  -> last;
 default_rank({_, _, _, "⍀"})  -> last;
 default_rank(_)               -> none.
 
-make_monadic(#'$ast¯'{do = #'$func¯'{} = Func} = AST) -> AST#'$ast¯'{do = Func#'$func¯'{type = monadic}}.
+% make_monadic(#'$ast¯'{do = #'$func¯'{} = Func} = AST) -> AST#'$ast¯'{do = Func#'$func¯'{type = monadic}}.

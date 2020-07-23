@@ -6,6 +6,7 @@
 -include("parser_records.hrl").
 -include("comments.hrl").
 
+
 -export([
 		 debug/1,
 		 debug/2,
@@ -18,21 +19,23 @@
 -define(INITIALINDENT, 1).
 -define(INDENTSIZE,    2).
 
-debug(Lable, #'$ast¯'{} = AST) ->
-	io:format("~n~n>>>>>>>>>>>> ~p~n~n", [Lable]),
-	?debugFmt("~n~n>>>>>>>>>>>> ~p~n~n", [Lable]),
-	debug(AST),
-	io:format("~n~n>>>>>>>>>>>> ~n~n", []),
-	?debugFmt("~n~n>>>>>>>>>>>> ~n~n", []).
+-define(PRINTTYPE, io_format).
+% -define(PRINTTYPE, debugFmt).
 
+debug(Lable, Contents) ->
+	print("~n~n>>>>START>>>>>> ~p~n~n", [Lable], ?PRINTTYPE),
+	debug(Contents),
+	print("~n~n>>>>END>>>>>>>> ~n~n", [], ?PRINTTYPE).
+
+debug(List) when is_list(List) ->
+	[debug(X) || X <- List];
 debug(#'$ast¯'{line_no = LNo,
 							 char_no = CNo} = AST) ->
 	Line1 = io_lib:format("In ⎕debug~n", []),
 	Line2 = debug2(AST, ?INITIALINDENT),
 	Breaker = lists:duplicate(79, "*") ++ "\n",
 	Msg = Line1 ++ Breaker ++ Line2 ++ Breaker,
-	?debugFmt("in stdlib debug~n~ts~n", [Msg]),
-	io:format("in stdlib debug~n~ts~n", [Msg]),
+	print("in stdlib debug~n~ts~n", [Msg], ?PRINTTYPE),
 	#comment{msg     = Msg,
            at_line = LNo,
            at_char = CNo}.
@@ -61,23 +64,26 @@ debug2(#'$ast¯'{do      = Do,
 														Line4
 													]).
 
+print(String, Vals, io_format) -> io:format(String, Vals);
+print(String, Vals, debugFmg)  -> ?debugFmt(String, Vals).
+
 % don't do anything to scalars
-make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = 0}} = AST) ->
+make_lazy([#'$ast¯'{do = #'$shape¯'{dimensions = 0}} = AST]) ->
 	AST;
 % do work on unindexed arrays
-make_lazy(#'$ast¯'{do = #'$shape¯'{dimensions = Type} = Shp} = AST)
+make_lazy([#'$ast¯'{do = #'$shape¯'{dimensions = Type} = Shp} = AST])
 	when Type /= unsized_vector ->
 	NewShp = Shp#'$shape¯'{dimensions = unsized_vector},
 	AST#'$ast¯'{do = NewShp};
 % don't do anything to anything else
-make_lazy(X) ->
+make_lazy([X]) ->
 	X.
 
-make_indexed(AST)     -> pometo_runtime:make_indexed(AST).
+make_indexed([AST])     -> pometo_runtime:make_indexed(AST).
 
-force_indexing(AST)   -> pometo_runtime:force_index(AST, index).
+force_indexing([AST])   -> pometo_runtime:force_index(AST, index).
 
-force_unindexing(AST) -> pometo_runtime:force_index(AST, unindex).
+force_unindexing([AST]) -> pometo_runtime:force_index(AST, unindex).
 
 %%
 %% Internal Functions
