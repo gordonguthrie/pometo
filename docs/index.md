@@ -6,7 +6,7 @@
 
 THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SOME INCHOATE SYMBOLS SCRAWLED WITH A HALF-BURNT STICK ON A CAVE WALL.
 
-```
+```warning
            _       _
      /\   | |     | |
     /  \  | |_ __ | |__   __ _

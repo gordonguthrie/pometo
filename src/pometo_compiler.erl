@@ -74,7 +74,7 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
 	{PublicFns,  LineNo4, SourceMap4} = make_public_fns(Exports,    LineNo3, ModuleName, SourceMap3, ?EMPTY_RESULTS),
 	{PrivateFns, LineNo5, SourceMap5} = make_private_fns(Functions, LineNo4, ModuleName, SourceMap4, ?EMPTY_RESULTS),
 
-	%% ?debugFmt("final SourceMap is ~p~n", [SourceMap5]),
+	% ?debugFmt("final SourceMap is ~p~n", [SourceMap5]),
 
 	%% TODO turn SourceMap 5 into a lookup function for errors to map back to Pometo code
 
@@ -112,7 +112,7 @@ format_lint_errors([], _SM, Errs, _Str) -> lists:reverse(Errs);
 format_lint_errors([{_LineNo, erl_lint, {unused_var, V}} | T], SM, Errs, Str) ->
 	Err = #error{type    = "UNUSED VARIABLE",
 							 msg1    = "variable is unused",
-							 msg2    = atom_to_list(V),
+							 msg2    = unpostfix(atom_to_list(V)),
 							 at_line = 1,
 							 at_char = 1
 							},
@@ -214,7 +214,7 @@ make_line(#'$ast¯'{do   = #'$shape¯'{} = Shp,
 	make_record(AST#'$ast¯'{do   = NewShp,
 													args = NewArgs});
 % when the variable is being set to a scalar or vector
-make_line(#'$ast¯'{do   = 'let',
+make_line(#'$ast¯'{do   = 'let_op',
 									 args = [Var, #'$ast¯'{do   = #'$shape¯'{},
 																				 args = Args} = A | []]}) ->
 	% strip the variable name and rename the do
@@ -228,7 +228,7 @@ make_line(#'$ast¯'{do   = 'let',
 	end,
 	Src;
 % when the variable is being set to the result of an expression
-make_line(#'$ast¯'{do   = 'let',
+make_line(#'$ast¯'{do   = 'let_op',
 									 args = [Var, Args]}) ->
 	% strip the variable name and rename the do
 	Src = case Args of
@@ -240,6 +240,16 @@ make_line(#'$ast¯'{do   = 'let',
 													make_line(Args)
 	end,
 	Src;
+make_line(#'$ast¯'{do   = defer_evaluation,
+									 args = [#'$ast¯'{do   = #'$func¯'{} = Func}]}) ->
+	make_record(Func);
+make_line(#'$ast¯'{do   = defer_evaluation,
+									 args = [#'$ast¯'{do   = #'$shape¯'{type = variable},
+									 									args = Var}]}) ->
+	make_record(Var);
+make_line(#'$ast¯'{do   = resolve_monadic_fork,
+									 args = Args}) ->
+	make_resolve_function_call({pometo_runtime, resolve_monadic_fork}, Args, apply_fn);
 make_line(#'$ast¯'{do   = do_fn,
 									 args = Args}) ->
 	"[" ++ string:join(Args, ", ") ++ "]";
@@ -253,6 +263,27 @@ make_line(X) when is_atom(X) ->
 make_line(X) ->
 	X.
 
+make_resolve_function_call({Mod, Fun}, Args, Type) ->
+	Func = "[{" ++ quote(Mod) ++ ", " ++ quote(Fun) ++ "}]",
+	ExpFun = fun(A, Acc) ->
+			NewA = case A of
+				#'$ast¯'{do   = let_op,
+								 args = [VarName, Val]} -> NewVarName = "'" ++ quote(VarName) ++ "'",
+								 													 A#'$ast¯'{args = [NewVarName, Val]};
+				_																-> A
+			end,
+			L = make_record(NewA),
+			[L | Acc]
+	end,
+	ExpArgs1 = lists:reverse(lists:foldl(ExpFun, ?EMPTY_RESULTS, Args)),
+	ExpArgs2 = "[" ++ string:join(ExpArgs1, ", ") ++ "]",
+	Src = "pometo_runtime:"                         ++
+				atom_to_list(Type)                        ++
+				"(["                                      ++
+				string:join([Func, ExpArgs2], ", ") ++
+				"])",
+	Src.
+
 make_apply_function_call(Do, Args, Type, LNo, CNo) ->
 	Func = make_fn_ast(Do, LNo, CNo),
 	make_function_call2(Func, Args, Type).
@@ -265,17 +296,19 @@ make_function_call2(Func, Args, Type) ->
 			L = make_line(A),
 			[L | Acc]
 	end,
-	ExpArgs = lists:foldl(ExpFun, ?EMPTY_RESULTS, [Func | Args]),
-	Src = "pometo_runtime:"                         ++
-				atom_to_list(Type)                        ++
-				"(["                                      ++
-				string:join(lists:reverse(ExpArgs), ", ") ++
+	FuncLine = make_line(Func),
+	ExpArgs = "[" ++ string:join(lists:reverse(lists:foldl(ExpFun, ?EMPTY_RESULTS, Args)), ", ") ++ "]",
+	Src = "pometo_runtime:"                      ++
+				atom_to_list(Type)                     ++
+				"(["                                   ++
+				string:join([FuncLine, ExpArgs], ", ") ++
 				"])",
+
 	Src.
 
 make_fn_ast(Args, LNo, CNo) -> NewArgs = [quote(X) || X <- Args],
 					 #'$ast¯'{do      = do_fn,
-					          args    = NewArgs,
+										args    = NewArgs,
 										line_no = LNo,
 										char_no = CNo}.
 
@@ -299,6 +332,9 @@ maybe_make_record(T) when is_tuple(T) -> make_record(T);
 maybe_make_record(A) when is_atom(A)  -> atom_to_list(A);
 maybe_make_record(X)                  -> X.
 
+make_record(#'$ast¯'{do   = #'$shape¯'{type = variable},
+										 args = #'$var¯'{name = VarName}}) ->
+	VarName;
 make_record(#'$ast¯'{do      = complex,
 										 args    = [R, I],
 										 line_no = LineNo,
@@ -382,7 +418,8 @@ make_record(#'$func¯'{do             = D,
 											line_no        = LNo,
 											char_no        = CNo}) ->
 	Quoted = case is_list(D) of
-			true  -> lists:flatten("[" ++ [quote(X) || X <- D] ++ "]");
+			true  -> Fns = string:join([quote(X) || X <- D], ", "),
+							 "[" ++ Fns ++ "]";
 			false -> quote(D)
 	end,
   "#'$func¯'{"            ++
@@ -411,13 +448,14 @@ make_record(#'$op¯'{op      = O,
 										fns     = F,
 										line_no = LNo,
 										char_no = CNo}) ->
-	Fns = lists:flatten("[" ++ [quote(X) || X <- F] ++ "]"),
+	Fns = string:join([quote(X) || X <- F], ","),
+	FnsList = "[" ++ Fns ++ "]",
   "#'$op¯'{"              ++
   "op = "                 ++
   quote(O)                ++
   ", "                    ++
   "fns = "                ++
-  Fns                     ++
+  FnsList                 ++
   ", "                    ++
 	"line_no = "            ++
 	make_line_char_no(LNo)  ++
@@ -476,6 +514,8 @@ make_source_map(#'$ast¯'{do      = Do,
 									description    = Desc},
 	SourceMap#{LineNo => SM}.
 
+make_desc([{apply_fn, {Mod, Fn}}]) ->
+	io_lib:format("Applying Mod:Fn of ~p:~p", [Mod, Fn]);
 make_desc(#'$shape¯'{indexed    = Indexed,
 										 dimensions = Dims,
 										 type       = Type}) ->

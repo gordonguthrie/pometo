@@ -9,7 +9,9 @@
 			get_bindings/0,
 			clear_all/0,
 			put_line_no/1,
-			get_line_no/0
+			get_line_no/0,
+			get_new_scope/0,
+			get_current_scope/0
 		]).
 
 % exports for use in the interpreter only
@@ -22,8 +24,8 @@
 
 %% debugging export
 -export([
-		  'print_DEBUG'/0,
-		  'print_DEBUG'/1
+			'print_DEBUG'/0,
+			'print_DEBUG'/1
 		]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -37,18 +39,19 @@
 %%
 
 -record(storage, {
-				  current         = [],
-				  current_line_no = none,
-				  bindings        = #{},
-				  errors          = []
-			     }).
+									current         = [],
+									current_line_no = none,
+									bindings        = #{},
+									errors          = [],
+									scope_index     = 0
+								 }).
 
-%% this function appends the term to the PD as a list under a key called `'$POMETO_DATA'`
+%% this function appends the term to the Process Dictionary as a list under a key called `'$POMETO_DATA'`
 puts(Term) ->
 	case get('$POMETO_DATA') of
 		#storage{current = C} = S ->
 			put('$POMETO_DATA', S#storage{current = [Term | C]});
-	    undefined ->
+		undefined ->
 			put('$POMETO_DATA',  #storage{current = [Term]})
 		end,
 	ok.
@@ -57,11 +60,11 @@ are_current_bindings_valid() ->
 	case get('$POMETO_DATA') of
 		#storage{current = C} ->
 			case get_duplicates(C) of
-                []   -> true;
-                Dups -> {false, Dups}
+								[]   -> true;
+								Dups -> {false, Dups}
 			end;
-	    undefined ->
-            true
+		undefined ->
+						true
 		end.
 
 consolidate_bindings() ->
@@ -75,7 +78,7 @@ consolidate_bindings() ->
 			end,
 			NewBs =  lists:foldl(ConsolidateFn, Bindings, C),
 			put('$POMETO_DATA', S#storage{current  = [],
-				                  		  bindings = NewBs})
+																bindings = NewBs})
 	end,
 	ok.
 
@@ -101,7 +104,7 @@ can_bindings_be_consolidated() ->
 get_bindings() ->
 	case get('$POMETO_DATA') of
 		#storage{bindings = Bindings} -> Bindings;
-	    undefined                     -> #{}
+		undefined                     -> #{}
 	end.
 
 clear_all() ->
@@ -112,7 +115,7 @@ put_line_no(N) ->
 	case get('$POMETO_DATA') of
 		#storage{} = S ->
 			put('$POMETO_DATA', S#storage{current_line_no = N});
-	    undefined ->
+		undefined ->
 			put('$POMETO_DATA', #storage{current_line_no = N})
 	end,
 	ok.
@@ -126,10 +129,28 @@ persist_bindings(Bs) ->
 		#storage{bindings = OldBs} = S ->
 			MergedBs = maps:merge(OldBs, Bs),
 			put('$POMETO_DATA', S#storage{bindings = MergedBs});
-	    undefined ->
+		undefined ->
 			put('$POMETO_DATA', #storage{bindings = Bs})
 	end,
 	ok.
+
+get_new_scope() ->
+	NewRec = case get('$POMETO_DATA') of
+		#storage{scope_index = ScopeNo} = S -> S#storage{scope_index = ScopeNo + 1};
+		undefined                           -> #storage{}
+	end,
+	put('$POMETO_DATA', NewRec),
+	#storage{scope_index = NewS} = NewRec,
+	io_lib:format("~p", [NewS]).
+
+get_current_scope() ->
+	case get('$POMETO_DATA') of
+		#storage{scope_index = ScopeNo} -> io_lib:format("~p", [ScopeNo]);
+		undefined                       -> NewRec = #storage{},
+																			 put('$POMETO_DATA', NewRec),
+																			 #storage{scope_index = NewS} = NewRec,
+																			 io_lib:format("~p", [NewS])
+	end.
 
 %%
 %% private functions

@@ -25,7 +25,7 @@ And has the shape:
 ```
 
 If we then run
-```
+```apl
 2 / A
 ```
 

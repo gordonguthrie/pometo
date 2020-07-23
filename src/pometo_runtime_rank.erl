@@ -1,7 +1,7 @@
 -module(pometo_runtime_rank).
 
 -export([
-					iterate_by_axis/3,
+					iterate_by_axis/2,
 					iterate_over_rank/4,
 					is_rank_valid/4,
 					check_shape_compatible/5
@@ -24,7 +24,6 @@
 %%
 
 iterate_by_axis(#'$ast¯'{do = #'$shape¯'{dimensions = D2}} = Right,
-									Rank,
 									RankFns) ->
 	Axes = pometo_runtime:make_axes(D2),
 	Count = pometo_runtime:make_count(length(D2)),

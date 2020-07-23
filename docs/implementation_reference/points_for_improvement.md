@@ -39,3 +39,34 @@ Ditto for negative ranks which sometimes work
 ## Pometo Github Pages
 
 The logo doesn't appear when you run Jekyll locally but does on the Github pages. This is because it uses an absolute path.
+
+## Serious problems with the `/` operator
+
+This is valid apl...
+
+```apl
+0 +/ (2 3 ⍴ ⍳ 6)
+```
+
+Giving:
+
+```apl
+0 0 0 0
+0 0 0 0
+```
+
+Notice as well as zeroing the values one of the axes has been incremented by 1
+
+Also negative indexing is supported:
+
+```apl
+(-2) +/ (2 3 ⍴ ⍳ 6)
+```
+
+Giving:
+
+```apl
+3  5
+9 11
+```
+

@@ -76,6 +76,20 @@ gives:
 
 Each dimensions was reduced seperately.
 
+## Gotcha's
+
+The `/` operator reduces the rank and it will mondically reduce a vector of length 1 to a scalar:
+
+```pometo
+A ← 1 ⍴ 4
+⍴ +/ A
+```
+
+Gives a null result - its a scalar:
+
+```pometo_results
+
+```
 
 ## Dyadic Use On Scalars Are An Error
 
@@ -94,6 +108,23 @@ Error
 RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
 ```
 
+It works on a vector of length 1, of course:
+
+```pometo
+A ← 1 ⍴ 4
+1 +/ A
+```
+
+Resulting in:
+
+```pometo_results
+4
+```
+
+## Moar Gotcha's
+
+See the points for improvement page for outstanding issues.
+
 ## Dyadic Use On RHS Vectors With An LHS Scalar
 
 The '/' vector when used dyadically applies a sliding window:
@@ -103,6 +134,19 @@ The '/' vector when used dyadically applies a sliding window:
 ```
 
 Giving:
+
+```pometo_results
+3 5 7
+```
+
+The LHS scalar can be replaced with a vector of length 1 with the same results:
+
+```pometo
+A ← 1 ⍴ 2
+A +/ 1 2 3 4
+```
+
+and as expected:
 
 ```pometo_results
 3 5 7
@@ -140,7 +184,7 @@ which is of course:
 
 The shape has been reduced from `3 3` to `3 2`
 
-## Dyadic Use On RHS Vectors With An RHS Scalar
+## Dyadic Use On RHS Vectors With An LHS Vector
 
 This throws a LENGTH ERROR:
 
@@ -153,17 +197,9 @@ Giving
 ```pometo_results
 Error
 2 2 +/ 1 2 3 4
-^
-LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is [2]) on line 1 at character 1
-```
-
-This is obviously different if the LHS is a `lazy` vector:
-
-```pometo_lazy
-Error
-2 2 +/ 1 2 3 4
-^
-LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is unsized_vector) on line 1 at character 1
+----^
+LENGTH ERROR (Reduction window is too long for the axis:LHS has window size of [2,2] elements - RHS Axis has 4
+) on line 1 at character 5
 ```
 
 ## Reducing With Ranks

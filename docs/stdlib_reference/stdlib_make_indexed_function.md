@@ -7,7 +7,7 @@ A normal `Pometo` shape is an unindexed vector - it is a plain list of arguments
 
 It is defined by this Erlang record:
 
-```
+```erlang
 -record('$shape¯', {
                     indexed    = false,
                     dimensions = [],

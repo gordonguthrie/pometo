@@ -293,7 +293,8 @@ how_to_write_docs_pages_as_tests_1_interpreter_test_() ->
 
 If you screw up your code sections you tests can become wierd and very badly failing for that test module. If the results seem super wacko look at the test source and check it is same. This can be as simple as a missing backtick or mis-ordered sections.
 
-A cheap and quick way to see if the sets of code and results are correctly done hokey-cokey fashion is to run
+A cheap and quick way to see if the sets of code and results are correctly done hokey-cokey fashion is to run:
+
 ```bash
 grep -Rh "\`\`\`" docs/*
 ```

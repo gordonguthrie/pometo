@@ -31,8 +31,13 @@ make_index_error_for_rank(Rank, LNo, CNo) ->
 	throw({error, Error}).
 
 make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo) ->
+	NewSize = if
+			is_list(WindowSize) -> WindowSize;
+			is_map(WindowSize)  -> {_Disc, Keep} = lists:unzip(lists:sort(maps:to_list(WindowSize))),
+														 Keep
+	end,
 	Msg1  = "Reduction window is too long for the axis",
-	Msg2  = io_lib:format("LHS has window size of ~p elements - RHS Axis has ~p~n", [WindowSize, ChunkSize]),
+	Msg2  = io_lib:format("LHS has window size of ~p elements - RHS Axis has ~p~n", [NewSize, ChunkSize]),
 	Error = make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
 

@@ -59,6 +59,21 @@ It is multidimensional, of course:
 └─────┘
 ```
 
+`⍳` on a vector of one might surprise you
+
+```pometo
+A ← 1 ⍴ 4
+⍳ A
+```
+
+results in:
+
+```pometo_results
+┌─┐ ┌─┐ ┌─┐ ┌─┐
+│1│ │2│ │3│ │4│
+└─┘ └─┘ └─┘ └─┘
+```
+
 ## Use With Other Data Types
 
 If applied to a boolean scalar `⍳` will return a degenerate multidimensional scalar of type array with a null argument if any of the elements are set to zero.

@@ -1,11 +1,5 @@
 -module(pometo_runtime).
 
--include_lib("eunit/include/eunit.hrl").
-
--include("parser_records.hrl").
--include("errors.hrl").
--include("runtime_include.hrl").
-
 %% exported for inclusion in compiled modules
 %% should never be called directly
 -export([
@@ -14,7 +8,11 @@
 					dyadic/1,
 					monadic/1,
 					dyadic_ranked/1,
-					monadic_ranked/1
+					monadic_ranked/1,
+					ambivalent/1,
+					resolve_monadic_fork/1,
+					run_maybe_monadic_train/1,
+					run_maybe_dyadic_train/1
 				]).
 
 %% things exported for runtime
@@ -55,32 +53,115 @@
 					delete_dim_from_count/2
 				]).
 
+-include_lib("eunit/include/eunit.hrl").
+
+-include("parser_records.hrl").
+-include("errors.hrl").
+-include("runtime_include.hrl").
+
 %%
 %% Exported for use in compiled modules
 %%
 
-dyadic(Args) -> % io:format("in pometo_runtime calling diadic with ~p~n", [Args]),
-								pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+dyadic(Args) -> % io:format("in pometo_runtime calling diadic with~n- ~p~n", [Args]),
+								NewArgs = [run_ast2(X) || X <- Args],
+								pometo_runtime_dyadic:dyadic_RUNTIME(NewArgs).
 
-monadic(Args) -> % io:format("in pometo_runtime calling monadic with ~p~n", [Args]),
-								 pometo_runtime_monadic:monadic_RUNTIME(Args).
+monadic(Args) -> % io:format("in pometo_runtime calling monadic with~n- ~p~n", [Args]),
+								 NewArgs = [run_ast2(X) || X <- Args],
+								 pometo_runtime_monadic:monadic_RUNTIME(NewArgs).
 
-dyadic_ranked(Args) -> % io:format("in pometo_runtime calling diadic (ranked) with ~p~n", [Args]),
-											 pometo_runtime_dyadic:dyadic_RUNTIME(Args).
+dyadic_ranked(Args) -> % io:format("in pometo_runtime calling diadic (ranked) with~n- ~p~n", [Args]),
+											 NewArgs = [run_ast2(X) || X <- Args],
+											 pometo_runtime_dyadic:dyadic_RUNTIME(NewArgs).
 
-monadic_ranked(Args) -> io:format("in pometo_runtime calling monadic (ranked) with ~p~n", [Args]),
-												pometo_runtime_monadic:monadic_RUNTIME(Args).
+monadic_ranked(Args) -> % io:format("in pometo_runtime calling monadic (ranked) with~n- ~p~n", [Args]),
+												NewArgs = [run_ast2(X) || X <- Args],
+												pometo_runtime_monadic:monadic_RUNTIME(NewArgs).
 
+ambivalent([Fn, [Arg]]) 			 -> % io:format("in pometo_runtime calling ambivalent to monadic with~n- ~p~n- ~p~n", [Fn, Arg]),
+																	NewArg = run_ast2(Arg),
+																	pometo_runtime_monadic:monadic_RUNTIME([Fn, [NewArg]]);
+ambivalent([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling ambivalent to dyadic with~n- ~p~n- ~p~n- ~p~n", [Fn, Arg1, Arg2]),
+																	NewArg1 = run_ast2(Arg1),
+																	NewArg2 = run_ast2(Arg2),
+																	pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
 
-apply_fn([[{Mod, Fun}], Arg]) -> Mod:Fun(Arg).
+apply_fn([[{Mod, Fun}], Args]) -> % io:format("Applying {~p : ~p} with args~n- ~p~n", [Mod, Fun, Args]),
+																	NewArgs = [run_ast2(X) || X <- Args],
+																	Mod:Fun(NewArgs).
+
+% This is an Afg monadic fork
+resolve_monadic_fork([#'$ast¯'{do   = let_op,
+															args = [_VarW, Val]},
+											#'$ast¯'{} = LHS,
+											Mid,
+											RHS]) ->
+	NewRHS = run_ast2(RHS#'$ast¯'{args = [Val]}),
+	NewMid = run_ast2(Mid#'$ast¯'{args = [LHS, NewRHS]}),
+	run_ast2(NewMid);
+% this is an fgh monadic fork
+resolve_monadic_fork([#'$ast¯'{do   = let_op,
+															args = [_VarW, Val]},
+											#'$func¯'{line_no = LNo,
+																char_no = CNo} = LHS,
+											Mid,
+											RHS]) ->
+	NewLHS = run_ast2(#'$ast¯'{do      = LHS,
+														 args    = [Val],
+														 line_no = LNo,
+														 char_no = CNo}),
+	NewRHS = run_ast2(RHS#'$ast¯'{args = [Val]}),
+	NewMid = Mid#'$ast¯'{args = [NewLHS, NewRHS]},
+	run_ast2(NewMid).
 
 runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
+
+run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{type = func},
+																	args = Args}                    = _LHS,
+												 #'$ast¯'{do   = #'$shape¯'{}}            = W]) ->
+  NewAST = make_train(lists:reverse(Args), monadic, [W]),
+  run_ast2(NewAST);
+run_maybe_monadic_train([#'$ast¯'{do      = #'$shape¯'{},
+																	line_no = LNo,
+																	char_no = CNo}          = LHS,
+												 #'$ast¯'{do      = #'$shape¯'{}} = RHS]) ->
+	NewAST = #'$ast¯'{do      = #'$shape¯'{dimensions = [2]},
+										args    = [LHS, RHS],
+										line_no = LNo,
+										char_no = CNo},
+	run_ast2(NewAST).
+
+run_maybe_dyadic_train([#'$ast¯'{do   = #'$shape¯'{type = func},
+																	args = Args}                    = _LHS,
+												 #'$ast¯'{do   = #'$shape¯'{}}            = A,
+												 #'$ast¯'{do   = #'$shape¯'{}}            = W]) ->
+  NewAST = make_train(lists:reverse(Args), dyadic, [A, W]),
+  run_ast2(NewAST).
+
+make_train([Final], _Type,  _Operands) ->
+	Final;
+% fork
+make_train([RHS, Mid, LHS | Rest], Type, Operands) ->
+	#'$ast¯'{do = #'$func¯'{} = Func} = Mid,
+	NewLHS = pometo_parser:descend_arg(LHS, Operands),
+	NewRHS = pometo_parser:descend_arg(RHS, Operands),
+	NewAcc = Mid#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
+											 args = [NewLHS, NewRHS]},
+	make_train([NewAcc | Rest], Type, Operands);
+% atop
+make_train([RHS, LHS], Type, Operands) ->
+#'$ast¯'{do = #'$func¯'{} = Func} = LHS,
+NewRHS = pometo_parser:descend_arg(RHS, Operands),
+LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
+				    args = [NewRHS]}.
 
 %%
 %% Runtime API
 %%
 
 run_ast(AST, Str) ->
+	% io:format("in run_ast AST is ~p~n", [AST]),
 	try run_ast2(AST)
 	catch
 		throw:E -> {error, #error{} = Err} = E,
@@ -88,23 +169,51 @@ run_ast(AST, Str) ->
 	end.
 
 run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
-									args = [Arg]}) ->
-	apply_fn([[{Mod, Fn}], Arg]);
+									args = Args}) when is_list(Args)->
+	% io:format("in run_ast2 (1) Apply (~p:~p)~n- to Args is ~p~n", [Mod, Fn, Args]),
+	apply_fn([[{Mod, Fn}], Args]);
 run_ast2(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
+	% io:format("in run_ast2 (2) AST is ~p~n", [AST]),
 	AST;
-run_ast2(#'$ast¯'{do   = 'let',
+run_ast2(#'$ast¯'{do   = 'let_op',
 									args = [_V, A | []]} = AST) ->
 	NewL = AST#'$ast¯'{do   = runtime_let,
 										 args = A},
+	% io:format("in run_ast2 (3) AST is ~p~n", [AST]),
 	runtime_let([NewL]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
 									args = [A1, A2]}) 										when Type == dyadic        orelse
-																														 Type == dyadic_ranked ->
-	dyadic([Func, run_ast2(A1), run_ast2(A2)]);
+																														 Type == dyadic_ranked orelse
+																														 Type == ambivalent    ->
+	% io:format("in run_ast2 (4)~n", []),
+	dyadic([Func, [run_ast2(A1), run_ast2(A2)]]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
 									args = [A]}) 													when Type == monadic        orelse
-																														 Type == monadic_ranked ->
-	monadic([Func, run_ast2(A)]).
+																														 Type == monadic_ranked orelse
+																														 Type == ambivalent     ->
+	% io:format("in run_ast2 (5) Func is ~p ~n- A is ~p~n", [Func, A]),
+	monadic([Func, [run_ast2(A)]]);
+run_ast2(#'$ast¯'{do   = defer_evaluation,
+									args = [#'$ast¯'{do   = #'$shape¯'{type = variable},
+																	 args = #'$var¯'{} = Var}]}) ->
+	% io:format("in run_ast2 (6) Var is ~p~n", [Var]),
+	Var;
+run_ast2(#'$ast¯'{do   = defer_evaluation,
+									args = [#'$ast¯'{do = Func}]}) when is_record(Func, '$func¯')  ->
+	% io:format("in run_ast2 (7) AST is ~p~n", [AST]),
+	Func;
+run_ast2(#'$ast¯'{do   = defer_evaluation,
+									args = [#'$ast¯'{do   = #'$shape¯'{},
+																	 args = Args}]}) ->
+	% io:format("in run_ast2 (8) Args is ~p~n", [Args]),
+	Args;
+run_ast2(#'$ast¯'{do   = resolve_monadic_fork,
+									args = Args}) ->
+	% io:format("in run_ast2 (9) Args is ~p~n", [Args]),
+	resolve_monadic_fork(Args);
+run_ast2(A) ->
+	% io:format("in run_ast2 (10) A is ~p~n", [A]),
+	A.
 
 are_all_positive_integers([])                                 -> true;
 are_all_positive_integers([H | T]) when is_integer(H)         -> are_all_positive_integers(T);
@@ -135,7 +244,8 @@ index(Args) ->
 make_eager(#'$ast¯'{do    = #'$shape¯'{dimensions = unsized_vector} = Shp,
 										args = Args} = AST) ->
 	AST#'$ast¯'{do = Shp#'$shape¯'{dimensions = [length(Args)]}};
-make_eager(X) -> X.
+make_eager(X) ->
+	X.
 
 unindex(Args) when is_map(Args) -> List = lists:sort(maps:to_list(Args)),
 									 {_Keys, Vals} = lists:unzip(List),
@@ -155,9 +265,11 @@ force_index(X, _) ->
 % don't do anything scalars
 make_indexed(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
 	AST;
-% do work on unindexed arrays
-make_indexed(#'$ast¯'{do   = #'$shape¯'{indexed = false} = Shp,
-											args = Args} = AST) ->
+% do work on unindexed arrays that are not func or maybe_func types
+make_indexed(#'$ast¯'{do   = #'$shape¯'{indexed = false,
+																				type    = Type} = Shp,
+											args = Args} = AST) when Type /= func       andalso
+																							 Type /= maybe_func ->
 	{_Len, NewArgs} = pometo_runtime:index(Args),
 	AST#'$ast¯'{do   = Shp#'$shape¯'{indexed = true},
 							args = NewArgs};
@@ -278,8 +390,7 @@ foldl(ApplyFn, Map,                Len) when is_map(Map)   -> Acc = maps:get(1, 
 																															mapfold(ApplyFn, Map, 2, Len, Acc).
 
 mapfold(_ApplyFn, _Map, Len, Len, Acc) -> Acc;
-mapfold(ApplyFn,  Map,  N,   Len, Acc) -> io:format("in map fold Map is ~p~n- N is ~p Len is ~p~n", [Map, N, Len]),
-																					Val = maps:get(N, Map),
+mapfold(ApplyFn,  Map,  N,   Len, Acc) -> Val = maps:get(N, Map),
 																					NewAcc = ApplyFn(Val, Acc),
 																					mapfold(ApplyFn, Map, N + 1, Len, NewAcc).
 
@@ -288,7 +399,8 @@ is_terminated({list, []})  -> true;
 is_terminated(_)           -> false.
 
 make_enumerable(Map)  when is_map(Map)   -> {map,  maps:iterator(Map)};
-make_enumerable(List) when is_list(List) -> {list, List}.
+make_enumerable(List) when is_list(List) -> {list, List};
+make_enumerable(Val)                     -> {list, [Val]}.
 
 
 get_first({map, Iter})      -> {_K, Val, NewIter} = maps:next(Iter),
@@ -323,7 +435,6 @@ increment_count2({N, Orig, Count}, Axes) ->
 	end.
 
 make_index_from_count({N, Count}, Axes) ->
-	io:format("    in make_index_from_count N is ~p Count is ~p Axes is ~p~n", [N, Count, Axes]),
 	StartingIndex = 0,
 	make_index_from_count2(N, Count, 1, Axes, StartingIndex).
 

@@ -12,7 +12,7 @@ Resulting in:
 
 ```pometo_results
 Error
-RANK ERROR
 1 +/ 1
-^
+-----^
+RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
 ```

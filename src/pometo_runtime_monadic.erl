@@ -13,8 +13,8 @@
 -include("runtime_include.hrl").
 
 monadic_RUNTIME([#'$func¯'{do = [","]},
-								 #'$ast¯'{do   = ?shp(0) = Shp,
-													args = Arg} = AST]) ->
+								 [#'$ast¯'{do   = ?shp(0) = Shp,
+												   args = Arg} = AST]]) ->
 	NewShp = Shp?shp([1]),
 	AST#'$ast¯'{do   = NewShp,
 							args = [Arg]};
@@ -22,8 +22,8 @@ monadic_RUNTIME([#'$func¯'{do      = [","],
 													 rank    = Rank,
 													 line_no = LNo,
 													 char_no = CNo},
-								 #'$ast¯'{do      = ?shp(N) = Shp,
-													args    = Args} = AST]) ->
+								 [#'$ast¯'{do      = ?shp(N) = Shp,
+													 args    = Args} = AST]]) ->
 	try
 		NewShp = rerank_ravel(N, Rank),
 		AST#'$ast¯'{do   = Shp?shp(NewShp),
@@ -35,17 +35,17 @@ monadic_RUNTIME([#'$func¯'{do      = [","],
         throw({error, Error})
    end;
 monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
-								 #'$ast¯'{do = ?shp(0) = Shp} = AST]) ->
+								 [#'$ast¯'{do = ?shp(0) = Shp} = AST]]) ->
 	AST#'$ast¯'{do   = Shp,
 							args = ""};
 % need to know the size for ⍴ so size it and flip it back in
 monadic_RUNTIME([#'$func¯'{do = ["⍴"]} = Func,
-								 #'$ast¯'{do   = ?shp(unsized_vector) = Shp,
-													args = Args} = AST]) ->
+								 [#'$ast¯'{do   = ?shp(unsized_vector) = Shp,
+													 args = Args} = AST]]) ->
 	Dims = [length(Args)],
-	monadic_RUNTIME([Func, AST#'$ast¯'{do = Shp?shp(Dims)}]);
+	monadic_RUNTIME([Func, [AST#'$ast¯'{do = Shp?shp(Dims)}]]);
 monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
-								 #'$ast¯'{do = ?shp(Dims) = Shp} = AST]) ->
+								 [#'$ast¯'{do = ?shp(Dims) = Shp} = AST]]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
 												 indexed    = false,
@@ -53,10 +53,10 @@ monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
 	AST#'$ast¯'{do   = NewShp,
 							args = Dims};
 monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
-								 #'$ast¯'{do      = ?shp(D),
-													args    = Args,
-													line_no = LNo,
-													char_no = CNo}]) ->
+								 [#'$ast¯'{do      = ?shp(D),
+													 args    = Args,
+													 line_no = LNo,
+													 char_no = CNo}]]) ->
 	NewArgs = case D of
 					0 -> [Args];
 					_ -> Args
@@ -86,14 +86,14 @@ monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
 			throw({error, Error})
 	end;
 monadic_RUNTIME([#'$func¯'{do = [#'$op¯'{op = Op}]} = Func,
-								 #'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST]) when Op == "/" orelse
-																																					Op == "⌿" ->
+								 [#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST]]) when Op == "/" orelse
+																																						Op == "⌿" ->
 	NewAST = pometo_runtime:maybe_cast_scalar_to_vector(AST),
-	monadic_RUNTIME([Func, NewAST]);
+	monadic_RUNTIME([Func, [NewAST]]);
 monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 													 rank = Rank} = Func,
-								 #'$ast¯'{do   = #'$shape¯'{} = Shp} = Right]) when Op == "/" orelse
-																																		Op == "⌿" ->
+								 [#'$ast¯'{do   = #'$shape¯'{} = Shp} = Right]]) when Op == "/" orelse
+																																			Op == "⌿" ->
 	NewRight   = pometo_runtime:make_eager(pometo_runtime:maybe_cast_scalar_to_vector(Right)),
 	#'$ast¯'{do = #'$shape¯'{dimensions = NewD}} = NewRight,
 	ActualRank = pometo_runtime:resolve_rank(NewD, Rank),
@@ -112,7 +112,7 @@ monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 		end
 	end,
 	RankFns = #rank_fns{iteration_fn = IterationFn},
-	NewArgs = pometo_runtime_rank:iterate_by_axis(NewRight, ActualRank, RankFns),
+	NewArgs = pometo_runtime_rank:iterate_by_axis(NewRight, RankFns),
 	NewDims = pometo_runtime:eliminate_rank(ActualRank, NewD),
 	case NewDims of
 		[] -> NewArg = maps:get(1, NewArgs),
@@ -124,13 +124,13 @@ monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 											 args = NewArgs}
 	end;
 monadic_RUNTIME([#'$func¯'{do = Do},
-								 #'$ast¯'{do   = ?shp(0),
-													args = A} = AST]) ->
+								 [#'$ast¯'{do   = ?shp(0),
+													 args = A} = AST]]) ->
 	NewA = do_apply(Do, A, fun execute_monadic/2),
 	AST#'$ast¯'{args = NewA};
 monadic_RUNTIME([#'$func¯'{do = Do},
-								 #'$ast¯'{do   = #'$shape¯'{},
-													args = A} = AST]) ->
+								 [#'$ast¯'{do   = #'$shape¯'{},
+													 args = A} = AST]]) ->
 	ApplyFun = fun(X) ->
 		do_apply(Do, X, fun execute_monadic/2)
 	end,

@@ -1,12 +1,5 @@
 -module(pometo_runtime_format).
 
--include_lib("eunit/include/eunit.hrl").
-
--include("parser_records.hrl").
--include("comments.hrl").
--include("errors.hrl").
--include("runtime_include.hrl").
-
 %% things exported for runtime
 -export([
 					format/1,
@@ -22,6 +15,13 @@
 -export([
 					build_segments_TEST/1
 				]).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-include("parser_records.hrl").
+-include("comments.hrl").
+-include("errors.hrl").
+-include("runtime_include.hrl").
 
 %% the size we allow the formated output to be
 -define(DISPLAYWIDTH,  80).
