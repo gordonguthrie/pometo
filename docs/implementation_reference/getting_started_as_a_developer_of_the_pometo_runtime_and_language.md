@@ -24,6 +24,62 @@ There are some great Dyalog resources:
 * [a live `REPL`](https://tryapl.org/)
 * [a live help site](http://help.dyalog.com/18.0/index.htm)
 
+## Typing Symbols
+
+How am I even going to type this you ask? You need to install an `apl` font and a keyboard layout:
+
+The font is ***Apl385 Unicode*** which you need to install on your dev machine You should also install an APL keyboard on your dev machine. Download and installation instructions are [available on the Dyalog apl font and keyboards page](https://www.dyalog.com/apl-font-keyboard.htm). (You can even buy a special APL keyboard and be the envy of your pals ;-)
+
+Then print out this cheat sheet and away you go:
+
+![Mac Keyboard Cheat Sheet](../images/mac.png)
+
+## We Develop Inside Docker
+
+Using a docker as an isolation unit means that you don't need to worry about:
+
+* getting Erlang installed
+* which version of Erlang and Elixir you have installed
+* if your dev environment is compatible with the `rappel` application as well
+* what tools you need to have installed
+
+You need to have `docker` installed on your machine.
+
+https://docs.docker.com/get-docker/
+
+You need to clone this repo, the `Pometo` repo.
+
+`git clone git@github.com:gordonguthrie/pometo.git`
+
+Once the source code is available we bring up the `pometo` docker container
+
+```
+cd $GITROOT/pometo
+docker-compose build
+docker-compose up
+```
+
+This will leave docker running in that terminal. Switch to another terminal:
+
+```
+cd $GITROOT/pometo/scripts
+sh start_pometo.sh
+```
+
+This will log you into the docker instance.
+
+`pometo` app is in the directory `/pometo` inside docker. Your local file system is mounted - so if you edit files on your desktop the changes show up in the docker.
+
+You are ready to go.
+
+## Rappel - The Pometo Repl
+
+Our REPL is called `rappel` and you can find it here:
+
+https://github.com/gordonguthrie/rappel/
+
+It uses the same development approach as `pometo` - inside docker with scripting for all your tooling and development needs. `pometo` is written in `erlang` but `rappel` is written in `erlang`s sister language `elixir`.
+
 ## Basic Dev Cycle Of APL Features
 
 The core development cycle is:
@@ -352,4 +408,4 @@ Ah, are you sure you types `rebar3 ....` and not `rebar ...` becuz `rebar` is al
 
 ## Working On The Runtime
 
-If you are working on the runtime please to add the simplest smoke tests to the documentation page `basics.md`
+If you are working on the runtime please to add the simplest smoke tests to the documentation page `smoke_tests.md`
