@@ -18,19 +18,25 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-dyadic_RUNTIME([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
-								#'$ast¯'{do      = ?shp(N),
-												 line_no = LNo,
-												 char_no = CNo},
-								#'$ast¯'{}]) when (N /= 0     andalso
-																	 N /= [1])  andalso
-																	(Op == "/"  orelse
-																	 Op == "⌿") ->
+% we need to collapse arrays with dimensions like [1, 1, 1, 1] to [1]
+dyadic_RUNTIME([Func, [LHS, RHS]]) ->
+	NewLHS = pometo_runtime:maybe_collapse_identity_arrays(LHS),
+	NewRHS = pometo_runtime:maybe_collapse_identity_arrays(RHS),
+	dyadic_RUNTIM2([Func, [NewLHS, NewRHS]]).
+
+dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
+								[#'$ast¯'{do      = ?shp(N),
+													line_no = LNo,
+													char_no = CNo},
+								 #'$ast¯'{}]]) when (N /= 0     andalso
+																		 N /= [1])  andalso
+																		(Op == "/"  orelse
+																		 Op == "⌿") ->
 	Msg1  = io_lib:format("The operator ~p can only take a scalar on the LHS", [Op]),
 	Msg2  = io_lib:format("The shape of the LHS is ~p", [N]),
 	Error = pometo_runtime_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error});
-dyadic_RUNTIME([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
+dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
 								[#'$ast¯'{},
 								 #'$ast¯'{do      = ?shp(0),
 													line_no = LNo,
@@ -40,12 +46,12 @@ dyadic_RUNTIME([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
 	Msg2  = io_lib:format("It is a scalar", []),
 	Error = pometo_runtime_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error});
-dyadic_RUNTIME([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
+dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 													rank    = Rank,
 													line_no = LNo,
 													char_no = CNo}                 = Func,
 								[#'$ast¯'{do   = ?shape(D1,  Type1),
-													args = A2}             = Left,
+													args = A2}                     = Left,
 								 #'$ast¯'{do   = ?shape(D2, Type2)= Shp} = Right]])
 	when (Type1 == number  orelse
 				Type1 == boolean orelse
@@ -126,7 +132,7 @@ dyadic_RUNTIME([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 					end
 			end
 	end;
-dyadic_RUNTIME([#'$func¯'{do      = [Fn],
+dyadic_RUNTIM2([#'$func¯'{do      = [Fn],
 													rank    = Rank,
 													line_no = LNo,
 													char_no = CNo},
@@ -158,7 +164,7 @@ dyadic_RUNTIME([#'$func¯'{do      = [Fn],
 																				   indexed    = true}};
 % rho needs to know the length of the vector
 % this clause handles both a scalar and a vector on either of the LHS or the RHS
-dyadic_RUNTIME([#'$func¯'{do = ["⍴"]},
+dyadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
 								[#'$ast¯'{do      = ?shape(N1, Type1) = Shp,
 													args    = A1,
 													line_no = LNo,
@@ -200,10 +206,11 @@ dyadic_RUNTIME([#'$func¯'{do = ["⍴"]},
 				is_map(NewArgs)  -> true;
 				is_list(NewArgs) -> false
 			end,
-			Right#'$ast¯'{do   = Shp#'$shape¯'{dimensions = pometo_runtime:args_to_list(NewA1),
+			Ret = Right#'$ast¯'{do   = Shp#'$shape¯'{dimensions = pometo_runtime:args_to_list(NewA1),
 																				 indexed    = Indexed,
 																				 type       = Type2},
-										args = NewArgs};
+										args = NewArgs},
+			Ret;
 		false ->
 			Msg1  = "dyadic ⍴ only accepts integer arguments to the left and was called with",
 			Args1 = pometo_runtime:args_to_list(A1),
@@ -215,19 +222,19 @@ dyadic_RUNTIME([#'$func¯'{do = ["⍴"]},
 %% complex element number handling first
 %% complex numbers in arrays are unpacked in execute_dyadic
 %% some ops on complex numbers are simple scalar extentions
-dyadic_RUNTIME([#'$func¯'{}        = Func,
+dyadic_RUNTIM2([#'$func¯'{}        = Func,
 								[?complex_el(A1)   = Left,
 								 ?complex_el(A2)]]) ->
 	Vals = do_complex(Func, A1, A2),
 	Left?complex_el(Vals);
 % mixed real and complex addition and subtraction
-dyadic_RUNTIME([#'$func¯'{}            = Func,
+dyadic_RUNTIM2([#'$func¯'{}            = Func,
 								[?complex_el(A1)       = Left,
 								 #'$ast¯'{do = ?shp(0),
 													args = A2}]]) ->
 	Vals = do_complex(Func, A1, [A2, 0]),
 	Left?complex_el(Vals);
-dyadic_RUNTIME([#'$func¯'{}               = Func,
+dyadic_RUNTIM2([#'$func¯'{}               = Func,
 								[#'$ast¯'{do   = ?shp(0),
 													args = A1},
 								 ?complex_el(A2)          = Right]]) ->
@@ -236,7 +243,7 @@ dyadic_RUNTIME([#'$func¯'{}               = Func,
 
 % handle scalars
 % if both sides are scalar return a scalar
-dyadic_RUNTIME([#'$func¯'{} = Func,
+dyadic_RUNTIM2([#'$func¯'{} = Func,
 								[#'$ast¯'{do = ?shp(0),
 													args = A1} = Left,
 								 #'$ast¯'{do = ?shp(0),
@@ -244,7 +251,7 @@ dyadic_RUNTIME([#'$func¯'{} = Func,
 	Val = execute_dyadic(Func, A1, A2),
 	Left#'$ast¯'{args = Val};
 % if one side is a scalar cast it to an array
-dyadic_RUNTIME([#'$func¯'{}              = Func,
+dyadic_RUNTIM2([#'$func¯'{}              = Func,
 								[#'$ast¯'{do = ?shp(N1)}  = Left,
 								 #'$ast¯'{do = ?shp(N2)} = Right]]) when (N1 == 0    orelse
 								                                          N1 == [1]) ->
@@ -256,37 +263,37 @@ dyadic_RUNTIME([#'$func¯'{}              = Func,
 	end,
 	#'$ast¯'{do = #'$shape¯'{} = Shp} = Ret,
 	Ret#'$ast¯'{do = Shp#'$shape¯'{dimensions = NewDims}};
-dyadic_RUNTIME([#'$func¯'{}              = Func,
+dyadic_RUNTIM2([#'$func¯'{}              = Func,
 								[#'$ast¯'{do = ?shp(_N)} = Left,
 								 #'$ast¯'{do = ?shp(N)}  = Right]]) when (N == 0    orelse
 								                                          N == [1]) ->
 	apply(Func, Left, pometo_runtime:maybe_cast_scalar_to_vector(Right), right, fun dyadic_fn/3);
 %% now plain number handling
 %% this clause will match two unsized vectors or two vectors of the same size
-dyadic_RUNTIME([#'$func¯'{}             = Func,
+dyadic_RUNTIM2([#'$func¯'{}             = Func,
 								[#'$ast¯'{do = ?shp(N)} = Left,
 								 #'$ast¯'{do = ?shp(N)} = Right]]) ->
 	zip(Func, Left, Right, fun dyadic_fn/3);
 %% this clause will handle on mixed case
-dyadic_RUNTIME([#'$func¯'{}                          = Func,
+dyadic_RUNTIM2([#'$func¯'{}                          = Func,
 								[#'$ast¯'{do = ?shp(unsized_vector)} = Left,
 								 #'$ast¯'{do = ?shp(L)}              = Right]]) when is_list(L) ->
 	zip(Func, Left, Right, fun dyadic_fn/3);
 %% this clause will handle the other
-dyadic_RUNTIME([#'$func¯'{}                          = Func,
+dyadic_RUNTIM2([#'$func¯'{}                          = Func,
 								[#'$ast¯'{do = ?shp(L)}              = Left,
 								 #'$ast¯'{do = ?shp(unsized_vector)} = Right]]) when is_list(L) ->
 	zip(Func, Left, Right, fun dyadic_fn/3);
-dyadic_RUNTIME([#'$func¯'{}               = Func,
+dyadic_RUNTIM2([#'$func¯'{}               = Func,
 								[#'$ast¯'{do = ?shp([1])} = Left,
 								 #'$ast¯'{}               = Right]]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
 	apply(Func, Right, Left, left, fun dyadic_fn/3);
-dyadic_RUNTIME([#'$func¯'{}              = Func,
+dyadic_RUNTIM2([#'$func¯'{}              = Func,
 								#'$ast¯'{}               = Left,
 								#'$ast¯'{do = ?shp([1])} = Right]) ->
 	apply(Func, Left, Right, right, fun dyadic_fn/3);
-dyadic_RUNTIME([#'$func¯'{do = Do},
+dyadic_RUNTIM2([#'$func¯'{do = Do},
 								[#'$ast¯'{do      = ?shp(N1),
 													line_no = LNo,
 													char_no = CNo},
@@ -380,9 +387,9 @@ execute_dyadic(Func,  L,        ?cmplx(R)) -> ?cmplx(do_complex(Func, [L, 0], R)
 execute_dyadic(#'$func¯'{do = ["/"]}, L, R) -> duplicate(L, R);
 
 %% complex arrays
-execute_dyadic(Func, #'$ast¯'{} = L, #'$ast¯'{} = R) -> dyadic_RUNTIME([Func, [L, R]]);
-execute_dyadic(Func, #'$ast¯'{} = L, R)              -> dyadic_RUNTIME([Func, [L, make_scalar_ast(R)]]);
-execute_dyadic(Func, L,              #'$ast¯'{} = R) -> dyadic_RUNTIME([Func, [make_scalar_ast(L), R]]);
+execute_dyadic(Func, #'$ast¯'{} = L, #'$ast¯'{} = R) -> dyadic_RUNTIM2([Func, [L, R]]);
+execute_dyadic(Func, #'$ast¯'{} = L, R)              -> dyadic_RUNTIM2([Func, [L, make_scalar_ast(R)]]);
+execute_dyadic(Func, L,              #'$ast¯'{} = R) -> dyadic_RUNTIM2([Func, [make_scalar_ast(L), R]]);
 
 % if a function can be applied to a complex no it
 % has to be listed after the complex execution descends into the

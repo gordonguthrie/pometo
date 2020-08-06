@@ -70,7 +70,7 @@ run_for_format_TEST(Str, ModuleName) ->
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> compile_and_run_for_format2([{{run, 0, []}, Exprs}], ModuleName, Str);
-			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+		{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 compile_load_and_run_force_index_TEST(Str, ModuleName) ->
@@ -335,12 +335,12 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 	{NewArgs2, NewDims, NewType} = case NewA2 of
 		#'$ast¯'{do   = #'$shape¯'{dimensions = D,
 															 type       = T},
-						 args = A2} 												-> {A2, D, T};
-		#'$ast¯'{do = complex} = A4 								-> {A4, 0, complex};
-		#'$ast¯'{do = #'$func¯'{}} = A4							-> {A4, 0, func};
-		#'$ast¯'{do = [{apply_fn, _}]} = A4		      -> #'$ast¯'{do = App} = A4,
-																									 {A4, 0, App};
-		[X2] 																				-> {X2, 0, get_type(X2)};
+						 args = A2}												 -> {A2, D, T};
+		#'$ast¯'{do   = complex} = A4 						 -> {A4, 0, complex};
+		#'$ast¯'{do   = #'$func¯'{}} = A4					 -> {A4, 0, func};
+		#'$ast¯'{do   = [{apply_fn, _}]} = A4			 -> #'$ast¯'{do = App} = A4,
+																									{A4, 0, App};
+		[X2]																			 -> {X2, 0, get_type(X2)};
 		[] ->
 			{[], 0, variable} % error condition so we don't care about the result
 	end,

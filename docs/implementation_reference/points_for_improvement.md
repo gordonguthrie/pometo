@@ -70,3 +70,6 @@ Giving:
 9 11
 ```
 
+## Consolidate Function in `pometo_runtime`
+
+We iterate over the whole list to determine if it is consolidatable and then iterate over it again to execute the consolidation

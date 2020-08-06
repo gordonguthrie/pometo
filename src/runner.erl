@@ -9,10 +9,20 @@
 -compile([{nowarn_unused_function, [{run, 1}, {run1, 1}, {run2, 1}, {run3, 1}]}]).
 
 run() ->
-	Codes = [
-            "C ← 2 3 4 ⍴ ⍳24\n⍴ ,[1.5] C"
-          ],
-	[run(X) || X <- Codes],
+Codes = [
+          % "A ← 888 999\nB ← 1 2\nC ← A\nC + B"
+          % "A ← 888 999\nB ← 1 2\nA + B"
+          % "A ← 1\nB ← 3 A 2"
+          % "A ← 888 999\n1 (2 3 A)"
+          % "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\nA + B"
+          % "A ← 2 2 ⍴ 1 22 333 4444\n, A"
+          % "A ← 2 ⍴ 999\nB ← 2 ⍴ 8888\n2 3 ⍴ A B"
+          % "(1 2)"
+          % "A ← 1\nB ← 2 3\nB A"
+          % "C ← 2 3 4 ⍴ ⍳24\n⍴ ,[3 4] C"
+          "A ← ⍳ 24\nB ← 2 3 4 ⍴ A\n2 +/[2] B"
+        ],
+	[run1(X) || X <- Codes],
 	exit(0).
 
 run(Code) ->
@@ -26,7 +36,7 @@ run1(Code) ->
   % Resp0 = pometo:parse_TEST(Code),
   % io:format("parse_TEST returns~n~p~n", [Resp0]),
   Resp1 = pometo:interpret_TEST(Code),
-  io:format("interpret_TEST returns~n~p~n~n~ts~n", [Resp1, Resp1]),
+  io:format("interpret_TEST returns~n~ts~n", [Resp1]),
   % Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
   % io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
   ok.
@@ -42,8 +52,8 @@ run2(Code) ->
 
 % lazy and forcing and make_indexing testing
 run3(Code) ->
-  Resp = pometo:compile_load_and_run_lazy_TEST(Code, "compile_lazy_runner"),
-  io:format("compile_load_and_run_lazy_TEST returns~n~ts~n", [Resp]),
+  % Resp = pometo:compile_load_and_run_lazy_TEST(Code, "compile_lazy_runner"),
+  % io:format("compile_load_and_run_lazy_TEST returns~n~ts~n", [Resp]),
   Resp1 = pometo:compile_load_and_run_indexed_TEST(Code, "compile_indexed_runner"),
   io:format("compile_load_and_run_indexed_TEST returns~n~ts~n", [Resp1]),
   Resp2 = pometo:compile_load_and_run_force_index_TEST(Code, "compile_force_index_runner"),

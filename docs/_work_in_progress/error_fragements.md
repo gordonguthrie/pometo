@@ -16,3 +16,21 @@ Error
 -----^
 RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
 ```
+
+## Syntax Errrors
+
+If you try and make a train with an odd no of elements - the left of which is a scalar you will get a syntax error
+
+```pometo
+A ← 1 2 3
+(A+-÷) 4 5
+```
+
+resulting in:
+
+```pometo_results
+Error
+(A+-÷) 4 5
+-^
+SYNTAX ERROR: Missing right argument (cannot have a vector as the LHS of an atop train) on line 2 at char 2.
+```

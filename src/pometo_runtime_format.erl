@@ -43,7 +43,10 @@
 %%% API
 %%%
 
-format([]) -> [];
+format([]) ->
+	[];
+format(List) when is_list(List) ->
+	string:join([format(X) || X <- List], "\n");
 format(#'$ast¯'{do   = #'$shape¯'{indexed = true} = Shp,
 								args = Args} = AST) ->
 	% if it is indexed we just unindex it before display
@@ -63,9 +66,13 @@ format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																  type       = array},
 							  args = Args} = AST) ->
 % promote an array scalar to a mixed vector for printing
-	NewDims = [length(Args)],
+	{NewDims, NewArgs} = case is_list(Args) of
+							true  -> {length(Args), Args};
+							false -> {[1], [Args]}
+	end,
 	format(AST#'$ast¯'{do   = #'$shape¯'{dimensions = NewDims,
-																			 type       = mixed}});
+																			 type       = mixed},
+										 args = NewArgs});
 % scalar array first
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 								args = #'$ast¯'{do = #'$shape¯'{}} = InnerAST}) ->
@@ -97,7 +104,15 @@ format(#comment{msg     = Msg,
 	io_lib:format("~ts on line ~p at character ~p~n", [Msg, LNo, CNo]);
 format({error, Err}) ->
 	format_errors([Err]);
-format(X) ->
+format(#'$ast¯'{do = #'$func¯'{do   = Do,
+															 type = Type}}) ->
+	io_lib:format("Function: ~p of type ~p~n", [Do, Type]);
+format(#'$ast¯'{do = defer_evaluation,
+								args = Args}) ->
+	Line1 = io_lib:format("Defering Evaluation:", []),
+	Lines = [format(X) || X <- Args],
+	string:join([Line1 | Lines], "\n");
+format(X) when is_list(X) ->
 	X.
 
 format_errors(Errors) ->
@@ -291,6 +306,15 @@ get_greater(_, B)            -> B.
 
 build_segments_TEST(A) -> build_segments(A).
 
+% can't handle unsized vectors, gotta flip 'em
+build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
+												args = Args}) ->
+	Dim = length(Args),
+	build_segments(#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [Dim]},
+													args = Args});
+% can't handle indexed segments, gotta flip 'em
+build_segments(#'$ast¯'{do   = #'$shape¯'{indexed = true}} = AST) ->
+	build_segments(pometo_runtime:make_unindexed(AST));
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 												args = null}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
@@ -367,7 +391,8 @@ fmt(#'$ast¯'{do   = complex,
 						 args = [R, I]}) when I < 0 -> make_frag("~pJ¯~p",  [abs(R), abs(I)]);
 fmt(#'$ast¯'{do   = complex,
 						 args = [R, I]})            -> make_frag("~pJ~p",   [abs(R), abs(I)]);
-fmt(#'$ast¯'{} = A)                     -> [#fmt_line{segs = Strings}] = build_segments(A),
+fmt(#'$ast¯'{} = A)                     -> Seg = build_segments(A),
+																					 [#fmt_line{segs = Strings}] = Seg,
 																					 {Width, Height} = get_size(Strings),
 																						#fmt_segment{strings = Strings,
 																												 width   = Width + 2,

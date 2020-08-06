@@ -197,9 +197,17 @@ Giving
 ```pometo_results
 Error
 2 2 +/ 1 2 3 4
-----^
-LENGTH ERROR (Reduction window is too long for the axis:LHS has window size of [2,2] elements - RHS Axis has 4
-) on line 1 at character 5
+^
+LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is [2]) on line 1 at character 1
+```
+
+Using a lazy vector gives a different error - it is thrown at runtime during evaluation and not before it:
+
+```pometo_lazy
+Error
+2 2 +/ 1 2 3 4
+^
+LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is unsized_vector) on line 1 at character 1
 ```
 
 ## Reducing With Ranks

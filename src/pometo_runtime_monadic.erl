@@ -12,13 +12,18 @@
 -include("errors.hrl").
 -include("runtime_include.hrl").
 
-monadic_RUNTIME([#'$func¯'{do = [","]},
+% we need to collapse arrays with dimensions like [1, 1, 1, 1] to [1]
+monadic_RUNTIME([Func, [RHS]]) ->
+	NewRHS = pometo_runtime:maybe_collapse_identity_arrays(RHS),
+	monadic_RUNTIM2([Func, [NewRHS]]).
+
+monadic_RUNTIM2([#'$func¯'{do = [","]},
 								 [#'$ast¯'{do   = ?shp(0) = Shp,
 												   args = Arg} = AST]]) ->
 	NewShp = Shp?shp([1]),
 	AST#'$ast¯'{do   = NewShp,
 							args = [Arg]};
-monadic_RUNTIME([#'$func¯'{do      = [","],
+monadic_RUNTIM2([#'$func¯'{do      = [","],
 													 rank    = Rank,
 													 line_no = LNo,
 													 char_no = CNo},
@@ -34,17 +39,17 @@ monadic_RUNTIME([#'$func¯'{do      = [","],
         Error = pometo_runtime_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
         throw({error, Error})
    end;
-monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
+monadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
 								 [#'$ast¯'{do = ?shp(0) = Shp} = AST]]) ->
 	AST#'$ast¯'{do   = Shp,
 							args = ""};
 % need to know the size for ⍴ so size it and flip it back in
-monadic_RUNTIME([#'$func¯'{do = ["⍴"]} = Func,
+monadic_RUNTIM2([#'$func¯'{do = ["⍴"]} = Func,
 								 [#'$ast¯'{do   = ?shp(unsized_vector) = Shp,
 													 args = Args} = AST]]) ->
 	Dims = [length(Args)],
-	monadic_RUNTIME([Func, [AST#'$ast¯'{do = Shp?shp(Dims)}]]);
-monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
+	monadic_RUNTIM2([Func, [AST#'$ast¯'{do = Shp?shp(Dims)}]]);
+monadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
 								 [#'$ast¯'{do = ?shp(Dims) = Shp} = AST]]) ->
 	NewDims = length(Dims),
 	NewShp = Shp#'$shape¯'{dimensions = [NewDims],
@@ -52,7 +57,7 @@ monadic_RUNTIME([#'$func¯'{do = ["⍴"]},
 												 type       = number},
 	AST#'$ast¯'{do   = NewShp,
 							args = Dims};
-monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
+monadic_RUNTIM2([#'$func¯'{do = ["⍳"]},
 								 [#'$ast¯'{do      = ?shp(D),
 													 args    = Args,
 													 line_no = LNo,
@@ -85,12 +90,12 @@ monadic_RUNTIME([#'$func¯'{do = ["⍳"]},
 			Error = pometo_runtime_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
 			throw({error, Error})
 	end;
-monadic_RUNTIME([#'$func¯'{do = [#'$op¯'{op = Op}]} = Func,
+monadic_RUNTIM2([#'$func¯'{do = [#'$op¯'{op = Op}]} = Func,
 								 [#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST]]) when Op == "/" orelse
 																																						Op == "⌿" ->
 	NewAST = pometo_runtime:maybe_cast_scalar_to_vector(AST),
-	monadic_RUNTIME([Func, [NewAST]]);
-monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
+	monadic_RUNTIM2([Func, [NewAST]]);
+monadic_RUNTIM2([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 													 rank = Rank} = Func,
 								 [#'$ast¯'{do   = #'$shape¯'{} = Shp} = Right]]) when Op == "/" orelse
 																																			Op == "⌿" ->
@@ -123,12 +128,12 @@ monadic_RUNTIME([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 																						 indexed    = true},
 											 args = NewArgs}
 	end;
-monadic_RUNTIME([#'$func¯'{do = Do},
+monadic_RUNTIM2([#'$func¯'{do = Do},
 								 [#'$ast¯'{do   = ?shp(0),
 													 args = A} = AST]]) ->
 	NewA = do_apply(Do, A, fun execute_monadic/2),
 	AST#'$ast¯'{args = NewA};
-monadic_RUNTIME([#'$func¯'{do = Do},
+monadic_RUNTIM2([#'$func¯'{do = Do},
 								 [#'$ast¯'{do   = #'$shape¯'{},
 													 args = A} = AST]]) ->
 	ApplyFun = fun(X) ->

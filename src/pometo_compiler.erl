@@ -241,12 +241,17 @@ make_line(#'$ast¯'{do   = 'let_op',
 	end,
 	Src;
 make_line(#'$ast¯'{do   = defer_evaluation,
-									 args = [#'$ast¯'{do   = #'$func¯'{} = Func}]}) ->
-	make_record(Func);
+									 args = [#'$ast¯'{do   = #'$func¯'{}} = AST]}) ->
+	make_record(AST);
 make_line(#'$ast¯'{do   = defer_evaluation,
 									 args = [#'$ast¯'{do   = #'$shape¯'{type = variable},
 									 									args = Var}]}) ->
 	make_record(Var);
+make_line(#'$ast¯'{do   = defer_evaluation,
+									 args = [#'$ast¯'{do   = #'$shape¯'{type = Type}} = AST]})
+	when Type == func       orelse
+			 Type == maybe_func ->
+	make_record(AST);
 make_line(#'$ast¯'{do   = resolve_monadic_fork,
 									 args = Args}) ->
 	make_resolve_function_call({pometo_runtime, resolve_monadic_fork}, Args, apply_fn);

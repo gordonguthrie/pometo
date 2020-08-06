@@ -3,6 +3,10 @@
 -define(SPACE,               32).
 -define(START_COUNTING_ARGS, 1).
 
+-define(scalar,         #'$shape¯'{dimensions = 0}).
+-define(unsized_vector, #'$shape¯'{dimensions = unsized_vector}).
+-define(vector,         #'$shape¯'{dimensions = [_N]}).
+
 -define(shp(Dim),         #'$shape¯'{dimensions = Dim}).
 -define(shape(Dim, Type), #'$shape¯'{dimensions = Dim,
 									 									 type       = Type}).

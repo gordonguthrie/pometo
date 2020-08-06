@@ -35,7 +35,7 @@ basic_dyadic_plus_vector_test_() ->
                   char_no = 9,
                   line_no = 1}
         ],
-  % ?debugFmt("~nin basic_dyadic_plus_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
+  % ?debugFmt("~nin basic_dyadic_plus_vector_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 basic_dyadic_plus_scalar_test_() ->
@@ -65,7 +65,7 @@ basic_dyadic_plus_scalar_test_() ->
                   char_no = 3,
                   line_no = 1}
         ],
-  % ?debugFmt("~nin basic_dyadic_plus_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
+  % ?debugFmt("~nin basic_dyadic_plus_scalar_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
   ?_assertEqual(Exp, Got).
 
 
@@ -295,7 +295,7 @@ basic_mixed_nested_array_test_() ->
   Exp = [
           ASTA
         ],
-  % ?debugFmt("~nin basic_mixed_nested_array_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
+  ?debugFmt("~nin basic_mixed_nested_array_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
   ?_assertEqual(Exp, Got).
 
 deep_mixed_nested_array_test_() ->
@@ -345,28 +345,48 @@ deep_mixed_nested_array_II_test_() ->
                  args    = ['A_0', LetAST],
                  line_no = 1,
                  char_no = 1},
-  ShpA = #'$shape¯'{dimensions = [2],
-                    type       = mixed,
+  Shp0 = #'$shape¯'{dimensions = 0,
+                    type       = boolean,
                     line_no    = 2,
                     char_no    = 1},
-  ShpB = #'$shape¯'{dimensions = [3],
-                    type       = runtime,
+  ShpA = #'$shape¯'{dimensions = [2],
+                    type       = maybe_func,
+                    line_no    = 2,
+                    char_no    = 1},
+  ShpB = #'$shape¯'{dimensions = [2],
+                    type       = number,
                     line_no    = 2,
                     char_no    = 4},
   ShpC = #'$shape¯'{dimensions = [2],
                     type       = number,
                     line_no    = 2,
                     char_no    = 8},
+  AST0 = #'$ast¯'{do      = Shp0,
+                  args    = 1,
+                  char_no = 1,
+                  line_no = 2},
   ASTC = #'$ast¯'{do      = ShpC,
                   args    = [888, 999],
                   char_no = 8,
                   line_no = 2},
   ASTB = #'$ast¯'{do      = ShpB,
-                  args    = [2, 3, ASTC],
+                  args    = [2, 3],
+                  char_no = 4,
+                  line_no = 2},
+  ShpY = #'$shape¯'{dimensions = [2],
+                    type       = maybe_func,
+                    line_no    = 2,
+                    char_no    = 4},
+  ASTY = #'$ast¯'{do      = ShpY,
+                  args    = [ASTB, ASTC],
+                  char_no = 4,
+                  line_no = 2},
+  ASTZ = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                  args    = [ASTY],
                   char_no = 4,
                   line_no = 2},
   ASTA = #'$ast¯'{do      = ShpA,
-                  args    = [1, ASTB],
+                  args    = [AST0, ASTZ],
                   char_no = 1,
                   line_no = 2},
   Exp = [
@@ -417,19 +437,30 @@ variable_subsitution_parser_test_() ->
                   args    = [1, 2],
                   line_no = 3,
                   char_no = 5},
-
-  ASTC = #'$ast¯'{do      = #'$func¯'{do      = ["+"],
-                                      type    = dyadic,
-                                      char_no = 3,
-                                      line_no = 3},
-                  args    = [ASTA, ASTB],
+  FuncC = #'$func¯'{do      = ["+"],
+                    type    = ambivalent,
+                    char_no = 3,
+                    line_no = 3},
+  ShpD = #'$shape¯'{dimensions = [3],
+                    type       = maybe_func,
+                    line_no    = 3,
+                    char_no    = 1},
+  ASTC = #'$ast¯'{do      = FuncC,
                   char_no = 3,
+                  line_no = 3},
+  ASTD = #'$ast¯'{do      = ShpD,
+                  args    = [ASTA, ASTC, ASTB],
+                  char_no = 1,
+                  line_no = 3},
+  ASTE = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                  args = [ASTD],
+                  char_no = 1,
                   line_no = 3},
 
   Exp = [
           Let1,
           Let2,
-          ASTC
+          ASTE
         ],
   % ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
   ?_assertEqual(Exp, Got).
@@ -478,6 +509,10 @@ variable_double_subsitution_parser_test_() ->
                     type       = number,
                     line_no    = 4,
                     char_no    = 5},
+  ShpD = #'$shape¯'{dimensions = [3],
+                    type       = maybe_func,
+                    line_no    = 4,
+                    char_no    = 1},
   ASTA = #'$ast¯'{do      = ShpA,
                   args    = [888, 999],
                   line_no = 4,
@@ -486,20 +521,29 @@ variable_double_subsitution_parser_test_() ->
                   args    = [1, 2],
                   line_no = 4,
                   char_no = 5},
-
-  ASTC = #'$ast¯'{do      = #'$func¯'{do      = ["+"],
-                                      type    = dyadic,
-                                      char_no = 3,
-                                      line_no = 4},
-                  args    = [ASTA, ASTB],
+  FuncC = #'$func¯'{do      = ["+"],
+                    type    = ambivalent,
+                    char_no = 3,
+                    line_no = 4},
+  ASTC = #'$ast¯'{do      = FuncC,
                   char_no = 3,
                   line_no = 4},
-
+  ASTD = #'$ast¯'{do      = ShpD,
+                  args    = [ASTA#'$ast¯'{do      = Shp1#'$shape¯'{char_no = 1,
+                                                                   line_no = 4},
+                                          char_no = 1,
+                                          line_no = 4}, ASTC, ASTB],
+                  char_no = 1,
+                  line_no = 4},
+  ASTE = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                  args = [ASTD],
+                  char_no = 1,
+                  line_no = 4},
   Exp = [
           Let1,
           Let2,
           Let3,
-          ASTC
+          ASTE
         ],
   % ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
   ?_assertEqual(Exp, Got).

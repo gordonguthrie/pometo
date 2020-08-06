@@ -4,26 +4,28 @@ set -o pipefail
 # rm -rf _build/default/plugins/pometo_docs_to_tests
 # rebar3 pometo_docs_to_tests
 
-# these are pretty much smoke tests they just check that the basics are working
-rebar3 eunit --module=lexer_tests --verbose
-rebar3 eunit --module=lexer_error_tests --verbose
-rebar3 eunit --module=complex_no_lexer_tests --verbose
+# these are pretty much smoke tests - they just check that the basics are working
+rebar3 eunit --module=lexer_tests                  --verbose
+rebar3 eunit --module=lexer_error_tests            --verbose
+rebar3 eunit --module=complex_no_lexer_tests       --verbose
 rebar3 eunit --module=complex_no_lexer_error_tests --verbose
-rebar3 eunit --module=parser_tests --verbose
-rebar3 eunit --module=parser_error_tests --verbose
+rebar3 eunit --module=parser_tests                 --verbose
+rebar3 eunit --module=parser_error_tests           --verbose
 
-# if your formatter or indexers are donald ducked then your compiler/interpreter tests are donald ducked
-rebar3 eunit --module=format_tests --verbose
-rebar3 eunit --module=index_tests --verbose
+# if your formatter or indexers or vector-makers are donald ducked
+# then your compiler/interpreter tests are donald ducked
+rebar3 eunit --module=format_tests       --verbose
+rebar3 eunit --module=index_tests        --verbose
+rebar3 eunit --module=make_vectors_tests --verbose
 
 # again this set largely checks the plumbing
 # <Jimmy, son, is the whoosey correctly wired into the thingiemabob?>
-rebar3 eunit --module=interpreter_tests --verbose
-rebar3 eunit --module=interpreter_error_tests --verbose
+rebar3 eunit --module=interpreter_tests            --verbose
+rebar3 eunit --module=interpreter_error_tests      --verbose
 rebar3 eunit --module=interpreter_complex_no_tests --verbose
-rebar3 eunit --module=compiler_tests --verbose
-rebar3 eunit --module=compiler_error_tests --verbose
-rebar3 eunit --module=compiler_complex_no_tests --verbose
+rebar3 eunit --module=compiler_tests               --verbose
+rebar3 eunit --module=compiler_error_tests         --verbose
+rebar3 eunit --module=compiler_complex_no_tests    --verbose
 
 # finally if the tests have been generated run the smoke tests
 # These are actual functional tests of the end system

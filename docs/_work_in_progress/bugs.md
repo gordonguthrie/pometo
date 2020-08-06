@@ -99,3 +99,29 @@ For `function`s this looks something like:
 * scalars vs arrays
 * restrictions on input
 * error messages that can be omitted
+
+## Arrays Of Functions
+
+### The Bug
+
+Arrays of functions return back to the user and crash the formatter
+
+```apl
+"A ← -+÷\n⎕debug A "
+```
+
+Causes a bug like:
+```erlang
+                          [],1,7}
+{"init terminating in do_boot",{badarg,[{erlang,'++',[[10|{'$ast¯',{'$func¯',["+"],ambivalent,primitive,explicit,false,none,1,6},[],1,6}],[10|{'$ast¯',{'$func¯',["�"],ambivalent,primitive,explicit,false,none,1,7},[],1,7}]],[]},{lists,append,1,[{file,"lists.erl"},{line,127}]},{string,join,2,[{file,"string.erl"},{line,2244}]},{pometo,'-interpret_TEST2/2-lc$^1/1-1-',1,[{file,"/pomet...
+```
+
+Not sure why - but there are issues around how it should print...
+
+Was trying to get a display of the structure of trains like this from dyalog:
+
+![Function Train Boxing From Dyalog](../images/dyalog_train_boxing.png)
+
+### Documentation To Be Updated
+
+I would say a proper implementation of this needs to be added to the function/page stdlib_debug_function and also then it should be used in the page trains to explain how the functions are allocated
