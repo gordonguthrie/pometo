@@ -295,7 +295,7 @@ basic_mixed_nested_array_test_() ->
   Exp = [
           ASTA
         ],
-  ?debugFmt("~nin basic_mixed_nested_array_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
+  % ?debugFmt("~nin basic_mixed_nested_array_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
   ?_assertEqual(Exp, Got).
 
 deep_mixed_nested_array_test_() ->
