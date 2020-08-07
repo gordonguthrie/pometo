@@ -34,7 +34,7 @@ dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
 																		 Op == "⌿") ->
 	Msg1  = io_lib:format("The operator ~p can only take a scalar on the LHS", [Op]),
 	Msg2  = io_lib:format("The shape of the LHS is ~p", [N]),
-	Error = pometo_runtime_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
+	Error = pometo_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error});
 dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
 								[#'$ast¯'{},
@@ -44,7 +44,7 @@ dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
 																									Op == "⌿") ->
 	Msg1  = "RHS must be an array",
 	Msg2  = io_lib:format("It is a scalar", []),
-	Error = pometo_runtime_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
+	Error = pometo_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error});
 dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 													rank    = Rank,
@@ -77,7 +77,7 @@ dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 	ChunkSize = lists:nth(ActualRank, NewD2),
 	if
 		WindowSize > ChunkSize ->
-			pometo_runtime_errors:make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo);
+			pometo_errors:make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo);
 		WindowSize =< ChunkSize ->
 			Adjustment = -(WindowSize - 1),
 			case Adjustment of
@@ -127,7 +127,7 @@ dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 						false ->
 							Msg1  = io_lib:format("The operator ~p can only take a scalar/vector of length 1 on the LHS", [Op]),
 							Msg2  = io_lib:format("The shape of the LHS is ~p", [D1]),
-							Error = pometo_runtime_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
+							Error = pometo_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 							throw({error, Error})
 					end
 			end
@@ -216,7 +216,7 @@ dyadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
 			Args1 = pometo_runtime:args_to_list(A1),
 			Args2 = pometo_runtime:args_to_list(A2),
 			Msg2  = io_lib:format("Left: ~p - Right: ~p", [Args1, Args2]),
-			Error = pometo_runtime_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
+			Error = pometo_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
 			throw({error, Error})
 	end;
 %% complex element number handling first
@@ -308,7 +308,7 @@ dyadic_RUNTIM2([#'$func¯'{do = Do},
 	end,
 	Msg1  = io_lib:format("dimensions mismatch in dyadic ~p", [Do]),
 	Msg2  = io_lib:format("LHS dimensions ~p - RHS dimensions ~p", [Lhs, Rhs]),
-	Error = pometo_runtime_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
+	Error = pometo_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
 
 dyadic_fn(N, Val, Acc) when is_list(Acc) -> {N + 1, [Val | Acc]};
@@ -353,7 +353,7 @@ zip_error(#'$func¯'{do = Do}, LNo, CNo, N) ->
 		1 -> io_lib:format("ran out of matches after 1 element",   []);
 		_ -> io_lib:format("ran out of matches after ~p elements", [N - 1])
 	end,
-	Error = pometo_runtime_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
+	Error = pometo_errors:make_error("LENGTH ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
 
 apply(Func, #'$ast¯'{args = Args}         = AST, Singleton, Direction, ZipFn) ->

@@ -28,6 +28,7 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
                        #'$ast¯'{do      = #'$shape¯'{type = Type2} = Shp2,
                                 args    = Args}                            = RHS)
   when (Type1 == number      orelse
+        Type1 == boolean     orelse
         Type1 == var)        andalso
        (Type2 == func        orelse
         Type2 == maybe_func) ->
@@ -37,7 +38,11 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
            args    = [Funcs],
            char_no = CNo,
            line_no = scope_dictionary:get_line_no()},
-  Ret.
+  Ret;
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = _LHS,
+                       #'$ast¯'{do      = #'$func¯'{},
+                                char_no = CNo}          = _RHS) ->
+  pometo_errors:make_right_assoc_syntax_error(scope_dictionary:get_line_no(), CNo).
 
 make_right_associative(#'$ast¯'{do = #'$func¯'{}} = AST) ->
   AST;

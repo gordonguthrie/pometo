@@ -476,7 +476,7 @@ make_Agh_fork(#'$ast¯'{do = #'$shape¯'{}} = AST, Funs, Type, Operands) ->
       Error  = "SYNTAX ERROR",
       Msg1   = "Missing right argument",
       Msg2   = "Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)",
-      Err    = pometo_runtime_errors:make_error(Error, Msg1, Msg2, LNo, CNo),
+      Err    = pometo_errors:make_error(Error, Msg1, Msg2, LNo, CNo),
       throw({error, Err})
   end.
 
@@ -524,11 +524,7 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
     _ ->
       #'$ast¯'{line_no = LNo,
                char_no = CNo} = lists:last(Args),
-      ErrType = "SYNTAX ERROR",
-      Msg1    = "invalid expression",
-      Msg2    = "no value at the RHS",
-      Error   = pometo_runtime_errors:make_error(ErrType, Msg1, Msg2, LNo, CNo),
-      throw({error, Error})
+      pometo_errors:make_right_assoc_syntax_error(LNo, CNo)
   end;
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp} = Funcs,
                        #'$ast¯'{do   = #'$shape¯'{}}                  = RHS])

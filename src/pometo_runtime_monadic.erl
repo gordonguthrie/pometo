@@ -36,7 +36,7 @@ monadic_RUNTIM2([#'$func¯'{do      = [","],
 	catch throw:Errs ->
         Msg1 = Errs,
         Msg2 = io_lib:format("~p", [Rank]),
-        Error = pometo_runtime_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
+        Error = pometo_errors:make_error("RANK ERROR", Msg1, Msg2, LNo, CNo),
         throw({error, Error})
    end;
 monadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
@@ -87,7 +87,7 @@ monadic_RUNTIM2([#'$func¯'{do = ["⍳"]},
 		false ->
 			Msg1 = "⍳ only accepts integer arguments and was called with",
 			Msg2 = io_lib:format("~p", [pometo_runtime:args_to_list(Args)]),
-			Error = pometo_runtime_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
+			Error = pometo_errors:make_error("DOMAIN ERROR", Msg1, Msg2, LNo, CNo),
 			throw({error, Error})
 	end;
 monadic_RUNTIM2([#'$func¯'{do = [#'$op¯'{op = Op}]} = Func,

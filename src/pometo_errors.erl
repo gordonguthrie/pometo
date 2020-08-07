@@ -1,11 +1,12 @@
--module(pometo_runtime_errors).
+-module(pometo_errors).
 
 -export([
 				 make_error/5,
 				 make_index_error_for_rank/3,
 				 make_length_error_for_reduce/4,
 				 make_length_error_for_shape/4,
-				 make_domain_error_for_shape/3
+				 make_domain_error_for_shape/3,
+				 make_right_assoc_syntax_error/2
 				]).
 
 -include("errors.hrl").
@@ -29,6 +30,13 @@ make_index_error_for_rank(Rank, LNo, CNo) ->
 	Msg2  = io_lib:format("~p", [Rank]),
 	Error = make_error("INDEX ERROR", Msg1, Msg2, LNo, CNo),
 	throw({error, Error}).
+
+make_right_assoc_syntax_error(LNo, CNo) ->
+      ErrType = "SYNTAX ERROR",
+      Msg1    = "invalid expression",
+      Msg2    = "no value at the RHS",
+      Error   = make_error(ErrType, Msg1, Msg2, LNo, CNo),
+      throw({error, Error}).
 
 make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo) ->
 	NewSize = if
