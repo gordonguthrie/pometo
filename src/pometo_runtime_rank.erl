@@ -42,7 +42,8 @@ is_rank_valid(#'$ast¯'{do = ?shp(N)}, Rank, LNo, CNo) ->
 		Rank == 1         andalso N    == unsized_vector -> ok;
 		Rank =< length(N) andalso Rank >= 1              -> ok;
 		el/=se                                           ->
-			pometo_errors:make_index_error_for_rank(Rank, LNo, CNo)
+			Error = pometo_errors:make_index_error_for_rank(Rank, LNo, CNo),
+			throw({error, Error})
 	end.
 
 check_shape_compatible(Rank, LHSDim, RHSDim, LNo, CNo) ->
@@ -53,9 +54,12 @@ check_shape_compatible(Rank, LHSDim, RHSDim, LNo, CNo) ->
 		1 -> case NoElems of
 					Vec -> identical;
 					1   -> scalar_LHS;
-					_   -> pometo_errors:make_length_error_for_shape(NoElems, Vec, LNo, CNo)
+					_   -> Error = pometo_errors:make_length_error_for_shape(NoElems, Vec, LNo, CNo),
+								 throw({error, Error})
+
 				end;
-		_ -> pometo_errors:make_domain_error_for_shape(LHSDim, LNo, CNo)
+		_ -> Error = pometo_errors:make_domain_error_for_shape(LHSDim, LNo, CNo),
+				 throw({error, Error})
 	end.
 
 %%

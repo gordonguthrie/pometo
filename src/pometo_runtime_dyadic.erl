@@ -77,7 +77,8 @@ dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = Fns}],
 	ChunkSize = lists:nth(ActualRank, NewD2),
 	if
 		WindowSize > ChunkSize ->
-			pometo_errors:make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo);
+			Error = pometo_errors:make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo),
+			throw({error, Error});
 		WindowSize =< ChunkSize ->
 			Adjustment = -(WindowSize - 1),
 			case Adjustment of

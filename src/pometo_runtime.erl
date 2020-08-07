@@ -524,7 +524,8 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
     _ ->
       #'$ast¯'{line_no = LNo,
                char_no = CNo} = lists:last(Args),
-      pometo_errors:make_right_assoc_syntax_error(LNo, CNo)
+      Error = pometo_errors:make_right_assoc_syntax_error(LNo, CNo),
+      throw({error, Error})
   end;
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp} = Funcs,
                        #'$ast¯'{do   = #'$shape¯'{}}                  = RHS])
@@ -605,6 +606,7 @@ run_ast2(#'$ast¯'{do      = #'$shape¯'{type = Type} = Shp,
                   char_no = CNo,
                   line_no = LNo} = Funcs) when Type == maybe_func ->
   NewArgs = [run_ast2(X) || X <- Args],
+  io:format("in run_ast2 (3) NewArgs is ~p~n", [NewArgs]),
   case type_array(NewArgs) of
     func  -> exit(rapidelino);
     shape -> make_vector(NewArgs, CNo, LNo);
