@@ -131,8 +131,8 @@ runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
 
 run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                                                     type = func},
-                                  args = [Arg]}                    = LHS,
-                         #'$ast¯'{do   = #'$shape¯'{}}            = W]) ->
+                                  args = [Arg]}                    = _LHS,
+                         #'$ast¯'{do   = #'$shape¯'{}}             = W]) ->
   #'$ast¯'{do   = #'$func¯'{} = Func,
            args = Args}               = Arg,
   NewArgs = Args ++ [W],
@@ -144,7 +144,7 @@ run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                        args = NewArgs},
   run_ast2(NewAST);
 run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{type = func},
-                                  args = Args}                    = LHS,
+                                  args = Args}                    = _LHS,
                          #'$ast¯'{do   = #'$shape¯'{}}            = W]) ->
   NewAST = make_train(lists:reverse(Args), monadic, [W]),
   run_ast2(NewAST);
@@ -222,7 +222,7 @@ merge_shapes(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = Shp1,
 merge_shapes(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = Shp1,
                       args = Arg1} = AST1,
              #'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector},
-                      args = Arg2} = AST2) ->
+                      args = Arg2} = _AST2) ->
   {NewN, NewArgs, IsIndexed} = maybe_flatten([Arg1 | Arg2], list),
   AST1#'$ast¯'{do   = Shp1#'$shape¯'{dimensions = [NewN],
                                      indexed    = IsIndexed,
@@ -231,7 +231,7 @@ merge_shapes(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = Shp1,
 merge_shapes(#'$ast¯'{do   = #'$shape¯'{indexed = IsIndexed1} = Shp1,
                       args = Arg1} = AST1,
              #'$ast¯'{do   = #'$shape¯'{indexed = IsIndexed2},
-                      args = Arg2} = AST2) ->
+                      args = Arg2} = _AST2) ->
   IsIndexed = IsIndexed1 and IsIndexed2,
   AccType = case IsIndexed of
     true  -> map;
@@ -370,7 +370,7 @@ iterate_over_map(Iter, N, Acc) ->
 consolidate([], N, ?shp([0]), Acc) ->
   {N - 1, lists:reverse(Acc)};
 % if there is no accumulator we want to emerge the list into a single vector
-consolidate([], N, #'$ast¯'{args = Args} = Partial, []) ->
+consolidate([], _N, #'$ast¯'{args = Args}, []) ->
   % we accumulate the args in the partial in reverse order
   % so reverse 'em
   % also get a real length
@@ -521,7 +521,7 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
     #'$ast¯'{do = #'$shape¯'{}} ->
       NewAST = make_right_associative(Funcs#'$ast¯'{do = Shp#'$shape¯'{type = func}}),
       run_ast2(NewAST);
-    X ->
+    _ ->
       #'$ast¯'{line_no = LNo,
                char_no = CNo} = lists:last(Args),
       ErrType = "SYNTAX ERROR",
