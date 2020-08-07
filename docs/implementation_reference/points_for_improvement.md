@@ -73,3 +73,7 @@ Giving:
 ## Consolidate Function in `pometo_runtime`
 
 We iterate over the whole list to determine if it is consolidatable and then iterate over it again to execute the consolidation
+
+## Errors
+
+We need to rename ***errors*** to ***error_help***
