@@ -13,7 +13,11 @@
 															args = Val}).
 
 -define(vector(Dim, Vals), #'$ast¯'{do   = #'$shape¯'{dimensions = [Dim]},
-															        args = Vals}).
+															      args = Vals}).
+
+-define(runtime_vector(Dim, Vals), #'$ast¯'{do   = #'$shape¯'{dimensions = [Dim],
+																															type       = runtime},
+															              args = Vals}).
 
 -define(array(Dims, Vals), #'$ast¯'{do   = #'$shape¯'{dimensions = Dims},
 															      args = Vals}).
@@ -38,24 +42,29 @@
 
 %% Tests
 
+%% two AST tests
+
 scalar_plus_vector_test_() ->
 	A   = ?maybe_func([1], ?scalar(1)),
 	B   = ?vector(2, [2, 3]),
 	Got = pometo_runtime:make_vector_TEST(A, B),
-	Exp = ?vector(2, [1, B]),
+	Exp = ?runtime_vector(2, [1, B]),
+	% ?debugFmt(" in scalar_plus_vector_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
 	?_assertEqual(Exp, Got).
 
 vector_plus_scalar_test_() ->
 	A   = ?scalar(1),
 	B   = ?vector(2, [2, 3]),
 	Got = pometo_runtime:make_vector_TEST(?maybe_func([1], B), A),
-	Exp = ?vector(2, [B, 1]),
+	Exp = ?runtime_vector(2, [B, 1]),
+	% ?debugFmt(" in vector_plus_scalar_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
 	?_assertEqual(Exp, Got).
 
 basic_vector_test_() ->
 	A   = ?scalar(1),
 	Got = pometo_runtime:make_vector_TEST(?maybe_func([1], A), A),
-	Exp = ?vector(2, [1, 1]),
+	Exp = ?runtime_vector(2, [1, 1]),
+	% ?debugFmt(" in basic_vector_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
 	?_assertEqual(Exp, Got).
 
 basic_vector_II_test_() ->
@@ -63,12 +72,25 @@ basic_vector_II_test_() ->
 	B   = ?scalar(99),
 	C   = ?scalar(888),
 	Got = pometo_runtime:make_vector_TEST(?maybe_func([3], [A, B, B]), C),
-	Exp = ?vector(4, [1, 99, 99, 888]),
+	Exp = ?runtime_vector(4, [1, 99, 99, 888]),
+	% ?debugFmt(" in basic_vector_II_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
 	?_assertEqual(Exp, Got).
 
 basic_2_vectors_test_() ->
 	A   = ?vector(3, [1, 2, 3]),
 	B   = ?vector(3, [9, 8, 7]),
 	Got = pometo_runtime:make_vector_TEST(?maybe_func([1], A), B),
-	Exp = ?vector(2, [A, B]),
+	Exp = ?runtime_vector(2, [A, B]),
+	% ?debugFmt(" in basic_2_vectors_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
+	?_assertEqual(Exp, Got).
+
+%% Lists of AST tests
+
+scalars_test_() ->
+	A   = ?scalar(1),
+	B   = ?scalar(2),
+	C   = ?scalar(3),
+	Got = pometo_runtime:make_vector_TEST([A, B, C]),
+	Exp = ?runtime_vector(3, [1, 2, 3]),
+	% ?debugFmt(" in scalars_test_ ~nExp:~n~p~nGot:~n~p~n", [Exp, Got]),
 	?_assertEqual(Exp, Got).

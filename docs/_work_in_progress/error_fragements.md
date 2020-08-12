@@ -32,5 +32,5 @@ resulting in:
 Error
 (A+-÷) 4 5
 -^
-SYNTAX ERROR: Missing right argument (cannot have a vector as the LHS of an atop train) on line 2 at char 2.
+SYNTAX ERROR (Missing right argument:Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)) on line 2 at char 2.
 ```

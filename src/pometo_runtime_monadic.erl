@@ -131,11 +131,13 @@ monadic_RUNTIM2([#'$func¯'{do   = [#'$op¯'{op = Op, fns = Fns}],
 monadic_RUNTIM2([#'$func¯'{do = Do},
 								 [#'$ast¯'{do   = ?shp(0),
 													 args = A} = AST]]) ->
+	io:format("in monadic_RUNTIM2 (-2)~n", []),
 	NewA = do_apply(Do, A, fun execute_monadic/2),
 	AST#'$ast¯'{args = NewA};
-monadic_RUNTIM2([#'$func¯'{do = Do},
+monadic_RUNTIM2([#'$func¯'{do = Do} = Func,
 								 [#'$ast¯'{do   = #'$shape¯'{},
 													 args = A} = AST]]) ->
+	io:format("in monadic_RUNTIM2 (-1)~n- Func is ~p~n- AST is ~p~n", [Func, AST]),
 	ApplyFun = fun(X) ->
 		do_apply(Do, X, fun execute_monadic/2)
 	end,

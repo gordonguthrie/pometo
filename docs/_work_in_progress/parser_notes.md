@@ -65,7 +65,7 @@ Are always syntax errors
 Error
 1 +
 --^
-SYNTAX ERROR (syntax error before: :) on line 1 at character 3
+SYNTAX ERROR (invalid expression:no value at the RHS) on line 1 at character 3
 ```
 
 This is true if the value is replaced with a variable
@@ -112,12 +112,18 @@ Change `H` to a scalar:
 ```pometo
 H ← 1
 A ← + - H ÷ + -
+A 10
 ```
 
 gives
 
 ```pometo_results
-Syntax error
+Error
+H ← 1
+A ← + - H ÷ + -
+A 10
+----------^
+SYNTAX ERROR (Missing right argument:Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)) on line 2 at character 11
 ```
 
 
@@ -126,7 +132,6 @@ Syntax error
 If the variable switches to a function we get:
 
 ```pometo
-H ← +
 A ← + - × ÷ + -
 A 10
 ```
@@ -134,9 +139,8 @@ A 10
 gives
 
 ```pometo_results
-1
+99.0
 ```
-
 
 ![Parser Decision Tree](../images/parser_decisions_2a.png)
 
@@ -207,10 +211,28 @@ A B A 4 5
 Which is an array:
 
 ```pometo_results
-┌───┐ ┌───┐ ┌───┐ ┌───┐
-│1 2│ │3 4│ │1 2│ │4 5│
-└───┘ └───┘ └───┘ └───┘
+┌───┐ ┌───┐ ┌───┐        
+│1 2│ │3 4│ │1 2│   4   5
+└───┘ └───┘ └───┘        
 ```
+
+We can see this problem if we cut `4 5` down to `4`:
+
+```pometo
+A ← 1 2
+B ← 3 4
+A B A 4
+```
+
+Which produces:
+
+```pometo_results
+┌───┐ ┌───┐ ┌───┐    
+│1 2│ │3 4│ │1 2│   4
+└───┘ └───┘ └───┘    
+```
+
+The problem the parser has is that it doesn't know until `runtime` if it should box `4 5` into a vector or append them as two simple scalars:
 
 But if A was a function:
 
@@ -287,7 +309,7 @@ This goes for trains of trains
 Giving:
 
 ```pometo_results
-10
+10.0
 ```
 
 But
@@ -303,3 +325,18 @@ Resulting in:
 0.101010101
 ```
 
+We need to be sure the parser can cope with fairly weird combos of vectors and trains and functions
+
+```pometo
+A ← - + ÷
+B ← 333 444
+C ← 555
+D ← 666
+777 888 + C D - B A 9999 1010
+```
+
+Giving
+
+```pometo_results
+10997.9667 2119.560396
+```

@@ -29,7 +29,8 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
                                 args    = Args}                            = RHS)
   when (Type1 == number      orelse
         Type1 == boolean     orelse
-        Type1 == var)        andalso
+        Type1 == var         orelse
+        Type1 == runtime)    andalso
        (Type2 == func        orelse
         Type2 == maybe_func) ->
   Funcs = RHS#'$ast¯'{do   = Shp2#'$shape¯'{type = maybe_func},
@@ -39,10 +40,18 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
            char_no = CNo,
            line_no = scope_dictionary:get_line_no()},
   Ret;
-make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = _LHS,
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = LHS,
                        #'$ast¯'{do      = #'$func¯'{},
-                                char_no = CNo}          = _RHS) ->
-  pometo_errors:make_right_assoc_syntax_error(scope_dictionary:get_line_no(), CNo).
+                                char_no = CNo}          = RHS) ->
+  AST = #'$ast¯'{do   = #'$shape¯'{type    = maybe_func,
+                                   char_no = CNo,
+                                   line_no = scope_dictionary:get_line_no()},
+                 args = [LHS, RHS]},
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+           args    = [AST],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()},
+  Ret.
 
 make_right_associative(#'$ast¯'{do = #'$func¯'{}} = AST) ->
   AST;
@@ -244,11 +253,9 @@ finalise_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
 finalise_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
                                            type       = unfinalised_vector} = Shp,
                           args = Args1} = AST) ->
-  Extract = [{T, X} || #'$ast¯'{do   = #'$shape¯'{type = T},
-                                args = X} <- Args1],
-  {Types, NewArgs} = lists:unzip(Extract),
-  Type = resolve_types(Types),
-  AST#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [D1], type = Type},
+  NewArgs = [X || #'$ast¯'{do   = #'$shape¯'{},
+                           args = X} <- Args1],
+  AST#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [D1], type = runtime},
               args = NewArgs}.
 
 append_to_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
@@ -436,10 +443,10 @@ log(X, Label) ->
 is_op_shape_changing("/") -> true;
 is_op_shape_changing(_)   -> false.
 
-is_primitive_fn_shape_changing(["⍴"]) -> true;
-is_primitive_fn_shape_changing(["⍳"]) -> true;
-is_primitive_fn_shape_changing([","]) -> true;
-is_primitive_fn_shape_changing(_)     -> false.
+is_primitive_fn_shape_changing("⍴") -> true;
+is_primitive_fn_shape_changing("⍳") -> true;
+is_primitive_fn_shape_changing(",") -> true;
+is_primitive_fn_shape_changing(X)   -> false.
 
 default_rank({_, _, _, ","})  -> none; % the ravel operator has funky ranking - it takes vectors not scalars
 default_rank({_, _, _, "/"})  -> first;

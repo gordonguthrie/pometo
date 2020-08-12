@@ -57,10 +57,17 @@
           maybe_collapse_identity_arrays/1
         ]).
 
+%% things exported for use in stdlib
+
+-export([
+          make_train/3
+        ]).
+
 % things exported for testing only
 
 -export([
-         make_vector_TEST/2
+         make_vector_TEST/2,
+         make_vector_TEST/1
         ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -99,9 +106,8 @@ ambivalent([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling ambival
                                   NewArg2 = run_ast2(Arg2),
                                   pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
 
-apply_fn([[{Mod, Fun}], Args]) -> % io:format("Applying {~p : ~p} with args~n- ~p~n", [Mod, Fun, Args]),
-                                  NewArgs = [run_ast2(X) || X <- Args],
-                                  Mod:Fun(NewArgs).
+apply_fn([[{Mod, Fun}], Args]) -> io:format("Applying {~p : ~p} with args~n- ~p~n", [Mod, Fun, Args]),
+                                  Mod:Fun(Args).
 
 % This is an Afg monadic fork
 resolve_monadic_fork([#'$ast¯'{do   = let_op,
@@ -127,7 +133,19 @@ resolve_monadic_fork([#'$ast¯'{do   = let_op,
   NewMid = Mid#'$ast¯'{args = [NewLHS, NewRHS]},
   run_ast2(NewMid).
 
-runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) -> run_ast2(Args).
+runtime_let([#'$ast¯'{do = runtime_let, args = Args}]) ->
+  ok = are_args_valid(Args),
+  run_ast2(Args).
+
+are_args_valid(#'$ast¯'{do   = defer_evaluation,
+                        args = [#'$ast¯'{do = #'$shape¯'{type = maybe_func}} = Arg]} = _AST) ->
+  % if the args are valid you should be able to make a train - if not it will error
+  Fake = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                  args = 1},
+  _Fakes = run_maybe_monadic_train([Arg, Fake]),
+  ok;
+are_args_valid(_X) ->
+ ok.
 
 run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                                                     type = func},
@@ -244,19 +262,15 @@ merge_shapes(#'$ast¯'{do   = #'$shape¯'{indexed = IsIndexed1} = Shp1,
                                      type       = runtime},
                args = NewArgs}.
 
-make_vector_TEST(AST1, AST2) -> make_vector(AST1, AST2).
+make_vector_TEST(AST1, AST2)     -> make_vector(AST1, AST2).
+
+make_vector_TEST(List) -> make_vector(List, none, none).
 
 make_vector([#'$ast¯'{do = #'$shape¯'{}} = AST], _CNo, _LNo) ->
   AST;
 make_vector(List, CNo, LNo) when is_list(List) ->
-  Dims = [length(List)],
-  Ret = #'$ast¯'{do      = #'$shape¯'{dimensions = Dims,
-                                      type       = runtime,
-                                      char_no    = CNo,
-                                      line_no    = LNo},
-                 args    = List,
-                 char_no = CNo,
-                 line_no = LNo},
+  Acc = get_make_vector_acc(CNo, LNo),
+  Ret = make_vector2(List, Acc),
   Ret.
 
 make_vector(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
@@ -264,30 +278,34 @@ make_vector(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
                      char_no = CNo,
                      line_no = LNo},
             #'$ast¯'{do   = #'$shape¯'{}} = RHS) ->
-  Acc = #'$ast¯'{do      = #'$shape¯'{dimensions = [0],
-                                      type       = runtime,
-                                      char_no    = CNo,
-                                      line_no    = LNo},
-                 args    = [],
-                 char_no = CNo,
-                 line_no = LNo},
+  Acc = get_make_vector_acc(CNo, LNo),
   NewArgs = case is_list(Args) of
     true  -> Args ++ [RHS];
     false -> [Args, RHS]
   end,
   make_vector2(NewArgs, Acc).
 
+get_make_vector_acc(CNo, LNo) ->
+  #'$ast¯'{do      = #'$shape¯'{dimensions = [0],
+                                type       = runtime,
+                                char_no    = CNo,
+                                line_no    = LNo},
+           args    = [],
+           char_no = CNo,
+           line_no = LNo}.
+
 make_vector2([], Acc) ->
+  io:format("make_vector2 Acc returns ~p~n", [Acc]),
   Acc;
 make_vector2([#'$ast¯'{do   = ?shp(0),
                        args = Arg} | T],
-              #'$ast¯'{do   = ?shp([N]),
+              #'$ast¯'{do   = ?shp([N]) = Shp,
                        args = Args} = Acc) ->
-  NewAcc = Acc#'$ast¯'{do = ?shp([N + 1]),
+  NewAcc = Acc#'$ast¯'{do = Shp?shp([N + 1]),
                        args = Args ++ [Arg]},
   make_vector2(T, NewAcc);
 make_vector2([#'$ast¯'{do   = ?shp([_N]) = Shape} = H | #'$ast¯'{do = ?shp([_M])} =T],
-              #'$ast¯'{do   = ?shp([N]),
+              #'$ast¯'{do   = ?shp([N]) = Shp,
                        args = Args} = Acc)
   when is_record(Shape, '$shape¯') ->
   {Head, [Tail]} = lists:split(length(Args) - 1, Args),
@@ -298,17 +316,16 @@ make_vector2([#'$ast¯'{do   = ?shp([_N]) = Shape} = H | #'$ast¯'{do = ?shp([_M
                                    args = [H | InnerArgs]}], N};
       _          -> {[Tail, H], N + 1}
   end,
-  NewAcc = Acc#'$ast¯'{do   = ?shp([NewDims]),
+  NewAcc = Acc#'$ast¯'{do   = Shp?shp([NewDims]),
                        args = Head ++ NewTail},
   make_vector2(T, NewAcc);
 % otherwise just accumulate at the top level
 make_vector2([#'$ast¯'{} = H | T],
-              #'$ast¯'{do   = ?shp([N]),
+              #'$ast¯'{do   = ?shp([N]) = Shp,
                        args = Args} = Acc) ->
-  NewAcc = Acc#'$ast¯'{do = ?shp([N + 1]),
+  NewAcc = Acc#'$ast¯'{do   = Shp?shp([N + 1]),
                        args = Args ++ [H]},
   make_vector2(T, NewAcc).
-
 
 make_list(List1, List2) when is_list(List1) andalso
                              is_list(List2) -> List1 ++ List2;
@@ -424,8 +441,11 @@ accumulate(_N, Val, List) when is_list(List) -> [Val | List];
 accumulate(N,  Val, Map)  when is_map(Map)   -> maps:put(N, Val, Map).
 
 make_trains(List, Type, Operands) ->
+  io:format("in make_trains~n- List is ~p~n- Type is ~p~n- Operands is ~p~n", [List, Type, Operands]),
   {NewList, NewOperands} = accumulate_right(Operands ++ List, ?EMPTY_ACCUMULATOR),
-  make_trains2(NewList, Type, NewOperands, ?EMPTY_ACCUMULATOR, ?EMPTY_ACCUMULATOR).
+  Ret = make_trains2(NewList, Type, NewOperands, ?EMPTY_ACCUMULATOR, ?EMPTY_ACCUMULATOR),
+  io:format("in make_trains Ret is ~p~n", [Ret]),
+  Ret.
 
 accumulate_right([#'$ast¯'{do = #'$shape¯'{}} = H | T], Acc) ->
   accumulate_right(T, [H | Acc]);
@@ -435,32 +455,40 @@ accumulate_right(Rest, Acc) ->
   {Rest, make_vector(Acc, CNo, LNo)}.
 
 make_trains2([], Type, _Operands, [], Acc) ->
+  io:format("in make_trains2 (1)~n", []),
   case length(Acc) of
-    1 -> [AST] = Acc,
+    1 -> io:format("in make_trains2 (1a)~n", []),
+         [AST] = Acc,
          AST;
-    _ ->   case type_array(Acc) of
+    _ -> io:format("in make_trains2 (1a)~n", []),
+         case type_array(Acc) of
               func  -> make_trains2(Acc, Type, [], ?EMPTY_ACCUMULATOR, ?EMPTY_ACCUMULATOR);
               shape -> #'$ast¯'{char_no = CNo,
                                 line_no = LNo} = hd(Acc),
                        make_vector(Acc, CNo, LNo)
-           end
+          end
   end;
+make_trains2([], Type, Operands, Partial, Acc) ->
+  make_trains2([], Type, Operands, ?EMPTY_ACCUMULATOR, [Partial | Acc]);
 make_trains2([#'$ast¯'{do = #'$func¯'{}} = H | T], Type, Operands, Partial, Acc) ->
+  io:format("in make_trains2 (2)~n- H is ~p~n- T is ~p~n- Partial is ~p~n- Acc is ~p~n", [H, T, Partial, Acc]),
   make_trains2(T, Type, Operands, [H | Partial], Acc);
 make_trains2([H | T], Type, Operands, Partial, Acc) ->
+  io:format("in make_trains2 (3)~n", []),
   NewAcc = process_partial(H, Operands, Type, Partial),
   make_trains2(T, Type, Operands, ?EMPTY_ACCUMULATOR, [NewAcc | Acc]).
 
 process_partial(H, _Operands, _Type, []) ->
   H;
 process_partial(H, Operands,  _Type, [#'$ast¯'{do   = #'$func¯'{} = Func,
-                                               args = []} = AST]) ->
+                                              args = []} = AST]) ->
   AST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
               args = [H, Operands]};
 process_partial(H, Operands, Type, Partial) ->
         make_Agh_fork(H, Partial, Type, Operands).
 
 make_Agh_fork(#'$ast¯'{do = #'$shape¯'{}} = AST, Funs, Type, Operands) ->
+  io:format("in make_Agh_fork~n- AST is ~p~n- Funs is ~p~n- Type is ~p~n- Operands is ~p~n", [AST, Funs, Type, Operands]),
   Len = length(Funs),
   case is_even(Len) of
     true ->
@@ -472,7 +500,7 @@ make_Agh_fork(#'$ast¯'{do = #'$shape¯'{}} = AST, Funs, Type, Operands) ->
       Ret;
     false ->
       #'$ast¯'{char_no = CNo,
-               line_no = LNo} = AST,
+               line_no = LNo} = hd(Funs),
       Error  = "SYNTAX ERROR",
       Msg1   = "Missing right argument",
       Msg2   = "Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)",
@@ -517,50 +545,128 @@ LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
                                 args = Args}                    = Funcs])
   when Type == maybe_func ->
-  case lists:last(Args) of
+  io:format("in run_right_associative (1)~n", []),
+  Last = lists:last(Args),
+  #'$ast¯'{line_no = LNo,
+           char_no = CNo} = Last,
+  case Last of
     #'$ast¯'{do = #'$shape¯'{}} ->
-      NewAST = make_right_associative(Funcs#'$ast¯'{do = Shp#'$shape¯'{type = func}}),
-      run_ast2(NewAST);
+      % because the last element isn't a shape type_array cannot return `func`
+      case type_array(Args) of
+        shape -> io:format("in run_right_associative (1) its a shape~n", []),
+                 Vec = make_vector(Args, CNo, LNo),
+                 io:format("in run_right_associative (1) Vec is ~p~n", [Vec]),
+                 Vec;
+        mixed -> io:format("in run_right_associative (1) its a mixed~n", []),
+                 NewAST = make_right_associative(Funcs#'$ast¯'{do = Shp#'$shape¯'{type = func}}),
+                 run_ast2(NewAST)
+      end;
     _ ->
-      #'$ast¯'{line_no = LNo,
-               char_no = CNo} = lists:last(Args),
       Error = pometo_errors:make_right_assoc_syntax_error(LNo, CNo),
       throw({error, Error})
   end;
-run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp} = Funcs,
-                       #'$ast¯'{do   = #'$shape¯'{}}                  = RHS])
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
+                                                  type       = Type} = Shp,
+                               args = Args} = Funcs,
+                      #'$ast¯'{do   = #'$shape¯'{}}                  = RHS])
   when Type == func       orelse
        Type == maybe_func ->
-  NewFn = make_right_associative(Funcs#'$ast¯'{do = Shp#'$shape¯'{type = func}}),
-  #'$ast¯'{do   = #'$func¯'{} = F,
-           args = NewArgs} = NewFn,
-  {NewType, NewArgs2} = case NewArgs of
-    [] -> {monadic, [RHS]};
-    _  -> {dyadic,  NewArgs ++ [RHS]}
-  end,
-  NewAST = NewFn#'$ast¯'{do   = F#'$func¯'{type = NewType},
-                         args = NewArgs2},
+  io:format("in run_right_associative (2)~n- Funcs is ~p~n", [Funcs]),
+  NewFunc = Funcs#'$ast¯'{do   = #'$shape¯'{dimensions = [N + 1],
+                                            type       = func},
+                          args = Args ++ [RHS]},
+  io:format("in run_right_associative (2)~n- NewFunc is ~p~n", [NewFunc]),
+  NewAST = make_right_associative(NewFunc),
+  io:format("in run_right_associative (2)~n- NewAST is ~p~n", [NewAST]),
+  pometo_stdlib:debug_fn("in run_right_associative (2)", NewAST),
   run_ast2(NewAST);
 run_right_associative([#'$ast¯'{do = #'$func¯'{}} = AST]) ->
+  io:format("in run_right_associative (3)~n", []),
   run_ast2(AST);
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = runtime},
+                                args = Args} = AST]) ->
+  % NewArgs = maybe_promote_scalars(Args, ?EMPTY_ACCUMULATOR),
+  % NewAST = AST#'$ast¯'{args = NewArgs},
+  io:format("in run_right_associative (4)~n- AST is ~p~n", [AST]),
+  AST;
 run_right_associative([#'$ast¯'{do = #'$shape¯'{}} = AST]) ->
-  AST.
+  io:format("in run_right_associative (5)~n- AST is ~p~n", [AST]),
+  AST;
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N1],
+                                                   type = runtime},
+                                 args = Args1} = AST1,
+                        #'$ast¯'{do   = #'$shape¯'{dimensions = [N2],
+                                                   type = runtime},
+                                 args = Args2} = AST2]) ->
+  io:format("in run_right_associative (6)~n- AST1 is ~p~n- AST2 is ~p~n", [AST1, AST2]),
+  #'$ast¯'{args = NewArgs2} = make_unindexed(AST2),
+  NewArgs = case is_list(NewArgs2) of
+    true  -> Args1 ++ NewArgs2;
+    false -> Args1 ++ [NewArgs2]
+  end,
+  Ret = AST1#'$ast¯'{do   = #'$shape¯'{dimensions = [N1 + N2],
+                                       type       = runtime},
+                    args = NewArgs},
+  io:format("in run_right_associative (6)~n- Ret is ~p~n", [Ret]),
+  Ret;
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N1],
+                                                  type         = runtime},
+                               args = Args1}                            = AST1,
+                      #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                               args = Arg}                              = _AST2]) ->
+  NewArgs = Args1 ++ [Arg],
+  Ret = AST1#'$ast¯'{do   = #'$shape¯'{dimensions = [N1 + 1]},
+                    args = NewArgs},
+  io:format("in run_right_associative (7)~n- Ret is ~p~n", [Ret]),
+  Ret;
+% this is a to-make-the-tests-work fix doesn't happen IRL
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{type       = runtime},
+                                args = Args1}                                         = AST1,
+                       #'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
+                                args = Args2}                                         = AST2]) ->
+  io:format("in run_right_associative (7a)~n", []),
+  Dims2 = length(Args2),
+  run_right_associative([AST1, AST2#'$ast¯'{do = Shp#'$shape¯'{dimensions = [Dims2]}}]);
+run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
+                                args = Args1}                                         = AST1,
+                       #'$ast¯'{do   = #'$shape¯'{}}                                  = AST2]) ->
+  io:format("in run_right_associative (7b)~n", []),
+  Dims1 = length(Args1),
+  run_right_associative([AST1#'$ast¯'{do = Shp#'$shape¯'{dimensions = [Dims1]}}, AST2]);
+run_right_associative(X) ->
+  io:format("in run_right_associative (8)~n- X is ~p~n", [X]),
+  exit(skpiiolo).
 
 make_right_associative(#'$ast¯'{do   = #'$shape¯'{type = Type},
                                 args = Funcs}) when Type == func       orelse
                                                     Type == maybe_func ->
+  io:format("make_right_associative (1)~n- Funcs is ~p~n", [Funcs]),
   make_right_assoc2(lists:reverse(Funcs)).
 
 make_right_assoc2([Final]) ->
+  io:format("make_right_assoc2 (1)~n- Final is ~p~n", [Final]),
   Final;
-make_right_assoc2([#'$ast¯'{do = #'$func¯'{}}        = RHS,
-                   #'$ast¯'{do = #'$func¯'{} = Func} = LHS | Rest]) ->
-  NewHead = LHS#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                        args = [RHS]},
+make_right_assoc2([#'$ast¯'{do   = #'$func¯'{do             = Do1,
+                                             shape_changing = SC1},
+                            args = Args1}                                  = RHS,
+                   #'$ast¯'{do   = #'$func¯'{do             = Do2,
+                                             shape_changing = SC2} = Func,
+                            args = Args2}                                   = LHS | Rest]) ->
+  io:format("make_right_assoc2 (2)~n-LHS is ~p~n- RHS is ~p~n", [LHS, RHS]),
+  NewHead = case {SC1, SC2} of
+    {false, false} -> io:format("merging~n", []),
+                      LHS#'$ast¯'{do   = Func#'$func¯'{do = Do2 ++ Do1},
+                                  args = Args2 ++ Args1};
+    {_,     _}     -> io:format("not merging~n", []),
+                      LHS#'$ast¯'{do   = Func#'$func¯'{type = monadic},
+                                  args = Args2 ++ [RHS]}
+  end,
+  io:format("make_right_assoc2 (2)~n-NewHead is ~p~n", [NewHead]),
   make_right_assoc2([NewHead | Rest]);
 make_right_assoc2([#'$ast¯'{do   = #'$shape¯'{}} = RHS,
                    #'$ast¯'{do   = #'$func¯'{},
                             args = Args}         = LHS | Rest]) ->
+  io:format("make_right_assoc2 (3)-LHS is ~p~n- RHS is ~p~n", [LHS, RHS]),
   #'$ast¯'{do = #'$func¯'{} = Func} = LHS,
   {NewType, NewArgs} = case Args of
     [] -> {monadic, [RHS]};
@@ -572,6 +678,7 @@ make_right_assoc2([#'$ast¯'{do   = #'$shape¯'{}} = RHS,
 make_right_assoc2([#'$ast¯'{do   = #'$func¯'{},
                             args = Args}         = RHS,
                    #'$ast¯'{do   = #'$shape¯'{}} = LHS | Rest]) ->
+  io:format("make_right_assoc2 (4)~n-LHS is ~p~n- RHS is ~p~n", [LHS, RHS]),
   #'$ast¯'{do = #'$func¯'{} = Func} = RHS,
   {NewType, NewArgs} = case Args of
     [] -> {monadic, [LHS]};
@@ -599,18 +706,23 @@ run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
   apply_fn([[{Mod, Fn}], Args]);
 run_ast2(#'$ast¯'{do = #'$shape¯'{type = Type}} = AST) when Type /= maybe_func andalso
                                                             Type /= func       ->
-  % io:format("in run_ast2 (2) AST is ~p~n", [AST]),
   AST;
 run_ast2(#'$ast¯'{do      = #'$shape¯'{type = Type} = Shp,
                   args    = Args,
                   char_no = CNo,
                   line_no = LNo} = Funcs) when Type == maybe_func ->
   NewArgs = [run_ast2(X) || X <- Args],
-  io:format("in run_ast2 (3) NewArgs is ~p~n", [NewArgs]),
+  % io:format("in run_ast2 (3) NewArgs is ~p~n", [NewArgs]),
   case type_array(NewArgs) of
-    func  -> exit(rapidelino);
-    shape -> make_vector(NewArgs, CNo, LNo);
-    mixed -> {MaybeTrain, [RHS]} = lists:split(length(NewArgs) - 1, Args),
+    func  -> % io:format("in run_ast2 (3) its a func~n", []),
+             Funcs#'$ast¯'{do   = Shp#'$shape¯'{type = func},
+                           args = NewArgs};
+    shape -> % io:format("in run_ast2 (3) its a shape~n", []),
+             Vec = make_vector(NewArgs, CNo, LNo),
+             % io:format("in run_ast2 (3) Vec is ~p~n", [Vec]),
+             Vec;
+    mixed -> % io:format("in run_ast2 (3) its a mixed~n", []),
+             {MaybeTrain, [RHS]} = lists:split(length(NewArgs) - 1, Args),
              Maybe2 = Funcs#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [length(MaybeTrain)],
                                                          type       = maybe_func},
                                     args = MaybeTrain},
@@ -620,40 +732,40 @@ run_ast2(#'$ast¯'{do   = 'let_op',
                   args = [_V, A | []]} = AST) ->
   NewL = AST#'$ast¯'{do   = runtime_let,
                      args = A},
-  % io:format("in run_ast2 (3) AST is ~p~n", [AST]),
+  % io:format("in run_ast2 (4) AST is ~p~n", [AST]),
   runtime_let([NewL]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-                  args = [A1, A2]})                     when Type == dyadic        orelse
+                  args = [A1, A2]} = AST)               when Type == dyadic        orelse
                                                              Type == dyadic_ranked orelse
                                                              Type == ambivalent    ->
-  % io:format("in run_ast2 (4)~n", []),
+  % io:format("in run_ast2 (5) AST is ~p~n", [AST]),
   dyadic([Func, [run_ast2(A1), run_ast2(A2)]]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                   args = [A]})                          when Type == monadic        orelse
                                                              Type == monadic_ranked orelse
                                                              Type == ambivalent     ->
-  % io:format("in run_ast2 (5) Func is ~p ~n- A is ~p~n", [Func, A]),
+  % io:format("in run_ast2 (6) Func is ~p ~n- A is ~p~n", [Func, A]),
   monadic([Func, [run_ast2(A)]]);
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do   = #'$shape¯'{type = variable},
                                    args = #'$var¯'{} = Var}]}) ->
-  % io:format("in run_ast2 (6) Var is ~p~n", [Var]),
+  % io:format("in run_ast2 (7) Var is ~p~n", [Var]),
   Var;
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do = #'$func¯'{}}]} = AST)  ->
-  % io:format("in run_ast2 (7) AST is ~p~n", [AST]),
+  % io:format("in run_ast2 (8) AST is ~p~n", [AST]),
   AST;
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do   = #'$shape¯'{},
-                                   args = Args}]}) ->
-  % io:format("in run_ast2 (8) Args is ~p~n", [Args]),
+                                   args = Args}]} = AST) ->
+  % io:format("in run_ast2 (9) AST is ~p~n", [AST]),
   Args;
 run_ast2(#'$ast¯'{do   = resolve_monadic_fork,
                   args = Args}) ->
-  % io:format("in run_ast2 (9) Args is ~p~n", [Args]),
+  % io:format("in run_ast2 (10) Args is ~p~n", [Args]),
   resolve_monadic_fork(Args);
 run_ast2(A) ->
-  % io:format("in run_ast2 (10) A is ~p~n", [A]),
+  % io:format("in run_ast2 (11) A is ~p~n", [A]),
   A.
 
 are_all_positive_integers([])                                 -> true;

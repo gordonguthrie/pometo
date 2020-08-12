@@ -83,6 +83,7 @@ Expr -> Monadic     : '$1'.
 Expr -> Associative : '$1'.
 Expr -> Vecs        : '$1'.
 Expr -> stdlib Vecs : make_stdlib('$1', '$2').
+Expr -> stdlib Var  : make_stdlib('$1', '$2').
 
 Dyadic  -> Args ConsecutiveFns Args : make_dyadic('$2', '$1', '$3').
 Monadic ->      ConsecutiveFns Args : make_monadic('$1', '$2').

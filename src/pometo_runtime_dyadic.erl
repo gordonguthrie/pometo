@@ -172,7 +172,8 @@ dyadic_RUNTIM2([#'$func¯'{do = ["⍴"]},
 													char_no = CNo},
 								 #'$ast¯'{do      = ?shape(N2, Type2),
 													args    = A2} = Right]]) when Type1 == number  orelse
-																												Type1 == boolean ->
+																												Type1 == boolean orelse
+																												Type1 == runtime ->
 	% this casts any scalars on either side to vectors
 	NewN2 = case N2 of
 			unsized_vector -> [length(A2)];

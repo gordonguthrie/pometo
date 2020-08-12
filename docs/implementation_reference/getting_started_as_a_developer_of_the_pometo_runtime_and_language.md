@@ -102,6 +102,19 @@ The core development cycle is:
         * to run Jekyll locally `cd` to `/docs` and run the batch file `run_jekyll.sh` - the docs site will build and can be seen on `http://localhost:5000`
     * if you have implemented a new symbol you need to make that symbol available in `rappel` the `pometo` REPL. (This involves deleting a line of embedded CSS please see the section [Enabling New Symbols In Rappel](#enabling_new_symbols_in_rappel)
 
+***GOTCHA***: some of the tests (see the parser notes page for instance) have significant trailing white space - if you get mysterious **my test is failing but the output looks the same*** this is problably it.
+
+Typically the results look like:
+
+```apl
+┌───┐ ┌───┐ ┌───┐        
+│1 2│ │3 4│ │1 2│   4   5
+└───┘ └───┘ └───┘        
+```
+The 4 and 5 have 'hiden' padding left, right top and bottom.
+
+If you editor clears trailing white space this test will fail.
+
 Code failures in tests are fairly hard to debug because the interpreter and compiler both capture and sanitize runtime errors.
 
 The easiest way to proceed is to copy the input string of the test into the `runner` module and then invoke it with the `run.sh` bash command in `%ROOT`
