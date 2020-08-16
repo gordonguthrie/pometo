@@ -10,7 +10,7 @@ basic_scalar_interpreter_test_() ->
 	Str = "1",
 	Got = pometo:interpret_TEST(Str),
 	Exp = "1",
-    % ?debugFmt("in basic_scalar_interpreter_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+  % ?debugFmt("in basic_scalar_interpreter_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 basic_interpreter_test_() ->
@@ -18,7 +18,7 @@ basic_interpreter_test_() ->
 	      "A + B",
 	Got = pometo:interpret_TEST(Str),
 	Exp = "10 12 ¯2",
-    % ?debugFmt("in basic_interpreter_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
+  % ?debugFmt("in basic_interpreter_test_~nGot ~ts~nExp ~ts~n", [Got, Exp]),
 	?_assertEqual(Exp, Got).
 
 

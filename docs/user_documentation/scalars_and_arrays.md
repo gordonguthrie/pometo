@@ -4,7 +4,7 @@ The basic data structures of `Pometo` are scalars and arrays.
 
 A scalar is not implemented as a vector of length 1.
 
-# Scalar Types
+## Scalar Types
 
 The basic scalar types are:
 
@@ -12,7 +12,7 @@ The basic scalar types are:
 * `boolean` - each element is the integer `0` or `1` - will be cast to `number` seemlessly if appropriate
 * `array` - it is possible to have an `array` as a `scalar`
 
-# Array Types
+## Array Types
 
 Array's take the type of their scalars (if all the scalars are of the same type)
 
@@ -24,6 +24,35 @@ An array can also take the type `mixed` when it is not obvious at write time wha
 
 Attempts to do type-invalid on `mixed` arrays might result in a runtime error.
 
-# Vectors
+## Vectors
 
 Vectors are just `array`s with a single dimension. They have no implementation specifities. They are important though for some functions. The `shape` or `rho` function `⍴` can only take a vector on the LHS not a generalised `array`.
+
+## Casting Vectors And Arrays To Scalars
+
+The following are cast to Scalars:
+
+```pometo
+A ← 1 ⍴ 3
+1 2 + A
+```
+
+Giving:
+
+```pometo_results
+4 5
+```
+
+But also:
+
+```pometo
+A ← 1 1 1 ⍴ 3
+1 2 + A
+```
+
+```pometo_results
+4 5
+```
+
+
+

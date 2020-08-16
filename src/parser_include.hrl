@@ -1,19 +1,74 @@
--export([make_err/1]).
+-export([
+          make_err/1,
+          resolve_types/1
+        ]).
 
 -include_lib("eunit/include/eunit.hrl").
 
 -include("parser_records.hrl").
 -include("errors.hrl").
+-include("runtime_include.hrl").
 
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
+
+make_maybe_vector(#'$ast¯'{char_no = CNo} = LHS,
+                  #'$ast¯'{}              = RHS) ->
+  Ret = #'$ast¯'{do      = #'$shape¯'{dimensions = [2],
+                                      type    = maybe_func,
+                                      char_no = CNo,
+                                      line_no = scope_dictionary:get_line_no()},
+                 args    = [LHS, RHS],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
+  Ret.
+
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
+                                char_no = CNo}                             = LHS,
+                       #'$ast¯'{do      = #'$shape¯'{type = Type2} = Shp2,
+                                args    = Args}                            = RHS)
+  when (Type1 == number      orelse
+        Type1 == boolean     orelse
+        Type1 == var         orelse
+        Type1 == runtime)    andalso
+       (Type2 == func        orelse
+        Type2 == maybe_func) ->
+  Funcs = RHS#'$ast¯'{do   = Shp2#'$shape¯'{type = maybe_func},
+                      args = [LHS | Args]},
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+           args    = [Funcs],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()},
+  Ret;
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = LHS,
+                       #'$ast¯'{do      = #'$func¯'{},
+                                char_no = CNo}          = RHS) ->
+  AST = #'$ast¯'{do   = #'$shape¯'{type    = maybe_func,
+                                   char_no = CNo,
+                                   line_no = scope_dictionary:get_line_no()},
+                 args = [LHS, RHS]},
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+           args    = [AST],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()},
+  Ret.
+
+make_right_associative(#'$ast¯'{do = #'$func¯'{}} = AST) ->
+  AST;
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
+                                char_no = CNo} = Funcs) ->
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                 args    = [Funcs],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
+  Ret.
 
 make_fn_array(#'$ast¯'{do      = Do1,
                        char_no = CNo} = LHS,
               #'$ast¯'{do      = Do2} = RHS) ->
   Type = case {Do1, Do2} of
       {#'$func¯'{}, #'$func¯'{}} -> func;
-      {_,           _}           -> maybe_func
+      {_, _}                     -> maybe_func
   end,
   #'$ast¯'{do      = #'$shape¯'{dimensions = [2],
                                 type       = Type,
@@ -24,23 +79,25 @@ make_fn_array(#'$ast¯'{do      = Do1,
            line_no = scope_dictionary:get_line_no()}.
 
 add_to_fn_array(#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
-                                           type       = Type},
+                                           type       = Type} = Shp,
                          args = Args} = LHS,
                 #'$ast¯'{do   = Do1}  = RHS) ->
   NewType = case {Do1, Type} of
-      {#'$func¯'{}, func} -> func;
-      {_,           _}    -> maybe_func
+      {#'$func¯'{},                func} -> func;
+      {#'$func¯'{},                 _}   -> maybe_func;
+      {#'$shape¯'{type = variable}, _}   -> maybe_func
   end,
-  LHS#'$ast¯'{do   = #'$shape¯'{dimensions = [N + 1],
-                                type       = NewType},
+  LHS#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [N + 1],
+                                   type       = NewType},
               args = Args ++ [RHS]}.
 
 make_monadic_train(Fns, AST) ->
   #'$ast¯'{char_no = CNo} = Fns,
-  #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_monadic_train}}],
-           args    = [Fns, AST],
-           char_no = CNo,
-           line_no = scope_dictionary:get_line_no()}.
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_monadic_train}}],
+                 args    = [Fns, AST],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
+  Ret.
 
 make_dyadic_train(Fns, LHS, RHS) ->
   #'$ast¯'{char_no = CNo} = Fns,
@@ -48,53 +105,6 @@ make_dyadic_train(Fns, LHS, RHS) ->
            args    = [Fns, LHS, RHS],
            char_no = CNo,
            line_no = scope_dictionary:get_line_no()}.
-
-
-%  VarName = make_scoped_var("w"),
-%  LetW = make_train_let(VarName, AST),
-%  RightFns = lists:reverse(Fns),
-%  [chunk_monadic(RightFns, LetW)].
-
-% we are chunking on a reversed list so Right is to the Left, right, don't get left behind...
-% chunk_monadic([RHS, LHS],             Var) -> make_monadic_atop(LHS, RHS, Var);
-% chunk_monadic([RHS, Mid, LHS],        Var) -> make_monadic_fork(LHS, Mid, RHS, Var);
-% chunk_monadic([RHS, Mid, LHS | Rest], Var) -> NewRHS = make_monadic_fork(LHS, Mid, RHS, Var),
-%                                              chunk_monadic([NewRHS | Rest], Var).
-
-% make_monadic_atop(#'$ast¯'{args = []} = LHS,
-%                  #'$ast¯'{args = []} = RHS,
-%                  Var) ->
-%  NewR = RHS#'$ast¯'{args = [Var]},
-%  LHS#'$ast¯'{args = [NewR]}.
-
-% fgh fork
-% make_monadic_fork(#'$ast¯'{args = []} = LHS,
-%                 #'$ast¯'{args = []} = Mid,
-%                  #'$ast¯'{args = []} = RHS,
-%                  Var) ->
-%  NewLHS  = LHS#'$ast¯'{args = [Var]},
-%  NewRHS  = RHS#'$ast¯'{args = [Var]},
-%  _NewMid = Mid#'$ast¯'{args = [NewLHS, NewRHS]};
-% Agh fork
-% make_monadic_fork(#'$ast¯'{args    = #'$var¯'{}} = LHS,
-%                  #'$ast¯'{args    = [],
-%                           char_no = CNo}         = Mid,
-%                  #'$ast¯'{args    = []}          = RHS,
-%                  Var) ->
-%  #'$ast¯'{do      = resolve_monadic_fork,
-%           args    = [Var, LHS, Mid, RHS],
-%           char_no = CNo,
-%           line_no = scope_dictionary:get_line_no()}.
-
-% make_scoped_var(Name) ->
-%  Scope = scope_dictionary:get_new_scope(),
-%  lists:flatten(make_varname("Var") ++ "_" ++ Scope ++ "_" ++ Name).
-
-% make_train_let(Name, #'$ast¯'{char_no = CNo} = AST)->
-%  Var = #'$var¯'{name    = Name,
-%                 char_no = CNo,
-%                 line_no = scope_dictionary:get_line_no()},
-%  make_let(#'$ast¯'{args = Var}, AST).
 
 op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do}   = Func,
                   args    = []}                  = AST1,
@@ -116,7 +126,8 @@ op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do}   = Func,
 add_rank({Type, CharNo, _, Val},
          #'$ast¯'{do   = #'$shape¯'{dimensions = D},
                   args = Rank}) when is_list(D) ->
-  make_fn_ast2(Val, Type, Rank, [], CharNo);
+  NewRank = extract_rank(Rank, ?EMPTY_ACCUMULATOR),
+  make_fn_ast2(Val, Type, NewRank, [], CharNo);
 add_rank({Type, CharNo, _, Val},
          {float, _,     _, F}) ->
   make_fn_ast2(Val, Type, F, [], CharNo);
@@ -124,7 +135,17 @@ add_rank({Type, CharNo, _, Val}, Rank) when is_atom(Rank) ->
   make_fn_ast2(Val, Type, Rank, [], CharNo);
 add_rank({Type, CharNo, _, Val}, #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
                                           args = Rank}) ->
-  make_fn_ast2(Val, Type, Rank, [], CharNo).
+  NewRank = extract_rank(Rank, ?EMPTY_ACCUMULATOR),
+  make_fn_ast2(Val, Type, NewRank, [], CharNo).
+
+extract_rank([], Acc) -> lists:reverse(Acc);
+extract_rank([#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                       args = X} | T], Acc) ->
+  extract_rank(T, [X | Acc]);
+extract_rank([H | T], Acc) ->
+  extract_rank(T, [H | Acc]);
+extract_rank(X, ?EMPTY_ACCUMULATOR) ->
+  X.
 
 make_fn_ast({Type, CharNo, _, Val}) ->
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
@@ -151,61 +172,71 @@ make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                                                                       Type == ambivalent    ->
   NewRightAST = case Args of
     []    -> RightAST;
-    [Arg] -> descend_arg(Arg, [RightAST])
+    [Arg] -> descend_arg(Arg, monadic, [RightAST])
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
                   args = [LeftAST, NewRightAST]};
 make_dyadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, LHS, RHS) ->
-  NewFunc = make_right_associative(Funcs),
+  NewFunc = pometo_runtime:make_right_associative(Funcs),
   #'$ast¯'{do   = Func,
            args = Args} = NewFunc,
-  NewArgs = [LHS | [descend_arg(X, [RHS]) || X <- Args]],
+  NewArgs = [LHS | [descend_arg(X, monadic, [RHS]) || X <- Args]],
   NewAST = NewFunc#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
                            args = NewArgs},
-  NewAST.
-
-descend_arg(#'$ast¯'{do   = #'$func¯'{},
-                     args = []}   = AST, NewArgs) ->
-  AST#'$ast¯'{args = NewArgs};
-descend_arg(#'$ast¯'{do   = #'$func¯'{},
-                     args = #'$var¯'{}} = AST, _NewArg) ->
-  AST;
-descend_arg(#'$ast¯'{do   = #'$func¯'{},
-                     args = Args} = AST, NewArgs) when is_list(Args) ->
-  NewArgs = [descend_arg(X, NewArgs) || X <- Args],
-  AST#'$ast¯'{args = NewArgs};
-descend_arg(#'$ast¯'{do   = #'$func¯'{},
-                     args = Arg} = AST, NewArgs) ->
-  NewArg = descend_arg(Arg, NewArgs),
-  AST#'$ast¯'{args = NewArg};
-descend_arg(#'$ast¯'{} = AST, _NewArg) ->
-  AST.
+  NewAST;
+make_dyadic(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
+                     char_no = CNo} = Funcs, LHS, RHS) ->
+  #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+           args    = [Funcs, LHS, RHS],
+           char_no = CNo,
+           line_no = scope_dictionary:get_line_no()};
+make_dyadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, LHS, RHS) ->
+  make_dyadic_train(FuncAST, LHS, RHS).
 
 make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                       args = Args}                       = FuncAST,
-             #'$ast¯'{}                                  = AST) when Type == monadic        orelse
+             #'$ast¯'{}                                  = RHS) when Type == monadic        orelse
                                                                      Type == monadic_ranked orelse
                                                                      Type == ambivalent ->
   NewArg = case Args of
-    []    -> AST;
-    [Arg] -> descend_arg(Arg, [AST])
+    []    -> RHS;
+    [Arg] -> descend_arg(Arg, monadic, [RHS])
   end,
-  FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                  args = [NewArg]};
+  Ret = FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
+                  args = [NewArg]},
+  Ret;
 make_monadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, RHS) ->
-  NewFunc = make_right_associative(Funcs),
-  make_monadic(NewFunc, RHS).
+  NewFunc = pometo_runtime:make_right_associative(Funcs),
+  Ret = make_monadic(NewFunc, RHS),
+  Ret;
+make_monadic(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
+                      char_no = CNo} = Funcs, RHS) ->
+  Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                 args    = [Funcs, RHS],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
+  Ret;
+make_monadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, RHS) ->
+  Ret = make_monadic_train(FuncAST, RHS),
+  Ret.
 
-make_right_associative(#'$ast¯'{do   = #'$shape¯'{type = func},
-                                args = Funcs}) ->
-  make_right_assoc2(lists:reverse(Funcs)).
-
-make_right_assoc2([Final]) -> Final;
-make_right_assoc2([RHS, LHS | Rest]) ->
-  #'$ast¯'{do = #'$func¯'{} = Func} = LHS,
-  NewHead = LHS#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                        args = [RHS]},
-  make_right_assoc2([NewHead | Rest]).
+descend_arg(#'$ast¯'{do   = #'$func¯'{} = Func,
+                     args = []}   = AST, Type, Operands) ->
+  AST#'$ast¯'{do    = Func#'$func¯'{type = Type},
+              args = Operands};
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = #'$var¯'{}} = AST, _Type, _Operands) ->
+  AST;
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = Args} = AST, Type, Operands) when is_list(Args) ->
+  NewArgs = [descend_arg(X, Type, Operands) || X <- Args],
+  AST#'$ast¯'{args = NewArgs};
+descend_arg(#'$ast¯'{do   = #'$func¯'{},
+                     args = Arg} = AST, Type, Operands) ->
+  NewArg = descend_arg(Arg, Type, Operands),
+  AST#'$ast¯'{args = NewArg};
+descend_arg(#'$ast¯'{} = AST, _Type,  _Operands) ->
+  AST.
 
 make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
   #'$ast¯'{do      = [{apply_fn, {Mod, Fn}}],
@@ -213,13 +244,51 @@ make_stdlib({stdlib, CharNo, _, {Mod, Fn}}, #'$ast¯'{} = A) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-append(#'$ast¯'{do = #'$shape¯'{} = Shp} = AST1,
-        #'$ast¯'{do = #'$shape¯'{}}      = AST2) ->
-  {NewType, NewDims, NewArgs} = combine_asts(AST1, AST2),
-  AST1#'$ast¯'{do      = Shp#'$shape¯'{dimensions = NewDims,
-                                       type       = NewType},
-               args    = NewArgs,
-               line_no = scope_dictionary:get_line_no()}.
+
+finalise_vector(#'$ast¯'{do   = #'$shape¯'{type = Type}} = AST) when Type == func orelse
+                                                                     Type == maybe_func ->
+  AST;
+finalise_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = 0}} = AST) ->
+  AST;
+finalise_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
+                                           type       = unfinalised_vector} = Shp,
+                          args = Args1} = AST) ->
+  NewArgs = [X || #'$ast¯'{do   = #'$shape¯'{},
+                           args = X} <- Args1],
+  AST#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [D1], type = runtime},
+              args = NewArgs}.
+
+append_to_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
+                                            type       = unfinalised_vector} = Shp,
+                          args = Args1}                                             = AST1,
+                 #'$ast¯'{do   = #'$shape¯'{dimensions = 0,
+                                            type       = Type2}}                    = AST2) ->
+  NewArg = case Type2 of
+    unfinalised_vector -> finalise_vector(AST2);
+    _                  -> AST2
+  end,
+  Ret = AST1#'$ast¯'{do      = Shp#'$shape¯'{dimensions = [D1 + 1],
+                                             type       = unfinalised_vector},
+                     args    = Args1 ++ [NewArg],
+                     line_no = scope_dictionary:get_line_no()},
+  Ret;
+append_to_vector(#'$ast¯'{do = #'$shape¯'{} = Shp} = AST1,
+                 #'$ast¯'{do = #'$shape¯'{}}       = AST2) ->
+  Ret = AST1#'$ast¯'{do      = Shp#'$shape¯'{dimensions = [2],
+                                             type       = unfinalised_vector},
+                     args    = [AST1, AST2],
+                     line_no = scope_dictionary:get_line_no()},
+  Ret;
+append_to_vector(#'$ast¯'{char_no = CNo}                                                = LHS,
+                 #'$ast¯'{do   = [{apply_fn, {pometo_runtime, run_right_associative}}]} = RHS) ->
+  Ret = #'$ast¯'{do = #'$shape¯'{dimensions = [2],
+                                 type = maybe_func,
+                                 char_no = CNo,
+                                 line_no = scope_dictionary:get_line_no()},
+                 args = [LHS, RHS],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
+  Ret.
 
 make_scalar({Type, CharNo, _, {R, I}}, complex) when Type == complex_number       orelse
                                                      Type == maybe_complex_number ->
@@ -285,10 +354,20 @@ make_var({var, CharNo, _, Var}) ->
 make_varname(Var) -> lists:flatten(Var ++ "_" ++ scope_dictionary:get_current_scope()).
 
 make_let_fn(#'$ast¯'{args = #'$var¯'{}} = AST, #'$ast¯'{do = #'$shape¯'{type = Type}} = RHS)
-  when Type == func       orelse
-       Type == maybe_func ->
-  NewExpr = make_defer_execution(RHS),
-  make_let(AST, NewExpr).
+  when Type == func           orelse
+       Type == maybe_func     ->
+  NewExpr = make_defer_evaluation(RHS),
+  make_let(AST, NewExpr);
+make_let_fn(#'$ast¯'{args = #'$var¯'{}} = AST, #'$ast¯'{do = #'$func¯'{type = Type}} = RHS)
+  when Type == monadic        orelse
+       Type == monadic_ranked orelse
+       Type == dyadic         orelse
+       Type == dyadic_ranked  orelse
+       Type == ambivalent ->
+  NewExpr = make_defer_evaluation(RHS),
+  make_let(AST, NewExpr);
+make_let_fn(AST, RHS) ->
+  make_let(AST, RHS).
 
 make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   #'$var¯'{name     = Var,
@@ -300,7 +379,7 @@ make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-make_defer_execution(#'$ast¯'{char_no = CharNo} = AST) ->
+make_defer_evaluation(#'$ast¯'{char_no = CharNo} = AST) ->
   #'$ast¯'{do      = defer_evaluation,
            args    = [AST],
            char_no = CharNo,
@@ -326,9 +405,10 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
          at_char = C2}.
 
 % enclose a scalar results in a scalar
-maybe_enclose_vector({open_bracket, _, _, _},
-                      #'$ast¯'{do = #'$shape¯'{dimensions = 0}} = A1) ->
-  A1;
+maybe_enclose_vector({open_bracket, CharNo, _, _},
+                      #'$ast¯'{do      = #'$shape¯'{dimensions = 0}} = A1) ->
+  A1#'$ast¯'{char_no = CharNo,
+             line_no = scope_dictionary:get_line_no()};
 maybe_enclose_vector({open_bracket, CharNo, _, _},
                       #'$ast¯'{do = #'$shape¯'{}} = A1) ->
   #'$ast¯'{do      = basic_shape(CharNo, array, scalar),
@@ -349,21 +429,6 @@ basic_shape(CharNo, Type, scalar) ->
              char_no    = CharNo,
              line_no    = scope_dictionary:get_line_no()}.
 
-combine_asts(#'$ast¯'{do      = #'$shape¯'{dimensions = D1,
-                                           type       = Type1},
-                      args    = Args1},
-             #'$ast¯'{do      = #'$shape¯'{dimensions = D2,
-                                           type       = Type2},
-                      args    = Args2}) ->
-  {NewDims, NewArgs} = case {D1, D2} of
-              {0,    0}    -> {[2],       [Args1,    Args2]};
-              {[N], 0}     -> {[N + 1],   Args1 ++ [Args2]};
-              {0,    [N]}  -> {[1 + N],   [Args1 |   Args2]};
-              {[N1], [N2]} -> {[N1 + N2],  Args1 ++  Args2}
-  end,
-  NewType = match_types(Type1, Type2),
-  {NewType, NewDims, NewArgs}.
-
 match_types(X,        X)        -> X;
 match_types(_,        variable) -> runtime;
 match_types(variable, _)        -> runtime;
@@ -378,10 +443,10 @@ log(X, Label) ->
 is_op_shape_changing("/") -> true;
 is_op_shape_changing(_)   -> false.
 
-is_primitive_fn_shape_changing(["⍴"]) -> true;
-is_primitive_fn_shape_changing(["⍳"]) -> true;
-is_primitive_fn_shape_changing([","]) -> true;
-is_primitive_fn_shape_changing(_)     -> false.
+is_primitive_fn_shape_changing("⍴") -> true;
+is_primitive_fn_shape_changing("⍳") -> true;
+is_primitive_fn_shape_changing(",") -> true;
+is_primitive_fn_shape_changing(X)   -> false.
 
 default_rank({_, _, _, ","})  -> none; % the ravel operator has funky ranking - it takes vectors not scalars
 default_rank({_, _, _, "/"})  -> first;
@@ -390,4 +455,8 @@ default_rank({_, _, _, "⌿"})  -> last;
 default_rank({_, _, _, "⍀"})  -> last;
 default_rank(_)               -> none.
 
-% make_monadic(#'$ast¯'{do = #'$func¯'{} = Func} = AST) -> AST#'$ast¯'{do = Func#'$func¯'{type = monadic}}.
+resolve_types([H | T]) ->
+  resolve_t2(T, H).
+
+resolve_t2([],      Type) -> Type;
+resolve_t2([H | T], Type) -> resolve_t2(T, match_types(H, Type)).

@@ -102,6 +102,19 @@ The core development cycle is:
         * to run Jekyll locally `cd` to `/docs` and run the batch file `run_jekyll.sh` - the docs site will build and can be seen on `http://localhost:5000`
     * if you have implemented a new symbol you need to make that symbol available in `rappel` the `pometo` REPL. (This involves deleting a line of embedded CSS please see the section [Enabling New Symbols In Rappel](#enabling_new_symbols_in_rappel)
 
+***GOTCHA***: some of the tests (see the parser notes page for instance) have significant trailing white space - if you get mysterious **my test is failing but the output looks the same*** this is problably it.
+
+Typically the results look like:
+
+```apl
+┌───┐ ┌───┐ ┌───┐        
+│1 2│ │3 4│ │1 2│   4   5
+└───┘ └───┘ └───┘        
+```
+The 4 and 5 have 'hiden' padding left, right top and bottom.
+
+If you editor clears trailing white space this test will fail.
+
 Code failures in tests are fairly hard to debug because the interpreter and compiler both capture and sanitize runtime errors.
 
 The easiest way to proceed is to copy the input string of the test into the `runner` module and then invoke it with the `run.sh` bash command in `%ROOT`
@@ -143,6 +156,49 @@ Please add a section at the end of the design docs page in the docs directory ex
 * what you want to do
 * why not conforming to Dyalog APL 18.0 is a good idea
 * why you want to extend the language or add new features to make it work better with `Erlang`, `Elixir` and `LFE`.
+
+## Notes For Working On The Lexer/Parser
+
+The lexer is `leex` and the parser is `yecc` - these are Erlang implementations of the old `C` `lex` and `yacc` programmes.
+
+Documentation, such as it is, is online:
+
+* [leex](https://erlang.org/doc/man/leex.html)
+* [yecc](https://erlang.org/doc/man/yecc.html)
+
+Debugging and developing with parsers is somewhat of a black art.
+
+Here are a couple of tips.
+
+To try and work out the invocation order of the parse use the function `log/2` in `parse_include.hrl`. It is a pass through function that takes 2 arguments - a term in the parser and a string label. It prints out the term - marked with the label - and returns the term unchanged.
+
+Use it like this:
+
+```erlang
+Vecs -> Vector      : log('$1', "making Vector a Vecs").
+```
+
+and you will get an output in the console like this:
+
+```erlang
+/pometo/src/parser_include.hrl:355:<0.9.0>: in making Vector a Vecs for {'$ast¯',{'$shape¯',false,0,none,number,3,3},
+                                     10,3,3}
+```
+
+It tells you that at the time the rule `Vecs -> Vector` was invoked the value of `$1` (ie the non-Terminal `Vector`) is the erlang record `#'$ast¯'{}`.
+
+`pometo` - like all `apl`s is overwhelmingly right associative and has a complex precendence tree.
+
+You can dump out the decisioning by uncommenting the `yrl_opts` line in `rebar.config` - this lets you run the generation of parser with all the appropriate flags and options described in the `yecc` documentation.
+
+The key things to understand are:
+
+* `reduce` means to apply a parser rule
+* `shift` means to read the next token and see what happens
+
+You can scan the reduce/shift decisioning tree and reason about how the parser made the decision it did.
+
+***NOTE***: if this scares the bejeebus out of you, ask for help, happy to explain, its all good - even if quite obscure...
 
 ## How To Write Docs Pages As Tests
 

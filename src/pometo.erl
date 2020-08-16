@@ -70,7 +70,7 @@ run_for_format_TEST(Str, ModuleName) ->
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}    -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} -> compile_and_run_for_format2([{{run, 0, []}, Exprs}], ModuleName, Str);
-			{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+		{Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
 	end.
 
 compile_load_and_run_force_index_TEST(Str, ModuleName) ->
@@ -93,6 +93,7 @@ interpret_TEST(Str) ->
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	io:format("in interpret_TEST NormalRawExprs is ~p~n", [NormalRawExprs]),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
@@ -124,6 +125,7 @@ compile_load_and_run2(Str, ModuleName, Type) ->
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
+	io:format("in compile_load_and_run2~n- NormalRawExprs is ~p~n", [NormalRawExprs]),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}      -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs}   -> Exprs2 = case Type of
@@ -335,12 +337,12 @@ substitute_arg(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = OrigDo,
 	{NewArgs2, NewDims, NewType} = case NewA2 of
 		#'$ast¯'{do   = #'$shape¯'{dimensions = D,
 															 type       = T},
-						 args = A2} 												-> {A2, D, T};
-		#'$ast¯'{do = complex} = A4 								-> {A4, 0, complex};
-		#'$ast¯'{do = #'$func¯'{}} = A4							-> {A4, 0, func};
-		#'$ast¯'{do = [{apply_fn, _}]} = A4		      -> #'$ast¯'{do = App} = A4,
-																									 {A4, 0, App};
-		[X2] 																				-> {X2, 0, get_type(X2)};
+						 args = A2}												 -> {A2, D, T};
+		#'$ast¯'{do   = complex} = A4 						 -> {A4, 0, complex};
+		#'$ast¯'{do   = #'$func¯'{}} = A4					 -> {A4, 0, func};
+		#'$ast¯'{do   = [{apply_fn, _}]} = A4			 -> #'$ast¯'{do = App} = A4,
+																									{A4, 0, App};
+		[X2]																			 -> {X2, 0, get_type(X2)};
 		[] ->
 			{[], 0, variable} % error condition so we don't care about the result
 	end,

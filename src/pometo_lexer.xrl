@@ -102,6 +102,7 @@ Rules.
 %% StdLib Fns
 
 ⎕debug            : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug}}}.
+⎕debug_fn         : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, debug_fn}}}.
 ⎕make_indexed     : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, make_indexed}}}.
 ⎕make_lazy        : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, make_lazy}}}.
 ⎕force_indexing   : {token, {stdlib, TokenChars, TokenLen, {pometo_stdlib, force_indexing}}}.

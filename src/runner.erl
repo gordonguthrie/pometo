@@ -9,10 +9,19 @@
 -compile([{nowarn_unused_function, [{run, 1}, {run1, 1}, {run2, 1}, {run3, 1}]}]).
 
 run() ->
-	Codes = [
-            "C ← 2 3 4 ⍴ ⍳24\n⍴ ,[1.5] C"
-          ],
-	[run(X) || X <- Codes],
+Codes = [
+          % "A ← - + ÷\n"
+          % "B ← 333 444\n"
+          % "C ← 555\n"
+          % "D ← 666\n"
+          % "777 888 + C D - B A 9999 1010\n"
+          
+          % "F ← -+÷\n÷×-F 10"
+          
+          "A ← + - ⍴ ÷\n"
+          "⎕debug A"
+        ],
+	[run1(X) || X <- Codes],
 	exit(0).
 
 run(Code) ->
@@ -26,7 +35,7 @@ run1(Code) ->
   % Resp0 = pometo:parse_TEST(Code),
   % io:format("parse_TEST returns~n~p~n", [Resp0]),
   Resp1 = pometo:interpret_TEST(Code),
-  io:format("interpret_TEST returns~n~p~n~n~ts~n", [Resp1, Resp1]),
+  io:format("interpret_TEST returns~n~ts~n", [Resp1]),
   % Resp2 = pometo:compile_load_and_run_TEST(Code, "compile_runner"),
   % io:format("compile_load_and_run_TEST returns~n~ts~n", [Resp2]),
   ok.
