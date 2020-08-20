@@ -36,9 +36,9 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
   Funcs = RHS#'$ast¯'{do   = Shp2#'$shape¯'{type = maybe_func},
                       args = [LHS | Args]},
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
-           args    = [Funcs],
-           char_no = CNo,
-           line_no = scope_dictionary:get_line_no()},
+                 args    = [Funcs],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
   Ret;
 make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = LHS,
                        #'$ast¯'{do      = #'$func¯'{},
@@ -48,15 +48,16 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{}} = LHS,
                                    line_no = scope_dictionary:get_line_no()},
                  args = [LHS, RHS]},
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
-           args    = [AST],
-           char_no = CNo,
-           line_no = scope_dictionary:get_line_no()},
+                 args    = [AST],
+                 char_no = CNo,
+                 line_no = scope_dictionary:get_line_no()},
   Ret.
 
 make_right_associative(#'$ast¯'{do = #'$func¯'{}} = AST) ->
   AST;
-make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
-                                char_no = CNo} = Funcs) ->
+make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type},
+                                char_no = CNo} = Funcs) when Type == func       orelse
+                                                             Type == maybe_func ->
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
                  args    = [Funcs],
                  char_no = CNo,
@@ -177,7 +178,7 @@ make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
                   args = [LeftAST, NewRightAST]};
 make_dyadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, LHS, RHS) ->
-  NewFunc = pometo_runtime:make_right_associative(Funcs),
+  NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
   #'$ast¯'{do   = Func,
            args = Args} = NewFunc,
   NewArgs = [LHS | [descend_arg(X, monadic, [RHS]) || X <- Args]],
@@ -206,7 +207,7 @@ make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                   args = [NewArg]},
   Ret;
 make_monadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, RHS) ->
-  NewFunc = pometo_runtime:make_right_associative(Funcs),
+  NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
   Ret = make_monadic(NewFunc, RHS),
   Ret;
 make_monadic(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
@@ -446,9 +447,9 @@ is_op_shape_changing(_)   -> false.
 is_primitive_fn_shape_changing("⍴") -> true;
 is_primitive_fn_shape_changing("⍳") -> true;
 is_primitive_fn_shape_changing(",") -> true;
-is_primitive_fn_shape_changing(X)   -> false.
+is_primitive_fn_shape_changing(_)   -> false.
 
-default_rank({_, _, _, ","})  -> none; % the ravel operator has funky ranking - it takes vectors not scalars
+default_rank({_, _, _, ","})  -> none; % the ravel function has funky ranking - it takes vectors not scalars
 default_rank({_, _, _, "/"})  -> first;
 default_rank({_, _, _, "\\"}) -> first;
 default_rank({_, _, _, "⌿"})  -> last;

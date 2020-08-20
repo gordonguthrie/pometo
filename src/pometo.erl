@@ -93,7 +93,6 @@ interpret_TEST(Str) ->
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
-	io:format("in interpret_TEST NormalRawExprs is ~p~n", [NormalRawExprs]),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
@@ -125,7 +124,6 @@ compile_load_and_run2(Str, ModuleName, Type) ->
 	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
-	io:format("in compile_load_and_run2~n- NormalRawExprs is ~p~n", [NormalRawExprs]),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []}      -> []; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs}   -> Exprs2 = case Type of
@@ -375,6 +373,7 @@ substitute_arg(#'$ast¯'{do   = Do,
 substitute_arg(#'$var¯'{name    = Var,
 												char_no = CNo,
 												line_no = LNo}, {Bindings, Errors, Results}) ->
+
 	Ret = case maps:is_key(Var, Bindings) of
 		true  -> Binding = maps:get(Var, Bindings),
 						 Subst   = maps:get(results, Binding),
@@ -383,13 +382,13 @@ substitute_arg(#'$var¯'{name    = Var,
 						 {ShouldMakeNewDo, MaybeVal} = case NewA of
 								 #'$ast¯'{do   = defer_evaluation,
 													args = InnerArgs}					-> [D] = InnerArgs,
-																											 {true, D};
-								 #'$ast¯'{}												  -> {false, none};
-								 N                                  -> {true, N}
+																											 {false, D};
+								 #'$ast¯'{}												  -> {true,  none};
+								 N                                  -> {false, N}
 						 end,
 						 NewA2 = case ShouldMakeNewDo of
-								true  -> MaybeVal;
-								false	-> NewDo = extract_and_renumber_do(NewA, CNo, LNo),
+								false -> renumber(MaybeVal, LNo, CNo);
+								true 	-> NewDo = extract_and_renumber_do(NewA, LNo, CNo),
 												 NewA#'$ast¯'{do      = NewDo,
 																			char_no = CNo,
 																			line_no = LNo}
@@ -454,10 +453,14 @@ get_type(1)                                    -> boolean;
 get_type(N) when is_number(N)                  -> number;
 get_type(#'$ast¯'{do = #'$shape¯'{type = T}})  -> T.
 
-extract_and_renumber_do(#'$ast¯'{do = #'$shape¯'{} = Shp}, CNo, LNo) ->
+extract_and_renumber_do(#'$ast¯'{do = #'$shape¯'{} = Shp}, LNo, CNo) ->
 	Shp#'$shape¯'{char_no = CNo,
 								line_no = LNo};
-extract_and_renumber_do(#'$ast¯'{do = complex}, _CNo, _LNo) ->
+extract_and_renumber_do(#'$ast¯'{do = complex}, _LNo, _CNo) ->
 	complex;
-extract_and_renumber_do(#'$ast¯'{do = #'$func¯'{} = Func}, _CNo, _LNo) ->
+extract_and_renumber_do(#'$ast¯'{do = #'$func¯'{} = Func}, _LNo, _CNo) ->
 	Func.
+
+renumber(#'$ast¯'{} = AST, LNo, CNo) -> AST#'$ast¯'{line_no = LNo,
+																										char_no = CNo};
+renumber(X, _LNo, _CNo)              -> X.

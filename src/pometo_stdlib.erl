@@ -1,19 +1,21 @@
 -module(pometo_stdlib).
 
--include_lib("eunit/include/eunit.hrl").
-
--include("runtime_include.hrl").
--include("parser_records.hrl").
--include("comments.hrl").
-
 -export([
      debug/1,
      debug/2,
      make_lazy/1,
      make_indexed/1,
      force_indexing/1,
-     force_unindexing/1
+     force_unindexing/1,
+     debug_fns/1
     ]).
+
+-include_lib("eunit/include/eunit.hrl").
+
+-include("runtime_include.hrl").
+-include("parser_records.hrl").
+-include("errors.hrl").
+-include("comments.hrl").
 
 -define(INITIALINDENT, 1).
 -define(INDENTSIZE,    2).
@@ -39,30 +41,15 @@ debug(#'$ast¯'{do      = #'$func¯'{},
            at_line = LNo,
            at_char = CNo};
 debug(#'$ast¯'{do      = #'$shape¯'{type = Type},
-               args    = Args,
                char_no = CNo,
                line_no = LNo} = AST) when Type == func       orelse
                                           Type == maybe_func ->
   Line1  = io_lib:format("In ⎕debug_fn~n", []),
   Line2  = io_lib:format("This function array will be resolved at runtime\n", []),
-  Right  = try_make_right_associative(AST),
-  RightS = build_execution_diagram(Right),
-  A = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-               args = {placeholder, "⍺"}},
-  W = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-               args = {placeholder, "⍵"}},
-  Monadic  = try_make_train(Args, monadic, [W]),
-  MonadicS = build_execution_diagram(Monadic),
-  Dyadic   = try_make_train(Args, dyadic,  [A, W]),
-  DyadicS  = build_execution_diagram(Dyadic),
+  Rest = debug_fns(AST),
   Msg = Line1 ++ make_breaker() ++ 
         Line2 ++ make_breaker() ++
-        "as right associative this is:\n" ++
-        RightS ++ "\n" ++
-        "as a monadic train this is:\n" ++
-        MonadicS ++ "\n" ++
-        "as dyadic train this is:\n" ++
-        DyadicS,
+        Rest,
   #comment{msg     = Msg,
            at_line = LNo,
            at_char = CNo};
@@ -75,6 +62,27 @@ debug(#'$ast¯'{line_no = LNo,
   #comment{msg     = Msg,
            at_line = LNo,
            at_char = CNo}.
+
+debug_fns(#'$ast¯'{do      = #'$shape¯'{type = Type},
+                   args    = Args} = AST) when Type == func       orelse
+                                               Type == maybe_func ->
+  Right  = try_make_right_associative(AST),
+  RightS = build_execution_diagram(Right),
+  A = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+               args = {placeholder, "⍺"}},
+  W = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+               args = {placeholder, "⍵"}},
+  Monadic  = try_make_train(Args, monadic, [W]),
+  MonadicS = build_execution_diagram(Monadic),
+  Dyadic   = try_make_train(Args, dyadic,  [A, W]),
+  DyadicS  = build_execution_diagram(Dyadic),
+  _Msg = "As right associative this is:" ++ "\n" ++
+         RightS                          ++ "\n" ++
+         "As a monadic train this is:"   ++ "\n" ++
+         MonadicS                        ++ "\n" ++
+         "As dyadic train this is:"      ++ "\n" ++
+         DyadicS                         ++ "\n" ++
+         "Where ⍺ is the LHS argument and ⍵ the RHS -".
 
 debug2(#'$ast¯'{do      = Do,
                 args    = Args,
@@ -102,22 +110,29 @@ debug2(#'$ast¯'{do      = Do,
 
 try_make_right_associative(AST) ->
   try
-    pometo_runtime:make_right_associative(AST)
+    pometo_runtime:make_runtime_right_associative(AST)
   catch
-    error: Error ->
-      io:format("got error ~p~n", [Error]),
-      "bingo"
+    _Type: Error ->
+      case Error of
+        {error, #error{} = Err} -> format(Err);
+        _                       -> Error
+      end
   end.
 
 try_make_train(List, Type, Operands) ->
   try
     pometo_runtime:make_train(List, Type, Operands)
   catch
-    error: Error ->
-      io:format("got error ~p~n", [Error]),
-      Error
+    _Type: Error ->
+      case Error of
+        {error, #error{} = Err} -> format(Err);
+        _                       -> Error
+      end
   end.
 
+format(#error{type = Type,
+              msg1 = Msg1,
+              msg2 = Msg2}) -> lists:flatten(io_lib:format("~s (~s:~s)", [Type, Msg1, Msg2])).
 
 print_start(Lable) -> print("~n~n>>>>START>>>>>> ~p~n~n", [Lable], ?PRINTTYPE).
 
@@ -129,7 +144,7 @@ print(String, Vals, io_format) -> io:format(String, Vals);
 print(String, Vals, debugFmg)  -> ?debugFmt(String, Vals).
 
 build_execution_diagram(#'$ast¯'{do   = #'$func¯'{do = Do},
-                                 args = [Arg1, Arg2]} = AST) ->
+                                 args = [Arg1, Arg2]}) ->
   
   Doos  = string:join([io_lib:format("~ts", [X]) || X <- Do], " "),
   LHS  = build_execution_diagram(Arg1),

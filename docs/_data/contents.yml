@@ -49,6 +49,8 @@ toc:
     subfolderitems:
       - page: Getting started as a developer of the Pometo runtime and language
         url:  implementation_reference/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
+      - page: Exploring the runtime parse tree
+        url:  implementation_reference/exploring_the_runtime_parse_tree.html
       - page: Implementation details of complex numbers
         url:  implementation_reference/implementation_details_of_complex_numbers.html
       - page: Smoke tests
