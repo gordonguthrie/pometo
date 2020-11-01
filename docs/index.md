@@ -26,7 +26,7 @@ THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SO
 
 # Why is it called Pometo?
 
-`Pometo` is the Esperanto for ***little apple*** and `Pometo` is ***a little APL*** and Esperanto words are both easily pronouncable and usually available as domains.
+`Pometo` is the Esperanto for ***little apple*** and `Pometo` is ***a little APL*** and Esperanto words are both easily pronounceable and usually available as domains.
 
 # Why Pometo?
 
@@ -36,13 +36,13 @@ Writing supervision trees and gen servers are not problems in that category.
 
 `Pometo` is an auxiliary language - used to write library functions which are consumed in applications not written in `Pometo`.
 
-[Read more about the rational and thinking](https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d).
+[Read more about the rationale and thinking](https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d).
 
 # Design Considerations
 
 The normal developer of `Erlang`, `Elixir` and `LFE` applications should not know they are calling `Pometo` without reading the source code.
 
-`Pometo` libraries will be listed on `hex`, the will use `rebar3` to build. The data structures in Pometo will be `lists` and `maps`, the datatypes `integers`, `floats`, `binaries` and `atoms`.
+`Pometo` libraries will be listed on `hex`, the will use `rebar3` to build. The data structures in Pometo will be `lists` and `maps`, the data-types `integers`, `floats`, `binaries` and `atoms`.
 
 # Contributing To Pometo
 
@@ -59,6 +59,18 @@ The `rappel` github repository has instructions for how to get up and running wi
 `Pometo` uses a `rebar3` plugin called `pometo_docs_to_tests` to turn the documentation into tests.
 
 [You can find the Pometo Docs To Tests plugin on github](http://github.com/gordonguthrie/pometo_docs_to_tests)
+
+There are pages in the Implementation Reference to help you get up and running as contributors to Pometo.
+
+We are implementing a funded Open Source Maintainers programme in conjunction with [Code Your Future](https://codeyourfuture.io). CodeYourFuture is a refugee-founded and lead programme that trains disadvantaged people in software development.
+
+The OSM programme is a post-graduation, pre-formal job transition that gives CYF graduates real world experience of software development in the wild. Because OSM contributors have no previous experience of Erlang, or Elixir or an APL this programme has a set of getting-started tasks defined.
+
+(People who are not on the OSM programme are very welcome to ride along with the OSM introduction, but please don't just grab tasks off the OSM list without saying hello to the core team first.)
+
+Please read our [Code of Conduct](./for_contributors/pometo_contributors_code_of_conduct.md).
+
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg)](code_of_conduct.md) 
 
 # Contents
 

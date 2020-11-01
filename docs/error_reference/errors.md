@@ -6,7 +6,7 @@ This is the error reference document for Pometo - it ***should*** have a referen
 
 As the code base is very primitive errors will be subject to enormous change.
 
-The purpose of writing these error tests early is to guide the process of putting in place error handling and reporting through the lexer, parser and then both the runtime interpreter and the compiler - and into the repl `Rappel`.
+The purpose of writing these error tests early is to guide the process of putting in place error handling and reporting through the lexer, parser and then both the runtime interpreter and the compiler - and into the REPL `Rappel`.
 
 To that end, don't go mad writing error tests at this stage if your are thinking of contributing.
 
