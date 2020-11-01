@@ -1,7 +1,7 @@
 toc:
   - title: User Documentation
     subfolderitems:
-      - page: APL for Erlang and Elixir Programmers
+      - page: APL For Erlang And Elixir Programmers
         url:  user_documentation/apl_for_erlang_and_elixir_programmers.html
       - page: Data Types
         url:  user_documentation/data_types.html
@@ -11,46 +11,71 @@ toc:
         url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
-      - page: The Replicate functions `/` and `⌿`
+      - page: The Replicate Functions `/` and `⌿`
         url:  technical_reference/functions_forwardslash_or_the_replicate_function.html
-      - page: The Identity/Complex Conjugate/Plus function `+`
+      - page: The Identity/Complex Conjugate/Plus Function `+`
         url:  technical_reference/functions_the_identity_complex_conjugate_plus_function.html
-      - page: The Negation/Minus function `-`
+      - page: The Negation/Minus Function `-`
         url:  technical_reference/functions_the_negation_minus_function.html
-      - page: The Direction/Multiply function `×`
+      - page: The Direction/Multiply Function `×`
         url:  technical_reference/functions_the_direction_multiply_function.html
-      - page: The Reciprocal/Divide function `÷`
+      - page: The Reciprocal/Divide Function `÷`
         url:  technical_reference/functions_the_reciprocal_divide_function.html
-      - page: The Rho/Shape function `⍴`
+      - page: The Rho/Shape Function `⍴`
         url:  technical_reference/functions_rho_the_shape_function.html
-      - page: The Iota/Index function `⍳`
+      - page: The Iota/Index Function `⍳`
         url:  technical_reference/functions_iota_the_index_function.html
-      - page: The Ravel/Comma function `,`
+      - page: The Ravel/Comma Function `,`
         url:  technical_reference/functions_ravel_or_comma_function.html
-      - page: The Reduce operators `/` and `⌿`
+      - page: The Reduce Operators `/` And `⌿`
         url:  technical_reference/functions_ravel_or_comma_function.html
   - title: StdLib Reference
     subfolderitems:
-      - page: The ⎕debug function
+      - page: The `⎕debug` Function
         url:  stdlib_reference/stdlib_debug_function.html
-      - page: The ⎕make_indexed function
+      - page: The `⎕make_indexed` Function
         url:  stdlib_reference/stdlib_make_indexed_function.html
-      - page: The ⎕make_lazy function
+      - page: The `⎕make_lazy` Function
         url:  stdlib_reference/stdlib_make_lazy_function.html
-      - page: The ⎕force_indexing function
+      - page: The `⎕force_indexing` Function
         url:  stdlib_reference/stdlib_force_indexing_function.html
-      - page: The ⎕force_unindexing function
+      - page: The ⎕force_unindexing Function
         url:  stdlib_reference/stdlib_force_unindexing_function.html
   - title: Errors Reference
     subfolderitems:
-      - page: Alphabetical list of Errors
+      - page: Alphabetical List Of Errors
         url:  error_reference/errors.html
   - title: Implementation Reference
     subfolderitems:
-      - page: Getting started as a developer of the Pometo runtime and language
-        url:  implementation_reference/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
-      - page: Implementation details of complex numbers
+      - page: Exploring The Runtime Parse Tree
+        url:  implementation_reference/exploring_the_runtime_parse_tree.html
+      - page: Implementation Details Of Complex Numbers
         url:  implementation_reference/implementation_details_of_complex_numbers.html
-      - page: Smoke tests
+      - page: Smoke Tests
         url:  implementation_reference/smoke_tests.html
+  - title: For Contributors To (And Developers Of) Pometo
+    subfolderitems:
+      - page: Pometo Contributors Code Of Conduct
+        url:  for_contributors/pometo_contributors_code_of_conduct.html
+      - page: Getting Started As An Open Source Maintainer Of Pometo
+        url:  for_contributors/open_source_maintainer_onboarding.html
+      - page: Getting Started As A Developer Of The Pometo Runtime And Language
+        url:  for_contributors/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
+      - page: The Language Roadmap
+        url:  for_contributors/the_language_roadmap.html
+      - page: Our Development Environment
+        url:  for_contributors/our_development_environment.html
+      - page: Eek, How Do I Even Type This?
+        url:  for_contributors/eek_how_do_I_even_type_this.html
+      - page: The Development Cycle
+        url:  for_contributors/the_development_cycle.html
+      - page: Our Testing
+        url:  for_contributors/our_testing.html
+      - page: The Toolchain And Testing
+        url:  for_contributors/the_toolchain_and_testing.html
+      - page: The REPL (Read-Evaluate-Print-Loop) Rappel
+        url:  for_contributors/the_repl_rappel.html
+      - page: Lexer/Parser Development
+        url:  for_contributors/lexer_parser_development.html
+
 

@@ -199,9 +199,11 @@ make_line(#'$ast¯'{do      = [{apply_fn, {Mod, Fun}}],
 									 line_no = LNo,
 									 char_no = CNo})  ->
 	make_apply_function_call([{Mod, Fun}], Args, apply_fn, LNo, CNo);
-make_line(#'$ast¯'{do   = #'$shape¯'{},
-									 args = #'$var¯'{name = Var}}) ->
-	Var;
+make_line(#'$ast¯'{do      = #'$shape¯'{},
+									 args    = #'$var¯'{name = VarName},
+									 line_no = LNo,
+									 char_no = CNo}) ->
+	renumber_var(VarName, LNo, CNo);
 make_line(#'$ast¯'{do   = #'$shape¯'{dimensions = 0} = Shp,
 									 args = Arg} = AST) ->
 	NewShp = make_record(Shp),
@@ -337,9 +339,11 @@ maybe_make_record(T) when is_tuple(T) -> make_record(T);
 maybe_make_record(A) when is_atom(A)  -> atom_to_list(A);
 maybe_make_record(X)                  -> X.
 
-make_record(#'$ast¯'{do   = #'$shape¯'{type = variable},
-										 args = #'$var¯'{name = VarName}}) ->
-	VarName;
+make_record(#'$ast¯'{do      = #'$shape¯'{type = variable},
+										 args    = #'$var¯'{name = VarName},
+										 line_no = LNo,
+										 char_no = CNo}) ->
+	renumber_var(VarName, LNo, CNo);
 make_record(#'$ast¯'{do      = complex,
 										 args    = [R, I],
 										 line_no = LineNo,
@@ -467,9 +471,16 @@ make_record(#'$op¯'{op      = O,
 	", "                    ++
 	"char_no = "            ++
 	make_line_char_no(CNo)  ++
-  "}";
-make_record({'$var¯', V, _LineNo, _CharNo}) ->
-	V.
+  "}".
+
+renumber_var(VarName, LineNo, CharNo) ->
+	"pometo_runtime:run_and_renumber(" ++
+	VarName                            ++
+	", "                               ++
+	integer_to_list(LineNo)            ++
+	", "                               ++
+	integer_to_list(CharNo)            ++
+	")".
 
 make_rank(L) when is_list(L)    -> "[" ++ string:join([make_rank(X) || X <- L], ", ") ++ "]";
 make_rank(N) when is_integer(N) -> integer_to_list(N);
