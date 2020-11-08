@@ -46,31 +46,26 @@
 format([]) ->
 	[];
 format(List) when is_list(List) ->
-	% io:format("in format (2)~n", []),
 	string:join([format(X) || X <- List], "\n");
 format(#'$ast¯'{do   = #'$shape¯'{indexed = true} = Shp,
 								args = Args} = AST) ->
 	% if it is indexed we just unindex it before display
-	% io:format("in format (3)~n", []),
 	NewArgs = pometo_runtime:unindex(Args),
 	format(AST#'$ast¯'{do   = Shp#'$shape¯'{indexed = false},
 									   args = NewArgs});
 % special case for the null return from ⍴ on a scalar
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 								args = []}) ->
-	% io:format("in format (4)~n", []),
 	"";
 % special case for the null return from ⍴ on a vectors
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = [0]},
 								args = Args}) when Args == []  orelse
 																	 Args == #{} ->
-	% io:format("in format (5)~n", []),
 	"";
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																  type       = array},
 							  args = Args} = AST) ->
 % promote an array scalar to a mixed vector for printing
-	% io:format("in format (6)~n", []),
 	{NewDims, NewArgs} = case is_list(Args) of
 							true  -> {length(Args), Args};
 							false -> {[1], [Args]}
@@ -81,18 +76,15 @@ format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 % scalar array first
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 								args = #'$ast¯'{do = #'$shape¯'{}} = InnerAST}) ->
-	% io:format("in format (7)~n", []),
 	format(InnerAST);
 % now a normal scalar (including complex nos)
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 							  args = Arg}) ->
-	% io:format("in format (8)~n", []),
 	#fmt_segment{strings = [String]} = fmt(Arg),
 	String;
 % if its unsized, size it and bung it back around
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
 								args = Args} = AST) ->
-	% io:format("in format (9)~n", []),
 	Dims = length(Args),
 	format(AST#'$ast¯'{do = Shp#'$shape¯'{dimensions = [Dims]}});
 format(#'$ast¯'{do   = #'$shape¯'{dimensions = Dims,
@@ -100,7 +92,6 @@ format(#'$ast¯'{do   = #'$shape¯'{dimensions = Dims,
 								args = Args} = AST) when is_list(Args)       andalso
 																				(Type /= func        andalso
 																				 Type /= maybe_func) ->
-	% io:format("in format (10)~n- AST is ~p~n", [AST]),
 	Len = length(Dims),
 	if
 		Len <  3 -> Frags = build_segments(AST),
@@ -116,7 +107,6 @@ format(#'$ast¯'{do      = #'$shape¯'{type = Type},
 								char_no = CNo} = AST) when is_list(Args)       andalso
 																					(Type == func        orelse
 																				   Type == maybe_func) ->
-	% io:format("in format (10a)~n- AST is ~p~n", [AST]),
 	Comment = pometo_stdlib:debug_fns(AST),
 	format(#comment{msg     = Comment,
 									at_line = LNo,
@@ -124,23 +114,18 @@ format(#'$ast¯'{do      = #'$shape¯'{type = Type},
 format(#comment{msg     = Msg,
 								at_line = LNo,
 								at_char = CNo}) ->
-	% io:format("in format (11)~n", []),
 	io_lib:format("~ts on line ~p at character ~p~n", [Msg, LNo, CNo]);
 format({error, Err}) ->
-	% io:format("in format (12)~n", []),
 	format_errors([Err]);
 format(#'$ast¯'{do = #'$func¯'{do   = Do,
 															 type = Type}}) ->
-	% io:format("in format (13)~n", []),
 	io_lib:format("Function: ~p of type ~p~n", [Do, Type]);
 format(#'$ast¯'{do = defer_evaluation,
 								args = Args}) ->
-	% io:format("in format (14)~n", []),
 	Line1 = io_lib:format("Defering Evaluation:", []),
 	Lines = [format(X) || X <- Args],
 	string:join([Line1 | Lines], "\n");
 format(X) when is_list(X) ->
-	% io:format("in format (15)~n", []),
 	X.
 
 format_errors(Errors) ->
@@ -337,31 +322,25 @@ build_segments_TEST(A) -> build_segments(A).
 % can't handle unsized vectors, gotta flip 'em
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
 												args = Args} = AST) ->
-	io:format("in build segments AST (1) is ~p~n", [AST]),
 	Dim = length(Args),
 	build_segments(#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [Dim]},
 													args = Args});
 % can't handle indexed segments, gotta flip 'em
 build_segments(#'$ast¯'{do   = #'$shape¯'{indexed = true}} = AST) ->
-	io:format("in build segments AST (2) is ~p~n", [AST]),
 	build_segments(pometo_runtime:make_unindexed(AST));
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 												args = null} = AST) ->
-	io:format("in build segments AST (3) is ~p~n", [AST]),
 	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
 % now handle the scalar array
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																					type       = array},
 												args = Args} = AST) ->
-	io:format("in build segments AST (4) is ~p~n", [AST]),
 	_SizedLines = [#fmt_line{segs = size_line(0, Args)}];
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
 												args = Arg} = AST) ->
-	io:format("in build segments AST (5) is ~p~n", [AST]),
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = D},
-												args = Args} = _AST) ->
-	io:format("in build segments AST (6) Args is ~p~n- D is ~p~n", [Args, D]),
+												args = Args} = AST) ->
 	[LineSize | Dims] = lists:reverse(D),
 	Lines = make_lines(Args, LineSize, ?EMPTY_ACCUMULATOR),
 	SplitFn = fun(Ls) ->
@@ -467,5 +446,6 @@ format_error(#error{type    = T,
 	end,
 	% there are reasons we add extra new lines here and then take the first ones away later
 	% its to make the test suites work and keep the output purty for users with multiple errors
-	io_lib:format("~n~nError~n~ts~n~s~n~s (~ts:~ts) on line ~p at character ~p",
-				  [E, Pointer, T, M1, M2, AtL, AtC]).
+	io_lib:format("~n~nError~n~ts~n~s~n~s [~ts: ~ts ] on line ~p at character ~p",
+				  [E, Pointer, T, M1, M2, AtL, AtC]);
+format_error(Error) -> Error.

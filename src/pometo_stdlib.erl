@@ -132,7 +132,7 @@ try_make_train(List, Type, Operands) ->
 
 format(#error{type = Type,
               msg1 = Msg1,
-              msg2 = Msg2}) -> lists:flatten(io_lib:format("~s (~s:~s)", [Type, Msg1, Msg2])).
+              msg2 = Msg2}) -> lists:flatten(io_lib:format("~s [~s: ~s ]", [Type, Msg1, Msg2])).
 
 print_start(Lable) -> print("~n~n>>>>START>>>>>> ~p~n~n", [Lable], ?PRINTTYPE).
 

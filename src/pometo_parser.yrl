@@ -1,4 +1,3 @@
-
 Nonterminals
 
 Exprs
@@ -80,7 +79,7 @@ Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
 
 Expr -> Dyadic      : '$1'.
 Expr -> Monadic     : '$1'.
-Expr -> Associative : '$1'.
+Expr -> Associative : final_check_on_associative('$1').
 Expr -> Vecs        : '$1'.
 Expr -> stdlib Vecs : make_stdlib('$1', '$2').
 Expr -> stdlib Var  : make_stdlib('$1', '$2').
@@ -100,7 +99,8 @@ Train -> Args open_bracket Fns close_bracket Args : make_dyadic_train('$3', '$1'
 Train ->      open_bracket Fns close_bracket Args : make_monadic_train('$2', '$4').
 Train ->      open_bracket Fns close_bracket      : '$2'.
 
-% trains require a minimum of 2 consecutive Fns but monadic/dyadic can do it with one - hence this construction
+% trains require a minimum of 2 consecutive Fns but monadic/dyadic can do it with one
+% hence this construction
 ConsecutiveFns -> Fns : '$1'.
 ConsecutiveFns -> Fn  : '$1'.
 

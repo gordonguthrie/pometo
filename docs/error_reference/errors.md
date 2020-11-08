@@ -40,7 +40,7 @@ A ← 2 3 4 ⍴ ⍳ 24
 B ← 2 2 ⍴ ⍳ 4
 B /[2] A
 --^
-DOMAIN ERROR (LHS must be a vector or a scalar:It has a shape of [2,2]) on line 3 at character 3
+DOMAIN ERROR [LHS must be a vector or a scalar: It has a shape of [2,2] ] on line 3 at character 3
 ```
 
 # INDEX ERROR
@@ -60,7 +60,7 @@ Error
 A ← 2 3 4 ⍴ 1 2 3 4 5 6
 2 /[6] A
 --^
-INDEX ERROR (Invalid Axis:6) on line 2 at character 3
+INDEX ERROR [Invalid Axis: 6 ] on line 2 at character 3
 ```
 
 # LENGTH ERROR
@@ -79,7 +79,7 @@ An `eager` vector will be tested before invoking the dyadic function and give th
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:LHS dimensions \"3\" - RHS dimensions \"2\") on line 1 at character 1
+LENGTH ERROR [dimensions mismatch in dyadic [\"+\"]: LHS dimensions \"3\" - RHS dimensions \"2\" ] on line 1 at character 1
 ```
 
 A `lazy` vector doesn't know it its own length and is typically passed in from `Erlang` or `Elixir`. If this expression were evaluated where both the LHS and the RHS were lazy the error message would emerge from the bowels of the dyadic function slightly differently:
@@ -88,7 +88,7 @@ A `lazy` vector doesn't know it its own length and is typically passed in from `
 Error
 1 2 3 + 4 5
 ^
-LENGTH ERROR (dimensions mismatch in dyadic [\"+\"]:ran out of matches after 2 elements) on line 1 at character 1
+LENGTH ERROR [dimensions mismatch in dyadic [\"+\"]: ran out of matches after 2 elements ] on line 1 at character 1
 ```
 
 ## Axis Operations
@@ -107,7 +107,7 @@ Error
 C ← 2 3 4 ⍴ ⍳24
 ⍴ ,[3 4] C
 --^
-RANK ERROR (Invalid Axis:[3,4]) on line 2 at character 3
+RANK ERROR [Invalid Axis: [3,4] ] on line 2 at character 3
 ```
 
 This is true for float axis specifications also:
@@ -124,7 +124,7 @@ Error
 C ← 2 3 4 ⍴ ⍳24
 ⍴ ,[4.5] C
 --^
-RANK ERROR (Invalid Axis:4.5) on line 2 at character 3
+RANK ERROR [Invalid Axis: 4.5 ] on line 2 at character 3
 ```
 # RANK ERROR
 
@@ -142,7 +142,7 @@ Resulting in:
 Error
 1 +/ 1
 -----^
-RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
+RANK ERROR [RHS must be an array: It is a scalar ] on line 1 at character 6
 ```
 
 # SYNTAX ERROR
@@ -161,7 +161,7 @@ MyVar≠99 ← 1 2 3
 Error
 MyVar≠99 ← 1 2 3
 ---------^
-SYNTAX ERROR (syntax error before: :{let_op,10,[8592],[8592]}) on line 1 at character 10
+SYNTAX ERROR [syntax error before: ← ] on line 1 at character 10
 ```
 
 ```pometo
@@ -172,7 +172,7 @@ MyVar~99 ← 1 2 3
 Error
 MyVar~99 ← 1 2 3
 ---------^
-SYNTAX ERROR (syntax error before: :{let_op,10,[8592],[8592]}) on line 1 at character 10
+SYNTAX ERROR [syntax error before: ← ] on line 1 at character 10
 ```
 
 ```pometo
@@ -183,7 +183,7 @@ myvar ← 1 2 3
 Error
 myvar ← 1 2 3
 ^
-SYNTAX ERROR (syntax error before: :{maybe_varfrag,1,\"m\",\"m\"}) on line 1 at character 1
+SYNTAX ERROR [syntax error before: m ] on line 1 at character 1
 ```
 
 # VARIABLE NOT DEFINED
@@ -203,13 +203,13 @@ will give the following error:
 Error
 D + C
 ----^
-VARIABLE NOT DEFINED (C:variable is not defined) on line 2 at character 5
+VARIABLE NOT DEFINED [C: variable is not defined ] on line 2 at character 5
 
 
 Error
 D + C
 ^
-VARIABLE NOT DEFINED (D:variable is not defined) on line 2 at character 1
+VARIABLE NOT DEFINED [D: variable is not defined ] on line 2 at character 1
 ```
 
 # VARIABLE REASSIGNED
@@ -230,5 +230,5 @@ will give the following error:
 Error
 A ← 4 5 6 ⋄ A ← 6 7 ¯8
 ------------^
-VARIABLE REASSIGNED (A:was previously assigned on line 1 at char 1) on line 1 at character 13
+VARIABLE REASSIGNED [A: was previously assigned on line 1 at char 1 ] on line 1 at character 13
 ```

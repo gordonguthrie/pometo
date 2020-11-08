@@ -108,7 +108,7 @@ The left hand side must be an array of integers:
 Error
 2.2 3 4 ⍴ 9 8 7
 ^
-DOMAIN ERROR (dyadic ⍴ only accepts integer arguments to the left and was called with:Left: [2.2,3,4] - Right: [9,8,7]) on line 1 at character 1
+DOMAIN ERROR [dyadic ⍴ only accepts integer arguments to the left and was called with: Left: [2.2,3,4] - Right: [9,8,7] ] on line 1 at character 1
 ```
 
 The formatter likes to keep things neat, which is nice:
@@ -192,6 +192,6 @@ If the left hand side is not an integer scalar an error will be thrown:
 Error
 1.1 ⍴ 2 3
 ^
-DOMAIN ERROR (dyadic ⍴ only accepts integer arguments to the left and was called with:Left: [1.1] - Right: [2,3]) on line 1 at character 1
+DOMAIN ERROR [dyadic ⍴ only accepts integer arguments to the left and was called with: Left: [1.1] - Right: [2,3] ] on line 1 at character 1
 ```
 

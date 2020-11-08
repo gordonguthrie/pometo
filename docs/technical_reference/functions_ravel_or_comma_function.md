@@ -94,7 +94,7 @@ Error
 C ← 2 3 4 ⍴ ⍳24
 ⍴ ,[3 4] C
 --^
-RANK ERROR (Invalid Axis:[3,4]) on line 2 at character 3
+RANK ERROR [Invalid Axis: [3,4] ] on line 2 at character 3
 ```
 
 This is true for float axis specifications also:
@@ -111,5 +111,5 @@ Error
 C ← 2 3 4 ⍴ ⍳24
 ⍴ ,[4.5] C
 --^
-RANK ERROR (Invalid Axis:4.5) on line 2 at character 3
+RANK ERROR [Invalid Axis: 4.5 ] on line 2 at character 3
 ```

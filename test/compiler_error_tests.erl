@@ -12,6 +12,6 @@ basic_compiler_failure_test_() ->
 	Exp = "\n\nError\n"        ++
 		  "\n" ++
 		  "^\n"            ++
-		  "UNUSED VARIABLE (variable is unused:A) on line 1 at character 1",
+		  "UNUSED VARIABLE [variable is unused: A ] on line 1 at character 1",
   % ?debugFmt("in basic_compiler_failure_test_~nfrom ~p~nGot ~ts~nExp ~ts~n", [Str, Got, Exp]),
 	?_assertEqual(Exp, Got).

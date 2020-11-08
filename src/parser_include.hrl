@@ -12,6 +12,19 @@
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
+final_check_on_associative(#'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                                    args    = [#'$ast¯'{do   = #'$shape¯'{type = maybe_func},
+                                                        args = Args}],
+                                    char_no = CNo,
+                                    line_no = LNo} = AST) ->
+  RHS = hd(lists:reverse(Args)),
+  case RHS of
+    #'$ast¯'{do = #'$shape¯'{}} -> AST;
+    _                           -> pometo_errors:make_right_assoc_syntax_error(LNo, CNo)
+  end;
+final_check_on_associative(#'$ast¯'{} = AST) ->
+  AST.
+
 make_maybe_vector(#'$ast¯'{char_no = CNo} = LHS,
                   #'$ast¯'{}              = RHS) ->
   Ret = #'$ast¯'{do      = #'$shape¯'{dimensions = [2],
@@ -378,7 +391,9 @@ make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   #'$ast¯'{do      = 'let_op',
            args    = [list_to_atom(Var), Expr],
            char_no = CharNo,
-           line_no = scope_dictionary:get_line_no()}.
+           line_no = scope_dictionary:get_line_no()};
+make_let(_, #error{} = Err) ->
+  Err.
 
 make_defer_evaluation(#'$ast¯'{char_no = CharNo} = AST) ->
   #'$ast¯'{do      = defer_evaluation,
@@ -387,9 +402,11 @@ make_defer_evaluation(#'$ast¯'{char_no = CharNo} = AST) ->
            line_no = scope_dictionary:get_line_no()}.
 
 make_err({CharNo, pometo_parser, [Error | Body]}) ->
+  [NewBody, _] = io_lib:format("~ts~n", [lists:flatten(Body)]),
+  Char = get_character_from_body(NewBody),
   #error{type    = "SYNTAX ERROR",
-         msg1    = Error,
-         msg2    = io_lib:format("~ts", [Body]),
+         msg1    = normalise_error_msg(Error),
+         msg2    = io_lib:format("~ts", [Char]),
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = CharNo};
@@ -404,6 +421,17 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = C2}.
+
+normalise_error_msg("syntax error before: ") -> "syntax error before";
+normalise_error_msg(X)                       -> X.
+
+get_character_from_body(String) ->
+    Body = String ++ ".",
+    {ok,    Tokens, _} = erl_scan:string(Body),
+    {ok,    Parsed}    = erl_parse:parse_exprs(Tokens),
+    {value, Tuple, _}  = erl_eval:exprs(Parsed, []),
+    Char = element(4, Tuple),
+    Char.
 
 % enclose a scalar results in a scalar
 maybe_enclose_vector({open_bracket, CharNo, _, _},

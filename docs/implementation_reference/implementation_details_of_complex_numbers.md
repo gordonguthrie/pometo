@@ -74,7 +74,7 @@ _jjJjJ12ab ← 1 2 3
 Error
 _jjJjJ12ab ← 1 2 3
 ^
-SYNTAX ERROR (syntax error before: :{maybe_varfrag,1,\"_\",\"_\"}) on line 1 at character 1
+SYNTAX ERROR [syntax error before: _ ] on line 1 at character 1
 ```
 
 And cases where variable names include what would otherwise be valid complex numbers:

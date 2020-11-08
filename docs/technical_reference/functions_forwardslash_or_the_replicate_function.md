@@ -190,8 +190,8 @@ A ← ⍳ 24
 B ← 2 3 4 ⍴ A
 2 2/[2] B
 ---^
-LENGTH ERROR (LHS vector doesn't match the selection axis:LHS has 2 elements - RHS Axis has 3
-) on line 3 at character 4
+LENGTH ERROR [LHS vector doesn't match the selection axis: LHS has 2 elements - RHS Axis has 3
+ ] on line 3 at character 4
 ```
 
 ## Invalid Axes and INDEX ERRORs
@@ -212,8 +212,8 @@ A ← ⍳ 24
 B ← 1 2 3 ⍴ A
 2 2 3/[2] B
 -----^
-LENGTH ERROR (LHS vector doesn't match the selection axis:LHS has 3 elements - RHS Axis has 2
-) on line 3 at character 6
+LENGTH ERROR [LHS vector doesn't match the selection axis: LHS has 3 elements - RHS Axis has 2
+ ] on line 3 at character 6
 ```
 
 ## LHS Must Be A Scalar Or A Vector Or You Get A DOMAIN ERROR
@@ -236,7 +236,7 @@ C ← 2 2 ⍴ A
 D ← 2 2 ⍴ B
 D /[2] C
 --^
-DOMAIN ERROR (LHS must be a vector or a scalar:It has a shape of [2,2]) on line 5 at character 3
+DOMAIN ERROR [LHS must be a vector or a scalar: It has a shape of [2,2] ] on line 5 at character 3
 ```
 
 ## Implementation Notes

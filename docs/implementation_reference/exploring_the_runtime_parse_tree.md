@@ -1,5 +1,6 @@
 # Exploring The Runtime Parse Trees
 
+## Living With Amiguity
 
 `apl` has an ambiguous grammer and `yecc` is a `LALR` parser - you might be forgiven for thinking that therefore `pometo` can never work. Well yes, and no. The output of the `pometo` parser is not unambiguous. One of the parser outputs is an `$ast¯` record that looks like this:
 
@@ -108,9 +109,9 @@ This function array will be resolved at runtime
 As right associative this is:
 ([- + ÷] 1)
 As a monadic train this is:
-\"SYNTAX ERROR (invalid expression:no value at the RHS)\"
+\"SYNTAX ERROR [invalid expression: no value at the RHS ]\"
 As dyadic train this is:
-\"SYNTAX ERROR (invalid expression:no value at the RHS)\"
+\"SYNTAX ERROR [invalid expression: no value at the RHS ]\"
 Where ⍺ is the LHS argument and ⍵ the RHS - on line 3 at character 8
 
 ```

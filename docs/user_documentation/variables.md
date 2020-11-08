@@ -64,5 +64,5 @@ MyVar ← 1 2 3
 Error
 55 66 77 + MYVar
 -----------^
-VARIABLE NOT DEFINED (MYVar:variable is not defined) on line 2 at character 12
+VARIABLE NOT DEFINED [MYVar: variable is not defined ] on line 2 at character 12
 ```
