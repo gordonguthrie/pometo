@@ -65,7 +65,7 @@ Are always syntax errors
 Error
 1 +
 --^
-SYNTAX ERROR (invalid expression:no value at the RHS) on line 1 at character 3
+SYNTAX ERROR [Invalid expression: No value at the RHS ] on line 1 at character 3
 ```
 
 This is true if the value is replaced with a variable
@@ -77,10 +77,9 @@ A +
 
 ```pometo_results
 Error
-A ← 1
 A +
---^
-SYNTAX ERROR (invalid expression:no value at the RHS) on line 2 at character 3
+^
+SYNTAX ERROR [Invalid expression: No value at the RHS ] on line 2 at character 1
 ```
 
 This feeds into all evaluations.
@@ -123,7 +122,7 @@ H ← 1
 A ← + - H ÷ + -
 A 10
 ----------^
-SYNTAX ERROR (Missing right argument:Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)) on line 2 at character 11
+SYNTAX ERROR [Missing right argument: Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop) ] on line 2 at character 11
 ```
 
 

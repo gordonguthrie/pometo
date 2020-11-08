@@ -109,9 +109,9 @@ This function array will be resolved at runtime
 As right associative this is:
 ([- + ÷] 1)
 As a monadic train this is:
-\"SYNTAX ERROR [invalid expression: no value at the RHS ]\"
+\"SYNTAX ERROR [Invalid expression: No value at the RHS ]\"
 As dyadic train this is:
-\"SYNTAX ERROR [invalid expression: no value at the RHS ]\"
+\"SYNTAX ERROR [Invalid expression: No value at the RHS ]\"
 Where ⍺ is the LHS argument and ⍵ the RHS - on line 3 at character 8
 
 ```

@@ -32,8 +32,8 @@ make_index_error_for_rank(Rank, LNo, CNo) ->
 
 make_right_assoc_syntax_error(LNo, CNo) ->
       ErrType = "SYNTAX ERROR",
-      Msg1    = "invalid expression",
-      Msg2    = "no value at the RHS",
+      Msg1    = "Invalid expression",
+      Msg2    = "No value at the RHS",
       _Error  = make_error(ErrType, Msg1, Msg2, LNo, CNo).
 
 make_length_error_for_reduce(WindowSize, ChunkSize, LNo, CNo) ->
