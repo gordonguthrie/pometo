@@ -321,7 +321,7 @@ build_segments_TEST(A) -> build_segments(A).
 
 % can't handle unsized vectors, gotta flip 'em
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
-												args = Args} = AST) ->
+												args = Args}) ->
 	Dim = length(Args),
 	build_segments(#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [Dim]},
 													args = Args});
@@ -329,18 +329,18 @@ build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,
 build_segments(#'$ast¯'{do   = #'$shape¯'{indexed = true}} = AST) ->
 	build_segments(pometo_runtime:make_unindexed(AST));
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-												args = null} = AST) ->
+												args = null}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, "")}];
 % now handle the scalar array
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0,
 																					type       = array},
-												args = Args} = AST) ->
+												args = Args}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, Args)}];
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-												args = Arg} = AST) ->
+												args = Arg}) ->
 	_SizedLines = [#fmt_line{segs = size_line(0, [Arg])}];
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = D},
-												args = Args} = AST) ->
+												args = Args}) ->
 	[LineSize | Dims] = lists:reverse(D),
 	Lines = make_lines(Args, LineSize, ?EMPTY_ACCUMULATOR),
 	SplitFn = fun(Ls) ->
