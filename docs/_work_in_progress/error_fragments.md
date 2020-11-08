@@ -14,7 +14,7 @@ Resulting in:
 Error
 1 +/ 1
 -----^
-RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
+RANK ERROR [RHS must be an array: It is a scalar ] on line 1 at character 6
 ```
 
 ## Syntax Errrors
@@ -30,7 +30,8 @@ resulting in:
 
 ```pometo_results
 Error
+A ← 1 2 3
 (A+-÷) 4 5
--^
-SYNTAX ERROR (Missing right argument:Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop)) on line 2 at char 2.
+--^
+SYNTAX ERROR [Missing right argument: Cannot have a scalar or array as the LHS of a train with an odd number of functions (ie an atop) ] on line 2 at character 3
 ```
