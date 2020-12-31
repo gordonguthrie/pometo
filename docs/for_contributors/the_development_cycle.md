@@ -22,6 +22,8 @@ The core development cycle is:
         * to run Jekyll locally `cd` to `/docs` and run the batch file `run_jekyll.sh` - the docs site will build and can be seen on `http://localhost:5000`
     * if you have implemented a new symbol you need to make that symbol available in `rappel` the `pometo` REPL. (This involves deleting a line of embedded CSS please see the section [Enabling New Symbols In Rappel](#enabling-new-symbols-in-rappel)
 
+The `pometo_docs_to_ct_tests` plugin works in the same way as `pometo_docs_to_tests` and takes the same `BUILDWIP` environment variable - it generates tests in `tests/generated_common_tests` and when the tests are run the results are stored under `_build/test/log/index.html`.
+
 ***GOTCHA***: some of the tests (see the parser notes page for instance) have significant trailing white space - if you get mysterious ***my test is failing but the output looks the same*** this is probably it.
 
 Please read [Our Testing](./our_testing.md).

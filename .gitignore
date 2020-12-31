@@ -8,5 +8,6 @@ pometo_lexer.erl
 erl_crash.dump
 rebar3.crashdump
 test/generated_tests
+test/generated_common_tests
 docs/_site
 docs/Gemfile.lock

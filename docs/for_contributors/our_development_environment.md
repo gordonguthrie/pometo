@@ -1,6 +1,6 @@
 # Our Development Environment
 
-To develop `pometo` (and `rappel` and the `pometo_docs_to_test` `rebar3` plugin) we use docker as an isolation unit. This means that you don't need to worry about:
+To develop `pometo` (and `rappel` and the `pometo_docs_to_tests` and `pometo_docs_to_ct_tests` `rebar3` plugins) we use docker as an isolation unit. This means that you don't need to worry about:
 
 * getting Erlang installed
 * which version of Erlang and Elixir you have installed
