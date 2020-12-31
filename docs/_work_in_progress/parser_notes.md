@@ -321,7 +321,7 @@ F ← -+÷
 Resulting in:
 
 ```pometo_results
-0.101010101
+0.10101010101010101
 ```
 
 We need to be sure the parser can cope with fairly weird combos of vectors and trains and functions

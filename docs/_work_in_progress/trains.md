@@ -59,13 +59,13 @@ The technical term for this is a monadic fork.
 So we see this translates to:
 
 ```apl
-(- 10) + (÷ 10)
+(- 10),(÷ 10)
 ```
 
 The non-train execution was:
 
 ```apl
-(- (, (÷ 10))
+(-(,(÷ 10))
 ```
 
 If we have a string of functions bracketed by two vectors they will be applied monadically until the left most one:
@@ -267,7 +267,7 @@ This is the equivalent of:
 
 which gives:
 ```pometo_results
-¯0.25 ¯ 0.125
+¯0.25 ¯0.125
 ```
 
 ## Dyadic Atop Train Of Trains
@@ -312,7 +312,7 @@ This is the equivalent of:
 
 which gives:
 ```pometo_results
-0.0 -0.25
+0.0 ¯0.25
 ```
 
 ## Dyadic fgh Fork Train Of Trains

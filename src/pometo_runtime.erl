@@ -562,10 +562,12 @@ make_train2([RHS, LHS], Type, Operands) ->
   LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = [NewRHS]}.
 
+
+
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = D1}} = AST1,
                        #'$ast¯'{do   = #'$shape¯'{dimensions = D2}} = AST2])
   when D1 == unsized_vector orelse
-       D2 == unsized_vector->
+       D2 == unsized_vector ->
   NewAST1 = make_eager(AST1),
   NewAST2 = make_eager(AST2),
   run_right_associative([NewAST1, NewAST2]);
@@ -589,12 +591,12 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
       Funcs % XXXXX
   end;
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
-                                                  type       = Type},
-                               args = Args1}                          = Funcs,
-                      #'$ast¯'{do   = #'$shape¯'{},
-                               args = Args2}                          = RHS])
-  when Type == func       orelse
-       Type == maybe_func ->
+                                                  type       = Type1},
+                                args = Args1}                         = Funcs,
+                       #'$ast¯'{do   = #'$shape¯'{},
+                                args = Args2}                          = RHS])
+  when Type1 == func       orelse
+       Type1 == maybe_func ->
   #'$ast¯'{do = #'$shape¯'{type = NewType}} = resolve(Funcs),
   case NewType of
     func    -> NewFunc = Funcs#'$ast¯'{do   = #'$shape¯'{dimensions = [N + 1],
@@ -605,7 +607,7 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
     runtime -> NewDims = N + get_number_of_args(RHS),
                Funcs#'$ast¯'{do   = #'$shape¯'{dimensions = [NewDims],
                                                type       = runtime},
-                             args = Args1 ++ maybe_args_to_list(Args2)}
+                             args = maybe_extract_vals(Args1) ++ maybe_args_to_list(Args2)}
   end;
 run_right_associative([#'$ast¯'{do = #'$func¯'{}} = AST]) ->
   run_ast2(AST);
@@ -656,15 +658,29 @@ resolve2([_H | T], func) ->
 resolve2([_H | T], Type) ->
   resolve2(T, Type).
 
+maybe_extract_vals(Args) ->
+  case maybe_extract2(Args, []) of
+    abort -> Args;
+    Vals  -> Vals
+  end.
+
+maybe_extract2([], Acc) -> lists:reverse(Acc);
+maybe_extract2([#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                        args = Val} | T], Acc) ->
+  maybe_extract2(T, [Val | Acc]);
+maybe_extract2(_, _) ->
+  abort.
+
 make_runtime_right_associative(#'$ast¯'{do   = #'$shape¯'{type = Type},
                                         args = Funcs}) when Type == func       orelse
                                                             Type == maybe_func ->
   ReversedVectorised = vectorise(Funcs, ?EMPTY_ACCUMULATOR, ?EMPTY_ACCUMULATOR),
-  make_right_assoc2(ReversedVectorised);
+  Ret = make_right_assoc2(ReversedVectorised),
+  Ret;
 make_runtime_right_associative(#'$ast¯'{do      = #'$shape¯'{},
                                 line_no = LNo,
                                 char_no = CNo}) ->
-  Error = pometo_runtime_errors:make_right_assoc_syntax_error(LNo, CNo),
+  Error = pometo_errors:make_right_assoc_syntax_error(LNo, CNo),
   throw({error, Error}).
 
 make_right_assoc2([Final]) ->
@@ -689,6 +705,22 @@ make_right_assoc2([#'$ast¯'{do   = #'$func¯'{type = dyadic}} = RHS,
                             args = Args2}                    = LHS | Rest]) ->
   NewHead = LHS#'$ast¯'{args = Args2 ++ [RHS]},
   make_right_assoc2([NewHead | Rest]);
+make_right_assoc2([#'$ast¯'{do   = #'$shape¯'{type = runtime},
+                            args = [Inner, InnerRHS]} = RHS,
+                   #'$ast¯'{do   = #'$func¯'{},
+                            args = Args}         = LHS | Rest]) ->
+  #'$ast¯'{do = #'$func¯'{} = Func} = LHS,
+  NewInner = case Inner of
+    #'$ast¯'{do = #'$shape¯'{type = func}} -> pometo_parser:make_monadic_train(Inner, InnerRHS);
+    _                                      -> RHS
+  end,
+  {NewType, NewArgs} = case Args of
+    [] -> {monadic, [NewInner]};
+    _  -> {dyadic,  Args ++ [NewInner]}
+  end,
+  NewHead = LHS#'$ast¯'{do   = Func#'$func¯'{type = NewType},
+                        args = NewArgs},
+  make_right_assoc2([NewHead | Rest]);
 make_right_assoc2([#'$ast¯'{do   = #'$shape¯'{}} = RHS,
                    #'$ast¯'{do   = #'$func¯'{},
                             args = Args}         = LHS | Rest]) ->
@@ -700,16 +732,27 @@ make_right_assoc2([#'$ast¯'{do   = #'$shape¯'{}} = RHS,
   NewHead = LHS#'$ast¯'{do   = Func#'$func¯'{type = NewType},
                         args = NewArgs},
   make_right_assoc2([NewHead | Rest]);
-make_right_assoc2([#'$ast¯'{do   = #'$func¯'{},
+make_right_assoc2([#'$ast¯'{do   = #'$func¯'{} = Func,
+                            args = []}           = RHS,
+                   #'$ast¯'{do   = #'$shape¯'{}} = LHS | Rest]) ->
+  NewHead = RHS#'$ast¯'{do   = Func#'$func¯'{type = monadic},
+                        args = [LHS]},
+  make_right_assoc2([NewHead | Rest]);
+% dyadics can only contain a single argument so this clause is good
+make_right_assoc2([#'$ast¯'{do   = #'$func¯'{do = [_Do]} = Func,
                             args = Args}         = RHS,
                    #'$ast¯'{do   = #'$shape¯'{}} = LHS | Rest]) ->
-  #'$ast¯'{do = #'$func¯'{} = Func} = RHS,
-  {NewType, NewArgs} = case Args of
-    [] -> {monadic, [LHS]};
-    _  -> {dyadic,  [LHS | Args]}
-  end,
-  NewHead = RHS#'$ast¯'{do   = Func#'$func¯'{type = NewType},
-                        args = NewArgs},
+  NewHead = RHS#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
+                        args = [LHS | Args]},
+  make_right_assoc2([NewHead | Rest]);
+% need to pick the left-handmost operator off to make it dyadic and use the rest as the RHS
+make_right_assoc2([#'$ast¯'{do = #'$func¯'{do = [Dyadic | Monadic]} = Func} = RHS,
+                   #'$ast¯'{do = #'$shape¯'{}}                              = LHS | Rest]) ->
+  NewRHS = RHS#'$ast¯'{do   = Func#'$func¯'{do   = Monadic,
+                                             type = monadic}},
+  NewHead = RHS#'$ast¯'{do   = Func#'$func¯'{do = [Dyadic],
+                                             type = dyadic},
+                        args = [LHS, NewRHS]},
   make_right_assoc2([NewHead | Rest]).
 
 vectorise([], [], Acc) ->
@@ -718,7 +761,7 @@ vectorise([], V, Acc) ->
   [maybe_make_vector(lists:reverse(V)) | Acc];
 vectorise([#'$ast¯'{do = #'$shape¯'{}} = H | T], Vector, Acc) ->
   vectorise(T, [H | Vector], Acc);
-vectorise([ H | T], [], Acc) ->
+vectorise([H | T], [], Acc) ->
   vectorise(T, [], [H | Acc]);
 vectorise([H | T], V, Acc) ->
   vectorise(T, [], [H, maybe_make_vector(lists:reverse(V)) | Acc]).
@@ -753,6 +796,7 @@ run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
   apply_fn([[{Mod, Fn}], Args]);
 run_ast2(#'$ast¯'{do = #'$shape¯'{type = Type}} = AST) when Type /= maybe_func andalso
                                                             Type /= func       ->
+  % io:format("in run_ast2 (2)~n- AST is ~p~n", [AST]),
   AST;
 run_ast2(#'$ast¯'{do      = #'$shape¯'{type = Type} = Shp,
                   args    = Args,

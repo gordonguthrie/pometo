@@ -178,25 +178,25 @@ make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
            line_no = scope_dictionary:get_line_no()}.
 
 make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-                     args = Args}                    = FuncAST,
-            #'$ast¯'{}                               = LeftAST,
-            #'$ast¯'{}                               = RightAST) when Type == dyadic        orelse
-                                                                      Type == dyadic_ranked orelse
-                                                                      Type == hybrid        orelse
-                                                                      Type == ambivalent    ->
+                     args = Args}                  = FuncAST,
+            #'$ast¯'{}                             = LeftAST,
+            #'$ast¯'{}                             = RightAST) when Type == dyadic        orelse
+                                                                    Type == dyadic_ranked orelse
+                                                                    Type == hybrid        orelse
+                                                                    Type == ambivalent    ->
   NewRightAST = case Args of
     []    -> RightAST;
     [Arg] -> descend_arg(Arg, monadic, [RightAST])
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
                   args = [LeftAST, NewRightAST]};
-make_dyadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, LHS, RHS) ->
-  NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
-  #'$ast¯'{do   = Func,
-           args = Args} = NewFunc,
-  NewArgs = [LHS | [descend_arg(X, monadic, [RHS]) || X <- Args]],
-  NewAST = NewFunc#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
-                           args = NewArgs},
+make_dyadic(#'$ast¯'{do   = #'$shape¯'{type = func},
+                     args = Args} = Funcs, LHS, RHS) ->
+  [#'$ast¯'{do = Dyad} | Monads] = Args,
+  NewFuncs = Funcs#'$ast¯'{args = Monads},
+  NewRHS = make_monadic(NewFuncs, RHS),
+  NewAST = NewFuncs#'$ast¯'{do   = Dyad#'$func¯'{type = dyadic},
+                            args = [LHS, NewRHS]},
   NewAST;
 make_dyadic(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
                      char_no = CNo} = Funcs, LHS, RHS) ->
@@ -217,7 +217,7 @@ make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
     [Arg] -> descend_arg(Arg, monadic, [RHS])
   end,
   Ret = FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                  args = [NewArg]},
+                        args = [NewArg]},
   Ret;
 make_monadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, RHS) ->
   NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
@@ -236,7 +236,7 @@ make_monadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, RHS) ->
 
 descend_arg(#'$ast¯'{do   = #'$func¯'{} = Func,
                      args = []}   = AST, Type, Operands) ->
-  AST#'$ast¯'{do    = Func#'$func¯'{type = Type},
+  AST#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = Operands};
 descend_arg(#'$ast¯'{do   = #'$func¯'{},
                      args = #'$var¯'{}} = AST, _Type, _Operands) ->
@@ -425,6 +425,8 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
 normalise_error_msg("syntax error before: ") -> "syntax error before";
 normalise_error_msg(X)                       -> X.
 
+get_character_from_body([]) ->
+  "";
 get_character_from_body(String) ->
     Body = String ++ ".",
     {ok,    Tokens, _} = erl_scan:string(Body),
