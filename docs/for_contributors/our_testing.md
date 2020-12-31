@@ -24,7 +24,11 @@ To build the docs locally start the docker file and `cd /pometo/docs` and run th
 
 You should write your documentation top down - the easy basic and normal cases at the top, errors, edge cases, exceptions futher down.
 
-The test suites are generated in reverse order - so the top example becomes the last test. This means when you make a change a whole lot of tests fail the bottom failure is the test case you should fix first.
+The tests can be generated in two formats - Eunit tests and Common tests.
+
+Eunit tests are great for simple isolated development - adding a new function for example. Common tests are better for work that touches the lexer/parser and runtime where. The Erlang Common Test framework builds a local website with a detailed history of everytime the test suite has been run.
+
+The Eunit test suites are generated in reverse order - so the top example becomes the last test. This means when you make a change a whole lot of tests fail the bottom failure is the test case you should fix first.
 
 ## How To Write Docs Pages As Tests
 
@@ -66,13 +70,20 @@ This allows you to give two different results for a given `Pometo` code fragment
 
 * this is only offered for `runtime` `lazy` errors where they cannot be sensibly normalised and should be used rarely. This test suite was 345 tests in before one needed to be written
 
-The `pometo_docs_to_test` `rebar3` plugin will turn this page into a test file `get_started_as_a_developer_tests.erl` in `test/generated_tests` and it will contain a single test `how_to_write_docs_pages_as_tests_1_test_/0`.
+The `pometo_docs_to_tests` `rebar3` plugin will turn this page into an Eunit test file `our_testing_tests.erl` in `test/generated_tests` and it will contain the six variants on a single test, for example: `how_to_write_docs_pages_as_tests_1_compiler_force_unindex_test_/0`.
+
+The `pometo_docs_to_ct_tests` `rebar3` plugin will turn this page into an Common test file `our_testing_SUITE.erl` in `test/generated_common_tests` and it will contain the six variants on a single test, for example: `how_to_write_docs_pages_as_tests_1_interpreter/0`.
+
 
 It names each test from the second level heading that preceeded it in this case from `##How To Write Docs Pages As Tests` with an incrementing sequence number.
 
 The sequence deliberately increases over the whole document page - this is to ensure there isn't a test name clash if the same sub-heading is used.
 
-You can then run this page with `rebar3 eunit --module=get_started_as_a_developer_tests`.
+You can then run the Eunit tests from this page with `rebar3 eunit --module=our_testing`.
+
+To run the common tests from this page use `rebar3 ct --suite=test/generated_common_tests/our_testing_SUITE`
+
+(The entire suites can be run with `rebar3 eunit` and `rebar3 ct`)
 
 This is what the generated test looks like. The `pometo` section has been mapped to the code variable. The `pometo_results` section has become the expectation.
 

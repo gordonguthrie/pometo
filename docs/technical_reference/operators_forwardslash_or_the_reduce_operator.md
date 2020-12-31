@@ -105,7 +105,7 @@ Resulting in:
 Error
 1 +/ 1
 -----^
-RANK ERROR (RHS must be an array:It is a scalar) on line 1 at character 6
+RANK ERROR [RHS must be an array: It is a scalar ] on line 1 at character 6
 ```
 
 It works on a vector of length 1, of course:
@@ -198,7 +198,7 @@ Giving
 Error
 2 2 +/ 1 2 3 4
 ^
-LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is [2]) on line 1 at character 1
+LENGTH ERROR [The operator \"/\" can only take a scalar on the LHS: The shape of the LHS is [2] ] on line 1 at character 1
 ```
 
 Using a lazy vector gives a different error - it is thrown at runtime during evaluation and not before it:
@@ -207,7 +207,7 @@ Using a lazy vector gives a different error - it is thrown at runtime during eva
 Error
 2 2 +/ 1 2 3 4
 ^
-LENGTH ERROR (The operator \"/\" can only take a scalar on the LHS:The shape of the LHS is unsized_vector) on line 1 at character 1
+LENGTH ERROR [The operator \"/\" can only take a scalar on the LHS: The shape of the LHS is unsized_vector ] on line 1 at character 1
 ```
 
 ## Reducing With Ranks

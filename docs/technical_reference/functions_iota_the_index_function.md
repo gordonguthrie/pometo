@@ -121,7 +121,7 @@ giving:
 Error
 ⍳ 3 2 1.1
 --^
-DOMAIN ERROR (⍳ only accepts integer arguments and was called with:[3,2,1.1]) on line 1 at character 3
+DOMAIN ERROR [⍳ only accepts integer arguments and was called with: [3,2,1.1] ] on line 1 at character 3
 ```
 
 Attempts to use `⍳` on a scalar float will also throw an error (even if the float evaluates to an integer):
@@ -136,6 +136,6 @@ giving:
 Error
 ⍳ 1.0
 --^
-DOMAIN ERROR (⍳ only accepts integer arguments and was called with:[1.0]) on line 1 at character 3
+DOMAIN ERROR [⍳ only accepts integer arguments and was called with: [1.0] ] on line 1 at character 3
 ```
 

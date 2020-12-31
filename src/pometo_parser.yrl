@@ -1,4 +1,3 @@
-
 Nonterminals
 
 Exprs
@@ -55,6 +54,7 @@ Rootsymbol Exprs.
 Endsymbol  '$end'.
 
 Right    10 Rank.
+Right    11 ConsecutiveFns.
 Right    12 Vecs.
 Right    20 Vector.
 Right    30 Expr.
@@ -78,9 +78,13 @@ Exprs -> Let                   : ['$1'].
 Exprs -> Train                 : ['$1'].
 Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
 
+%Expr -> Expr ConsecutiveFns Expr : log(make_dyadic('$2', '$1', '$3'), "make dyadic expr").
+%Expr ->      ConsecutiveFns Expr : log(make_monadic('$1', '$2'), "make monadic expr").
+%Expr -> Expr ConsecutiveFns Args : log(make_dyadic('$2', '$1', '$3'), "make dyadic expr").
+%Expr ->      ConsecutiveFns Args : log(make_monadic('$1', '$2'), "make monadic expr").
 Expr -> Dyadic      : '$1'.
 Expr -> Monadic     : '$1'.
-Expr -> Associative : '$1'.
+Expr -> Associative : final_check_on_associative('$1').
 Expr -> Vecs        : '$1'.
 Expr -> stdlib Vecs : make_stdlib('$1', '$2').
 Expr -> stdlib Var  : make_stdlib('$1', '$2').
@@ -100,7 +104,8 @@ Train -> Args open_bracket Fns close_bracket Args : make_dyadic_train('$3', '$1'
 Train ->      open_bracket Fns close_bracket Args : make_monadic_train('$2', '$4').
 Train ->      open_bracket Fns close_bracket      : '$2'.
 
-% trains require a minimum of 2 consecutive Fns but monadic/dyadic can do it with one - hence this construction
+% trains require a minimum of 2 consecutive Fns but monadic/dyadic can do it with one
+% hence this construction
 ConsecutiveFns -> Fns : '$1'.
 ConsecutiveFns -> Fn  : '$1'.
 
@@ -162,6 +167,13 @@ Var -> var : make_var('$1').
 
 Erlang code.
 
--export([descend_arg/3]).
+% the grammer of APL is not resolvable at write time
+% some parsing decisions are delayed until runtime
+% and in these cases the runtime has to perform AST transforms that are properly
+% defined in the parser
+%
+% These exports are how they do them
+-export([descend_arg/3,
+				 make_monadic_train/2]).
 
 -include("parser_include.hrl").

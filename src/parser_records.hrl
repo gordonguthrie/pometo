@@ -11,7 +11,7 @@
                     indexed    = false :: boolean(),
                     dimensions = []    :: 0    | unsized_vector | [Integer],
                     forcing    = none  :: none | index | unindex,
-                    type       = none  :: none | array | mixed | boolean | complex | number | variable | scalar | func | maybe_func | unfinalised_vector,
+                    type       = none  :: none | array | mixed | boolean | complex | number | variable | scalar | func | maybe_func | unfinalised_vector | runtime,
                     line_no    = none  :: none | Integer,
                     char_no    = none  :: none | Integer
                    }).

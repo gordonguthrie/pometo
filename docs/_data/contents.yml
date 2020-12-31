@@ -11,33 +11,33 @@ toc:
         url:  user_documentation/comments.html
   - title: Technical Reference
     subfolderitems:
-      - page: The Replicate Functions `/` and `⌿`
+      - page: The Replicate Functions / and ⌿
         url:  technical_reference/functions_forwardslash_or_the_replicate_function.html
-      - page: The Identity/Complex Conjugate/Plus Function `+`
+      - page: The Identity/Complex Conjugate/Plus Function +
         url:  technical_reference/functions_the_identity_complex_conjugate_plus_function.html
-      - page: The Negation/Minus Function `-`
+      - page: The Negation/Minus Function -
         url:  technical_reference/functions_the_negation_minus_function.html
-      - page: The Direction/Multiply Function `×`
+      - page: The Direction/Multiply Function ×
         url:  technical_reference/functions_the_direction_multiply_function.html
-      - page: The Reciprocal/Divide Function `÷`
+      - page: The Reciprocal/Divide Function ÷
         url:  technical_reference/functions_the_reciprocal_divide_function.html
-      - page: The Rho/Shape Function `⍴`
+      - page: The Rho/Shape Function ⍴
         url:  technical_reference/functions_rho_the_shape_function.html
-      - page: The Iota/Index Function `⍳`
+      - page: The Iota/Index Function ⍳
         url:  technical_reference/functions_iota_the_index_function.html
-      - page: The Ravel/Comma Function `,`
+      - page: The Ravel/Comma Function ,
         url:  technical_reference/functions_ravel_or_comma_function.html
-      - page: The Reduce Operators `/` And `⌿`
+      - page: The Reduce Operators / And ⌿
         url:  technical_reference/functions_ravel_or_comma_function.html
   - title: StdLib Reference
     subfolderitems:
-      - page: The `⎕debug` Function
+      - page: The ⎕debug Function
         url:  stdlib_reference/stdlib_debug_function.html
-      - page: The `⎕make_indexed` Function
+      - page: The ⎕make_indexed Function
         url:  stdlib_reference/stdlib_make_indexed_function.html
-      - page: The `⎕make_lazy` Function
+      - page: The ⎕make_lazy Function
         url:  stdlib_reference/stdlib_make_lazy_function.html
-      - page: The `⎕force_indexing` Function
+      - page: The ⎕force_indexing Function
         url:  stdlib_reference/stdlib_force_indexing_function.html
       - page: The ⎕force_unindexing Function
         url:  stdlib_reference/stdlib_force_unindexing_function.html

@@ -12,6 +12,19 @@
 % log/2 is used in debugging the parser and therefore is super useful but also not normally used, so...
 -compile([{nowarn_unused_function, [{log, 2}]}]).
 
+final_check_on_associative(#'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                                    args    = [#'$ast¯'{do   = #'$shape¯'{type = maybe_func},
+                                                        args = Args}],
+                                    char_no = CNo,
+                                    line_no = LNo} = AST) ->
+  RHS = hd(lists:reverse(Args)),
+  case RHS of
+    #'$ast¯'{do = #'$shape¯'{}} -> AST;
+    _                           -> pometo_errors:make_right_assoc_syntax_error(LNo, CNo)
+  end;
+final_check_on_associative(#'$ast¯'{} = AST) ->
+  AST.
+
 make_maybe_vector(#'$ast¯'{char_no = CNo} = LHS,
                   #'$ast¯'{}              = RHS) ->
   Ret = #'$ast¯'{do      = #'$shape¯'{dimensions = [2],
@@ -165,25 +178,25 @@ make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
            line_no = scope_dictionary:get_line_no()}.
 
 make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-                     args = Args}                    = FuncAST,
-            #'$ast¯'{}                               = LeftAST,
-            #'$ast¯'{}                               = RightAST) when Type == dyadic        orelse
-                                                                      Type == dyadic_ranked orelse
-                                                                      Type == hybrid        orelse
-                                                                      Type == ambivalent    ->
+                     args = Args}                  = FuncAST,
+            #'$ast¯'{}                             = LeftAST,
+            #'$ast¯'{}                             = RightAST) when Type == dyadic        orelse
+                                                                    Type == dyadic_ranked orelse
+                                                                    Type == hybrid        orelse
+                                                                    Type == ambivalent    ->
   NewRightAST = case Args of
     []    -> RightAST;
     [Arg] -> descend_arg(Arg, monadic, [RightAST])
   end,
   FuncAST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
                   args = [LeftAST, NewRightAST]};
-make_dyadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, LHS, RHS) ->
-  NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
-  #'$ast¯'{do   = Func,
-           args = Args} = NewFunc,
-  NewArgs = [LHS | [descend_arg(X, monadic, [RHS]) || X <- Args]],
-  NewAST = NewFunc#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
-                           args = NewArgs},
+make_dyadic(#'$ast¯'{do   = #'$shape¯'{type = func},
+                     args = Args} = Funcs, LHS, RHS) ->
+  [#'$ast¯'{do = Dyad} | Monads] = Args,
+  NewFuncs = Funcs#'$ast¯'{args = Monads},
+  NewRHS = make_monadic(NewFuncs, RHS),
+  NewAST = NewFuncs#'$ast¯'{do   = Dyad#'$func¯'{type = dyadic},
+                            args = [LHS, NewRHS]},
   NewAST;
 make_dyadic(#'$ast¯'{do      = #'$shape¯'{type = maybe_func},
                      char_no = CNo} = Funcs, LHS, RHS) ->
@@ -204,7 +217,7 @@ make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
     [Arg] -> descend_arg(Arg, monadic, [RHS])
   end,
   Ret = FuncAST#'$ast¯'{do   = Func#'$func¯'{type = monadic},
-                  args = [NewArg]},
+                        args = [NewArg]},
   Ret;
 make_monadic(#'$ast¯'{do = #'$shape¯'{type = func}} = Funcs, RHS) ->
   NewFunc = pometo_runtime:make_runtime_right_associative(Funcs),
@@ -223,7 +236,7 @@ make_monadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, RHS) ->
 
 descend_arg(#'$ast¯'{do   = #'$func¯'{} = Func,
                      args = []}   = AST, Type, Operands) ->
-  AST#'$ast¯'{do    = Func#'$func¯'{type = Type},
+  AST#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = Operands};
 descend_arg(#'$ast¯'{do   = #'$func¯'{},
                      args = #'$var¯'{}} = AST, _Type, _Operands) ->
@@ -378,7 +391,9 @@ make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   #'$ast¯'{do      = 'let_op',
            args    = [list_to_atom(Var), Expr],
            char_no = CharNo,
-           line_no = scope_dictionary:get_line_no()}.
+           line_no = scope_dictionary:get_line_no()};
+make_let(_, #error{} = Err) ->
+  Err.
 
 make_defer_evaluation(#'$ast¯'{char_no = CharNo} = AST) ->
   #'$ast¯'{do      = defer_evaluation,
@@ -387,9 +402,11 @@ make_defer_evaluation(#'$ast¯'{char_no = CharNo} = AST) ->
            line_no = scope_dictionary:get_line_no()}.
 
 make_err({CharNo, pometo_parser, [Error | Body]}) ->
+  [NewBody, _] = io_lib:format("~ts~n", [lists:flatten(Body)]),
+  Char = get_character_from_body(NewBody),
   #error{type    = "SYNTAX ERROR",
-         msg1    = Error,
-         msg2    = io_lib:format("~ts", [Body]),
+         msg1    = normalise_error_msg(Error),
+         msg2    = io_lib:format("~ts", [Char]),
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = CharNo};
@@ -404,6 +421,19 @@ make_err({duplicates, {Var, {B1, B2}}}) ->
          expr    = "",
          at_line = scope_dictionary:get_line_no(),
          at_char = C2}.
+
+normalise_error_msg("syntax error before: ") -> "syntax error before";
+normalise_error_msg(X)                       -> X.
+
+get_character_from_body([]) ->
+  "";
+get_character_from_body(String) ->
+    Body = String ++ ".",
+    {ok,    Tokens, _} = erl_scan:string(Body),
+    {ok,    Parsed}    = erl_parse:parse_exprs(Tokens),
+    {value, Tuple, _}  = erl_eval:exprs(Parsed, []),
+    Char = element(4, Tuple),
+    Char.
 
 % enclose a scalar results in a scalar
 maybe_enclose_vector({open_bracket, CharNo, _, _},

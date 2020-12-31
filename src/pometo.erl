@@ -44,16 +44,16 @@ interpret(Str, ExternalBindings) ->
 	BinExpr = unicode:characters_to_binary(Str, utf8),
 	RawLexed = lex2(Str),
 	{Expressions, Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
-	NormalRawExprs          = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	NormalRawExprs          = normalise(Expressions, Str, ?EMPTYERRORS, ?EMPTYRESULTS),
 	case NormalRawExprs of
 		{?EMPTYERRORS, []} ->
 			{#{},      #{expr => BinExpr, succeeded => true,  results => []}}; % a line with a comment only will parse to an empty list
 		{?EMPTYERRORS, Exprs} ->
 			Results = unicode:characters_to_binary(string:join(interpret2(Exprs, Str), "\n"), utf8),
 			{Bindings, #{expr => BinExpr, succeeded => true, results => Results}};
-			{Errors,      _Exprs} ->
-						Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
-						{#{},      #{expr => BinExpr, succeeded => false, results => Errs}}
+		{Errors,      _Exprs} ->
+			Errs = unicode:characters_to_binary(lists:flatten(Errors), utf8),
+			{#{},      #{expr => BinExpr, succeeded => false, results => Errs}}
 	end.
 
 %%
@@ -64,7 +64,7 @@ run_for_format_TEST(Str, ModuleName) ->
 	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
-	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	NormalRawExprs           = normalise(Expressions, Str, ?EMPTYERRORS, ?EMPTYRESULTS),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
@@ -92,7 +92,7 @@ interpret_TEST(Str) ->
 	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, interpreted, 1, ?EMPTYRESULTS),
-	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	NormalRawExprs           = normalise(Expressions, Str, ?EMPTYERRORS, ?EMPTYRESULTS),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
@@ -121,7 +121,7 @@ compile_load_and_run2(Str, ModuleName, Type) ->
 	scope_dictionary:clear_all(),
 	RawLexed = lex2(Str),
 	{Expressions, _Bindings} = parse2(RawLexed, compiled, 1, ?EMPTYRESULTS),
-	NormalRawExprs           = normalise(Expressions, ?EMPTYERRORS, ?EMPTYRESULTS),
+	NormalRawExprs           = normalise(Expressions, Str, ?EMPTYERRORS, ?EMPTYRESULTS),
 	% there are reasons we add extra new lines at the start of an error and then take the first ones away here
 	% its to make the test suites work and keep the output purty for users with multiple errors
 	case NormalRawExprs of
@@ -229,8 +229,7 @@ parse2([{{ok, Lexed}, Expr} | T], Type, LineNo, Results) ->
 	case pometo_parser:parse(Lexed) of
 		{error, E} ->
 			Error = pometo_parser:make_err(E),
-			Msg   = pometo_runtime_format:format_errors([Error#error{expr = Expr}]),
-			parse2(T, Type, LineNo + 1, [{error, Msg} | Results]);
+			parse2(T, Type, LineNo + 1, [Error | Results]);
 		Parsed ->
 			NewRs = validate_references(Parsed, Type, Expr),
 			parse2(T, Type, LineNo + 1, NewRs ++ Results)
@@ -257,7 +256,7 @@ process_bindings(Parsed, Type, Expr) ->
 		interpreted -> fun substitute_arg/2;
 		compiled    -> fun check_arg/2
 	end,
-	%% two clauses
+	%% three clauses
 	%% the first for vectors
 	ProcessFn = fun(#'$ast¯'{args = Args} = P, Res) when is_list(Args)->
 					Acc = {BindingsToBeApplied, ?EMPTYERRORS, ?EMPTYRESULTS},
@@ -277,7 +276,10 @@ process_bindings(Parsed, Type, Expr) ->
 						_  -> FullErrs = [E#error{expr = Expr} || E <- Errors],
 									{error, pometo_runtime_format:format_errors(FullErrs)}
 					end,
-					[NewRes | Res]
+					[NewRes | Res];
+	%% the third for errors
+				(#error{} = Err, Res) ->
+					[Err | Res]
 				end,
 	TransformedParsed = lists:foldl(ProcessFn, ?EMPTYRESULTS, Parsed),
 	TransformedParsed.
@@ -441,12 +443,20 @@ make_duplicate_errs([H | T], Expr, Errs) ->
 	Msg = pometo_runtime_format:format_errors([Err#error{expr = Expr}]),
 	make_duplicate_errs(T, Expr, [{error, Msg} | Errs]).
 
-normalise([], Errs, Results) ->
+normalise([], _Str, Errs, Results) ->
 	{Errs, lists:reverse(Results)};
-normalise([{error, Err} | T], Errs, Results) ->
-	normalise(T, Errs ++ Err, Results);
-normalise([Lines | T], Errs, Results) ->
-	normalise(T, Errs, [Lines | Results]).
+normalise([#error{at_line = N} = E | T], Str, Errs, Results) ->
+	NewErr = E#error{expr = get_line(Str, N)},
+	ErrorStr = pometo_runtime_format:format_errors([NewErr]),
+	normalise(T, Str, Errs ++ [ErrorStr], Results);
+normalise([{error, ErrorStr} | T], Str, Errs, Results) ->
+	normalise(T, Str, Errs ++ [ErrorStr], Results);
+normalise([Lines | T], Str, Errs, Results) ->
+	normalise(T, Str, Errs, [Lines | Results]).
+
+get_line(Str, N) ->
+	Lines = string:split(Str, "\n", all),
+	lists:nth(N, Lines).
 
 get_type(0)                                    -> boolean;
 get_type(1)                                    -> boolean;
