@@ -160,7 +160,7 @@ apply_to_map_Val(Fn,  Map, I)    when is_map(Map) -> {K, V, NewI} = maps:next(I)
 																										 apply_to_map_Val(Fn, NewMap, NewI).
 
 make_args(Args, IsScalar, LNo, CNo) ->
-	NewArgs = make_args2(Args),
+	NewArgs = make_args2(lists:reverse(Args)),
 	%% the indices can either be scalars or vectors depending
 	%% on how many arguments are passed to ⍴
 	case IsScalar of
@@ -172,7 +172,7 @@ make_args(Args, IsScalar, LNo, CNo) ->
 						 AST = #'$ast¯'{do      = Shp,
 														line_no = LNo,
 														char_no = CNo},
-						 [AST#'$ast¯'{args = X} || X <- NewArgs]
+						 [AST#'$ast¯'{args = lists:reverse(X)} || X <- NewArgs]
 	end.
 
 make_args2([]) -> [];
