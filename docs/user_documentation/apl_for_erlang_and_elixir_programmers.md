@@ -2,4 +2,4 @@
 
 ## Function Evaluation
 
-Functions evaluate left to right with no precedence.
+Functions evaluate right to left with no precedence.
