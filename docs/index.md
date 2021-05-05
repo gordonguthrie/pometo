@@ -30,7 +30,7 @@ THIS PROJECT IS SUPER-EARLY, NOT SO MUCH ALPHA AS BEFORE THE DAWN OF WRITING, SO
 
 # Why Pometo?
 
-There are some problems that are elegantly solved with an `APL` syntax and `Pometo` is designed to write short, concise programmes that can be reasoned about to sole those problems.
+There are some problems that are elegantly solved with an `APL` syntax and `Pometo` is designed to write short, concise programmes that can be reasoned about to solve those problems.
 
 Writing supervision trees and gen servers are not problems in that category.
 
@@ -42,7 +42,7 @@ Writing supervision trees and gen servers are not problems in that category.
 
 The normal developer of `Erlang`, `Elixir` and `LFE` applications should not know they are calling `Pometo` without reading the source code.
 
-`Pometo` libraries will be listed on `hex`, the will use `rebar3` to build. The data structures in Pometo will be `lists` and `maps`, the data-types `integers`, `floats`, `binaries` and `atoms`.
+`Pometo` libraries will be listed on `hex`, they will use `rebar3` to build. The data structures in Pometo will be `lists` and `maps`, the data-types `integers`, `floats`, `binaries` and `atoms`.
 
 # Contributing To Pometo
 
