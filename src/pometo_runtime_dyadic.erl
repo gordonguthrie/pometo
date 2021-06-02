@@ -254,7 +254,7 @@ dyadic_RUNTIM2([#'$func¯'{} = Func,
 	Left#'$ast¯'{args = Val};
 % if one side is a scalar cast it to an array
 dyadic_RUNTIM2([#'$func¯'{}              = Func,
-								[#'$ast¯'{do = ?shp(N1)}  = Left,
+								[#'$ast¯'{do = ?shp(N1)} = Left,
 								 #'$ast¯'{do = ?shp(N2)} = Right]]) when (N1 == 0    orelse
 								                                          N1 == [1]) ->
 	% order of A2 and A1 swapped and return record based on 2nd shp
@@ -396,6 +396,10 @@ execute_dyadic(Func, L,              #'$ast¯'{} = R) -> dyadic_RUNTIM2([Func, [
 % if a function can be applied to a complex no it
 % has to be listed after the complex execution descends into the
 % complex AST
+execute_dyadic(#'$func¯'{do = ["="]}, L, R) -> case L of
+																									R -> 1;
+																									_ -> 0
+																								end;
 execute_dyadic(#'$func¯'{do = ["+"]}, L, R) -> L + R;
 execute_dyadic(#'$func¯'{do = ["-"]}, L, R) -> L - R;
 execute_dyadic(#'$func¯'{do = ["×"]}, L, R) -> L * R;
