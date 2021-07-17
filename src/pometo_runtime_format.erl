@@ -124,9 +124,7 @@ format(#'$ast¯'{do = defer_evaluation,
 								args = Args}) ->
 	Line1 = io_lib:format("Defering Evaluation:", []),
 	Lines = [format(X) || X <- Args],
-	string:join([Line1 | Lines], "\n");
-format(X) when is_list(X) ->
-	X.
+	string:join([Line1 | Lines], "\n").
 
 format_errors(Errors) ->
 	FormattedEs = [format_error(X) || X <- Errors],
@@ -317,7 +315,8 @@ get_greater(A, B) when A > B -> A;
 get_greater(_, B)            -> B.
 
 
-build_segments_TEST(A) -> build_segments(A).
+build_segments_TEST(A) ->
+	build_segments(A).
 
 % can't handle unsized vectors, gotta flip 'em
 build_segments(#'$ast¯'{do   = #'$shape¯'{dimensions = unsized_vector} = Shp,

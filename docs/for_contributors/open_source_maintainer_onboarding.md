@@ -54,7 +54,7 @@ You will have been bought a modern Erlang book. You need to spend a bit of time 
 There are two aspects to Erlang programming:
 
 * using the basic language
-* leveraging the BEAM infrastructue and OTP to build highly-available and concurrent software
+* leveraging the BEAM infrastructure and OTP to build highly-available and concurrent software
 
 `pometo` only requires the first. In Joe Armstrong's book *Programming Erlang* he only devotes 55 pages out of 500 to the basic language. That's all you need. It is small, if slightly unfamiliar.
 
