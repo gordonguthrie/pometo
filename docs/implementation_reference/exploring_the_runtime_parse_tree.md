@@ -52,7 +52,7 @@ A ← - + ÷
 resolves to:
 
 ```pometo_results
-In ⎕debug_fn
+In ⎕debug
 *******************************************************************************
 This function array will be resolved at runtime
 *******************************************************************************
@@ -78,7 +78,7 @@ A ← - +  ⍴ ÷
 We see that the 4 operator chain has been reduced to 3 - with `+` and `-` being combined into a single pass.
 
 ```pometo_results
-In ⎕debug_fn
+In ⎕debug
 *******************************************************************************
 This function array will be resolved at runtime
 *******************************************************************************
@@ -102,7 +102,7 @@ B ← A - + ÷
 results in a `SYNTAX ERROR`:
 
 ```pometo_results
-In ⎕debug_fn
+In ⎕debug
 *******************************************************************************
 This function array will be resolved at runtime
 *******************************************************************************
