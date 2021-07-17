@@ -74,7 +74,6 @@ The `pometo_docs_to_tests` `rebar3` plugin will turn this page into an Eunit tes
 
 The `pometo_docs_to_ct_tests` `rebar3` plugin will turn this page into an Common test file `our_testing_SUITE.erl` in `test/generated_common_tests` and it will contain the six variants on a single test, for example: `how_to_write_docs_pages_as_tests_1_interpreter/0`.
 
-
 It names each test from the second level heading that preceeded it in this case from `##How To Write Docs Pages As Tests` with an incrementing sequence number.
 
 The sequence deliberately increases over the whole document page - this is to ensure there isn't a test name clash if the same sub-heading is used.
