@@ -82,6 +82,20 @@ and not as you might expect/as we currently return `0.166666667`.
 
 The evaluation order should be `1÷(2÷3)` and not `(1÷2)÷3)`.
 
+Likewise:
+
+```
+-/ 3 4 5
+```
+
+This should return:
+
+```pometo_results
+4
+```
+
+and not `-6` like we currently do
+
 ### Documentation To Be Updated
 
 This test should be added to this section of the documentation:
@@ -107,7 +121,7 @@ For `function`s this looks something like:
 Arrays of functions return back to the user and crash the formatter
 
 ```apl
-"A ← -+÷\n⎕debug A "
+"A ← -+÷⎕debug A "
 ```
 
 Causes a bug like:
