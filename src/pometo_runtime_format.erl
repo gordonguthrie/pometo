@@ -92,14 +92,20 @@ format(#'$ast¯'{do   = #'$shape¯'{dimensions = Dims,
                 args = Args} = AST) when is_list(Args)       andalso
                                         (Type /= func        andalso
                                          Type /= maybe_func) ->
-  Len = length(Dims),
-  if
-    Len <  3 -> Frags = build_segments(AST),
-                Block = print(Frags),
-                maybe_truncate_block(Block);
-    Len >= 3 -> [First, Second | _Rest] = lists:reverse(Dims),
-                Block = chunk_format(AST, First, Second, ?EMPTY_ACCUMULATOR),
-                maybe_truncate_block(Block)
+  case is_degenerate(Dims) of
+    true  ->
+      "";
+    false ->
+      Len = length(Dims),
+    if
+      Len <  3 -> Frags = build_segments(AST),
+                  Block = print(Frags),
+                  maybe_truncate_block(Block);
+      Len >= 3 -> [First, Second | _Rest] = lists:reverse(Dims),
+                  io:format("First is ~p~nSecond is ~p~n", [First, Second]),
+                  Block = chunk_format(AST, First, Second, ?EMPTY_ACCUMULATOR),
+                  maybe_truncate_block(Block)
+    end
   end;
 format(#'$ast¯'{do      = #'$shape¯'{type = Type},
                 args    = Args,
@@ -126,6 +132,9 @@ format(#'$ast¯'{do = defer_evaluation,
   Lines = [format(X) || X <- Args],
   string:join([Line1 | Lines], "\n").
 
+is_degenerate(List) when is_list(List) ->
+  lists:member(0, List).
+
 format_errors(Errors) ->
   FormattedEs = [format_error(X) || X <- Errors],
   lists:flatten(string:join(FormattedEs, "\n")).
@@ -140,6 +149,7 @@ chunk_format(#'$ast¯'{args = Args} = AST, First, Second, Acc) ->
   NewAST = AST#'$ast¯'{args = Remainder},
   chunk_format(NewAST, First, Second, [NewAcc | Acc]).
 
+print([]) -> "";
 print(List) ->
   List2 = normalise_widths(List),
   List3 = normalise_heights(List2, ?EMPTY_ACCUMULATOR),
