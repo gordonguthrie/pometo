@@ -45,17 +45,17 @@ It is multidimensional, of course:
 └─────┘
 
 ┌─────┐
-│1 1 2│
+│2 1 1│
 └─────┘
 ┌─────┐
-│1 2 2│
+│2 2 1│
 └─────┘
 
 ┌─────┐
-│1 1 3│
+│3 1 1│
 └─────┘
 ┌─────┐
-│1 2 3│
+│3 2 1│
 └─────┘
 ```
 
@@ -86,7 +86,7 @@ If applied to a boolean scalar `⍳` will return a degenerate multidimensional s
 
 ```
 
-It is degenerated because it keeps its dimensionality (but the presence of a single `0` causes it to collapse:
+It is degenerate because it keeps its dimensionality (but the presence of a single `0` causes it to collapse:
 
 ```pometo
 A ← ⍳ 1 1 1 0
