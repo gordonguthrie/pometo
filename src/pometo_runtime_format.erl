@@ -113,7 +113,7 @@ format(#'$ast¯'{do      = #'$shape¯'{type = Type},
                 char_no = CNo} = AST) when is_list(Args)       andalso
                                           (Type == func        orelse
                                            Type == maybe_func) ->
-  Comment = pometo_stdlib:debug_fns(AST),
+  Comment = pometo_stdlib:debug_fn(AST),
   format(#comment{msg     = Comment,
                   at_line = LNo,
                   at_char = CNo});

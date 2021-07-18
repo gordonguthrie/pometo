@@ -7,7 +7,7 @@
      make_indexed/1,
      force_indexing/1,
      force_unindexing/1,
-     debug_fns/1,
+     debug_fn/1,
      print_trees/1
     ]).
 
@@ -43,7 +43,7 @@
 get_tree_TEST(X)              -> get_tree(X, false).
 structure_to_cells_TEST(X, Y) -> structure_to_cells(X, Y).
 printsize_TEST(X)             -> printsize(X).
-add_offsets_TEST(X, Y)     -> add_offsets(X, Y).
+add_offsets_TEST(X, Y)        -> add_offsets(X, Y).
 
 print_trees(List) when is_list(List) ->
   [print_trees(X) || X <- List];
@@ -92,6 +92,10 @@ add_offsets(Cells, Cols) ->
   Offsetted = add_offsets2(Cells, Cols, 1, 1, 1, 1, []),
   Offsetted.
 
+-define(LEFTTSHAPE, 9500).
+-define(TSHAPE,     9516).
+-define(TOPRIGHT,   9488).
+
 add_offsets2([], _, _, _, _, _, Acc) ->
   lists:reverse(Acc);
 % we have skipped a column but we need to bump the width
@@ -110,16 +114,23 @@ add_offsets2([#printcell{row        = R,
                      y_offset = YOffset + 3},
   {HText, NewWidth} = case NeedsRoof of
     false -> {"|", 1};
-    _     -> {lists:flatten(lists:duplicate(Width, "-")), Width}
+    _     -> {lists:flatten(lists:duplicate(Width - 1, "-")), Width}
   end,
-  Vertical1  = NewH#printcell{y_offset = YOffset,     width = 1,        text = "|",   needs_roof = false},
-  Horizontal = NewH#printcell{y_offset = YOffset + 1, width = NewWidth, text = HText, needs_roof = false},
-  Vertical3  = NewH#printcell{y_offset = YOffset + 2, width = 1,        text = "|",   needs_roof = false},
+  Vertical1  = NewH#printcell{y_offset = YOffset,     width = 1, text = "|",   needs_roof = false},
+  Vertical3  = NewH#printcell{y_offset = YOffset + 2, width = 1, text = "|",   needs_roof = false},
   NewAcc = case NeedsRoof of
-    initial    -> [Vertical3, Horizontal, Vertical1, NewH | Acc];
-    subsequent -> [Vertical3, Horizontal,            NewH | Acc];
-    last       -> [Vertical3,                        NewH | Acc];
-    false      -> [                                  NewH | Acc]
+    initial ->
+      Horizontal = NewH#printcell{y_offset = YOffset + 1, width = NewWidth, text = [?LEFTTSHAPE | HText], needs_roof = false},
+      [Vertical3, Horizontal, Vertical1, NewH | Acc];
+    subsequent ->
+      Horizontal = NewH#printcell{y_offset = YOffset + 1, width = NewWidth, text = [?TSHAPE | HText], needs_roof = false},
+      [Vertical3, Horizontal, NewH | Acc];
+    last ->
+      Horizontal = NewH#printcell{y_offset = YOffset + 1, width = 1, text = [?TOPRIGHT], needs_roof = false},
+      ?debugFmt("Horizontal is ~p~n", [Horizontal]),
+      [Vertical3, Horizontal, NewH | Acc];
+    false ->
+      [NewH | Acc]
   end,
   add_offsets2(T, Cols, R, C + 1, NewXOffset, YOffset, NewAcc);
 % we have ended a row, so:
@@ -264,7 +275,7 @@ debug(#'$ast¯'{do      = #'$shape¯'{type = Type},
                                           Type == maybe_func ->
   Line1  = io_lib:format("In ⎕debug~n", []),
   Line2  = io_lib:format("This function array will be resolved at runtime\n", []),
-  Rest = debug_fns(AST),
+  Rest = debug_fn(AST),
   Msg = Line1 ++ make_breaker() ++ 
         Line2 ++ make_breaker() ++
         Rest,
@@ -281,7 +292,7 @@ debug(#'$ast¯'{line_no = LNo,
            at_line = LNo,
            at_char = CNo}.
 
-debug_fns(#'$ast¯'{do      = #'$shape¯'{type = Type},
+debug_fn(#'$ast¯'{do      = #'$shape¯'{type = Type},
                    args    = Args} = AST) when Type == func       orelse
                                                Type == maybe_func ->
   Right  = try_make_right_associative(AST),

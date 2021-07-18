@@ -135,9 +135,10 @@ simplest_tree_offsets_test_() ->
          #printcell{row = 1, col = 1, width = 10, x_offset = 1,  y_offset = 4, needs_roof = false,      text = "shape: [2]"},
          #printcell{row = 2, col = 1, width = 1,  x_offset = 1,  y_offset = 8, needs_roof = initial,    text = "1"},
          #printcell{row = 2, col = 1, width = 1,  x_offset = 1,  y_offset = 5, needs_roof = false,      text = "|"},
-         #printcell{row = 2, col = 1, width = 12, x_offset = 1,  y_offset = 6, needs_roof = false,      text = "------------"},
+         #printcell{row = 2, col = 1, width = 12, x_offset = 1,  y_offset = 6, needs_roof = false,      text = "├-----------"},
          #printcell{row = 2, col = 1, width = 1,  x_offset = 1,  y_offset = 7, needs_roof = false,      text = "|"},
          #printcell{row = 2, col = 2, width = 2,  x_offset = 13, y_offset = 8, needs_roof = last,       text = "22"},
+         #printcell{row = 2, col = 2, width = 1,  x_offset = 13, y_offset = 6, needs_roof = false,      text = "┐"},
          #printcell{row = 2, col = 2, width = 1,  x_offset = 13, y_offset = 7, needs_roof = false,      text = "|"}
          ],
   ?_assertEqual(Exp, Got).
@@ -166,15 +167,17 @@ simple_tree_offsets_test_() ->
          {printcell,1,1,6,1,4,false,"let_op"},
          {printcell,2,1,5,1,8,initial,"'A_0'"},
          {printcell,2,1,1,1,5,false,"|"},
-         {printcell,2,1,8,1,6,false,"--------"},
+         {printcell,2,1,8,1,6,false,"├-------"},
          {printcell,2,1,1,1,7,false,"|"},
          {printcell,2,2,10,9,8,last,"shape: [2]"},
+         {printcell,2,2,1,9,6,false,"┐"},
          {printcell,2,2,1,9,7,false,"|"},
          {printcell,3,2,1,9,12,initial,"1"},
          {printcell,3,2,1,9,9,false,"|"},
-         {printcell,3,2,12,9,10,false,"------------"},
+         {printcell,3,2,12,9,10,false,"├-----------"},
          {printcell,3,2,1,9,11,false,"|"},
          {printcell,3,3,2,21,12,last,"22"},
+         {printcell,3,3,1,21,10,false,"┐"},
          {printcell,3,3,1,21,11,false,"|"}
          ],
   ?_assertEqual(Exp, Got).
@@ -188,7 +191,7 @@ simplest_tree_print_test_() ->
   #comment{msg = Got} = print(Code),
   Exp = "shape: [2]      \n" ++
         "|               \n" ++
-        "------------    \n" ++
+        "├-----------┐   \n" ++
         "|           |   \n" ++
         "1           22  \n",
   % ?debugFmt("in simplest_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
@@ -199,14 +202,14 @@ simple_tree_print_test_() ->
   #comment{msg = Got} = print(Code),
   Exp = "let_op                  \n" ++
         "|                       \n" ++
-        "--------                \n" ++
+        "├-------┐               \n" ++
         "|       |               \n" ++
         "'A_0'   shape: [2]      \n" ++
         "        |               \n" ++
-        "        ------------    \n" ++
+        "        ├-----------┐   \n" ++
         "        |           |   \n" ++
         "        1           22  \n",
-  % ?debugFmt("in simple_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
+  ?debugFmt("in simple_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simplest_nested_tree_print_test_() ->
@@ -215,11 +218,11 @@ simplest_nested_tree_print_test_() ->
   %     "123456789012345678901234567890"
   Exp = "shape: [2]                 \n" ++
         "|                          \n" ++
-        "------------               \n" ++
+        "├-----------┐              \n" ++
         "|           |              \n" ++
         "1           shape: [2]     \n" ++
         "            |              \n" ++
-        "            ------------   \n" ++
+        "            ├-----------┐  \n" ++
         "            |           |  \n" ++
         "            2           3  \n",
   % ?debugFmt("in simplest_nested_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
@@ -231,11 +234,11 @@ simple_nested_tree_print_test_() ->
   %     "123456789012345678901234567890"
   Exp = "shape: [3]                 \n" ++
         "|                          \n" ++
-        "------------------------   \n" ++
+        "├-----------┬-----------┐  \n" ++
         "|           |           |  \n" ++
         "1           shape: [2]  4  \n" ++
         "            |              \n" ++
-        "            ------------   \n" ++
+        "            ├-----------┐  \n" ++
         "            |           |  \n" ++
         "            2           3  \n",
   % ?debugFmt("in simple_nested_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
@@ -246,15 +249,15 @@ nested_tree_print_test_() ->
   #comment{msg = Got} = print(Code),
   Exp = "shape: [7]                                                  \n" ++
         "|                                                           \n" ++
-        "---------------------------------------------               \n" ++
+        "├-----------┬--┬-----------┬--┬--┬-----------┐              \n" ++
         "|           |  |           |  |  |           |              \n" ++
         "1           2  shape: [2]  3  4  shape: [2]  8              \n" ++
         "               |                 |                          \n" ++
-        "               ------------      ------------               \n" ++
+        "               ├-----------┐     ├-----------┐              \n" ++
         "               |           |     |           |              \n" ++
         "               1           2     5           shape: [2]     \n" ++
         "                                             |              \n" ++
-        "                                             ------------   \n" ++
+        "                                             ├-----------┐  \n" ++
         "                                             |           |  \n" ++
         "                                             6           7  \n",
   % ?debugFmt("in nested_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),

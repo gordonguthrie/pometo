@@ -1,6 +1,6 @@
 # Exploring The Runtime Parse Trees
 
-## Living With Amiguity
+## Living With Ambiguity
 
 `apl` has an ambiguous grammer and `yecc` is a `LALR` parser - you might be forgiven for thinking that therefore `pometo` can never work. Well yes, and no. The output of the `pometo` parser is not unambiguous. One of the parser outputs is an `$ast¯` record that looks like this:
 
