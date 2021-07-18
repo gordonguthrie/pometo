@@ -191,9 +191,7 @@ interpret2(Exprs, Str) ->
 
 %% in the TEST suite we make the interpreter mimic the compiler and return the last value only
 interpret_TEST2(Exprs, Str) ->
-  io:format("Exprs is ~p~n", [Exprs]),
   Resps          = [pometo_runtime:run_ast(E, Str)  || E <- Exprs],
-  io:format("Resps is ~p~n", [Resps]),
   FormattedResps = [pometo_runtime_format:format(R) || R <- Resps],
   LastResponse   = hd(lists:reverse(FormattedResps)),
   % there are reasons we add extra new lines at the start of an error and then take the first ones away here
