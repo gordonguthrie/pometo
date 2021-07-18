@@ -28,25 +28,25 @@
 %%%
 
 simplest_tree_print_cells_test_() ->
-	Code = "1 2",
+  Code = "1 2",
   Got = make_cells(Code),
   Exp = [
-  			 #printcell{row = 1, col = 1, width = 10, text = "shape: [2]", needs_roof = false},
-  			 #printcell{row = 2, col = 1, width = 1,  text = "1",          needs_roof = initial},
-  			 #printcell{row = 2, col = 2, width = 1,  text = "2",          needs_roof = last}
-  			 ],
+         #printcell{row = 1, col = 1, width = 10, text = "shape: [2]", needs_roof = false},
+         #printcell{row = 2, col = 1, width = 1,  text = "1",          needs_roof = initial},
+         #printcell{row = 2, col = 2, width = 1,  text = "2",          needs_roof = last}
+         ],
   ?_assertEqual(Exp, Got).
 
 simple_tree_print_cells_test_() ->
-	Code = "A ← 1 22",
+  Code = "A ← 1 22",
   Got = make_cells(Code),
   Exp = [
-  			 #printcell{row = 1, col = 1, width = 6,  text = "let_op",     needs_roof = false},
-  			 #printcell{row = 2, col = 1, width = 5,  text = "'A_0'",      needs_roof = initial},
-  			 #printcell{row = 2, col = 2, width = 10, text = "shape: [2]", needs_roof = last},
-  			 #printcell{row = 3, col = 2, width = 1,  text = "1",          needs_roof = initial},
-  			 #printcell{row = 3, col = 3, width = 2,  text = "22",         needs_roof = last}
-  			 ],
+         #printcell{row = 1, col = 1, width = 6,  text = "let_op",     needs_roof = false},
+         #printcell{row = 2, col = 1, width = 5,  text = "'A_0'",      needs_roof = initial},
+         #printcell{row = 2, col = 2, width = 10, text = "shape: [2]", needs_roof = last},
+         #printcell{row = 3, col = 2, width = 1,  text = "1",          needs_roof = initial},
+         #printcell{row = 3, col = 3, width = 2,  text = "22",         needs_roof = last}
+         ],
   ?_assertEqual(Exp, Got).
 
 simplest_nested_tree_test_() ->
@@ -100,13 +100,13 @@ nested_tree_test_() ->
 %%%
 
 simplest_tree_sizing_test_() ->
-	Code = "1 2",
+  Code = "1 2",
   Got = make_sizes(Code),
-	Exp = {#{1 => 12, 2 => 3}, 2},
+  Exp = {#{1 => 12, 2 => 3}, 2},
   ?_assertEqual(Exp, Got).
 
 simple_tree_sizing_test_() ->
-	Code = "A ← 1 22",
+  Code = "A ← 1 22",
   Got = make_sizes(Code),
   Exp = {#{1 => 8, 2 => 12, 3 => 4}, 3},
   ?_assertEqual(Exp, Got).
@@ -129,7 +129,7 @@ simple_tree_sizing_test_() ->
 %% 4 | |           |
 %% 5 | 1           2
 simplest_tree_offsets_test_() ->
-	Code = "1 22",
+  Code = "1 22",
   Got = make_offsets(Code),
   Exp = [
          #printcell{row = 1, col = 1, width = 10, x_offset = 1,  y_offset = 4, needs_roof = false,      text = "shape: [2]"},
@@ -160,7 +160,7 @@ simplest_tree_offsets_test_() ->
 %% 8 |         |           |
 %% 9 |         1           22
 simple_tree_offsets_test_() ->
-	Code = "A ← 1 22",
+  Code = "A ← 1 22",
   Got = make_offsets(Code),
   Exp = [
          {printcell,1,1,6,1,4,false,"let_op"},
@@ -265,8 +265,8 @@ nested_tree_print_test_() ->
 %%%
 
 make_cells(Code) ->
-	[AST] = pometo:parse_TEST(Code),
-	Structure = pometo_stdlib:get_tree_TEST(AST),
+  [AST] = pometo:parse_TEST(Code),
+  Structure = pometo_stdlib:get_tree_TEST(AST),
   InitialStruct = Structure#printable_tree{row = 1, col = 1},
   % its a pain but structure_to_cells returns an unreversed list
   % it makes our life easier in constructing the offsets if
@@ -274,13 +274,13 @@ make_cells(Code) ->
   lists:reverse(pometo_stdlib:structure_to_cells_TEST(InitialStruct, [])).
 
 make_sizes(Code) ->
-	Cells = make_cells(Code),
-	{_Rows, _NoCols} = pometo_stdlib:printsize_TEST(Cells).
+  Cells = make_cells(Code),
+  {_Rows, _NoCols} = pometo_stdlib:printsize_TEST(Cells).
 
 make_offsets(Code) ->
-	Cells = make_cells(Code),
-	{Cols, _NoRows} = pometo_stdlib:printsize_TEST(Cells),
-	pometo_stdlib:add_offsets_TEST(Cells, Cols).
+  Cells = make_cells(Code),
+  {Cols, _NoRows} = pometo_stdlib:printsize_TEST(Cells),
+  pometo_stdlib:add_offsets_TEST(Cells, Cols).
 
 print(Code) ->
   [AST] = pometo:parse_TEST(Code),

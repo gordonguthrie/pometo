@@ -5,8 +5,8 @@
 -include_lib("eunit/include/eunit.hrl").
 
 interpreter_debug_usage_test_() ->
-	Code = ["⎕debug 1 2 (1 2) 3 4 (5 (6 7)) 8"],
-	Got = pometo_test_helper:run_interpreter_test(Code),
+  Code = ["⎕debug 1 2 (1 2) 3 4 (5 (6 7)) 8"],
+  Got = pometo_test_helper:run_interpreter_test(Code),
   Exp = "In ⎕debug\n" ++
         "*******************************************************************************\n" ++
         "  from line 1 at character no 8\n" ++

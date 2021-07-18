@@ -9,9 +9,9 @@
 %% Tests
 
 basic_dyadic_plus_vector_test_() ->
-	Str = "1.1 2.2 + 3.3 4.4",
-	Got = pometo:parse_TEST(Str),
-	Shp1 = #'$shape¯'{dimensions = [2],
+  Str = "1.1 2.2 + 3.3 4.4",
+  Got = pometo:parse_TEST(Str),
+  Shp1 = #'$shape¯'{dimensions = [2],
                     type       = number,
                     line_no    = 1,
                     char_no    = 1},
@@ -19,7 +19,7 @@ basic_dyadic_plus_vector_test_() ->
                   args    = [1.1, 2.2],
                   char_no = 1,
                   line_no = 1},
-	Shp2 = #'$shape¯'{dimensions = [2],
+  Shp2 = #'$shape¯'{dimensions = [2],
                     type       = number,
                     line_no    = 1,
                     char_no    = 11},
@@ -27,16 +27,16 @@ basic_dyadic_plus_vector_test_() ->
                   args    = [3.3, 4.4],
                   char_no = 11,
                   line_no = 1},
-	Exp = [#'$ast¯'{do      = #'$func¯'{do      = ["+"],
+  Exp = [#'$ast¯'{do      = #'$func¯'{do      = ["+"],
                                       type    = dyadic,
                                       char_no = 9,
                                       line_no = 1},
-	                args    = [Arg1, Arg2],
+                  args    = [Arg1, Arg2],
                   char_no = 9,
                   line_no = 1}
         ],
   % ?debugFmt("~nin basic_dyadic_plus_vector_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
-	?_assertEqual(Exp, Got).
+  ?_assertEqual(Exp, Got).
 
 basic_dyadic_plus_scalar_test_() ->
   Str = "1 + 2",
@@ -153,8 +153,8 @@ basic_blank_lines_test_() ->
   ?_assertEqual(Exp, Got).
 
 basic_monadic_plus_test_() ->
-	Str = "+ 3.3 4.4",
-	Got = pometo:parse_TEST(Str),
+  Str = "+ 3.3 4.4",
+  Got = pometo:parse_TEST(Str),
   Shp = #'$shape¯'{dimensions = [2],
                    type       = number,
                    line_no    = 1,
@@ -163,16 +163,16 @@ basic_monadic_plus_test_() ->
                   args    = [3.3, 4.4],
                   char_no = 3,
                   line_no = 1},
-	Exp = [#'$ast¯'{do      = #'$func¯'{do      = ["+"],
+  Exp = [#'$ast¯'{do      = #'$func¯'{do      = ["+"],
                                       type    = monadic,
                                       char_no = 1,
                                       line_no = 1},
-	                args    = [Arg1],
+                  args    = [Arg1],
                   char_no = 1,
                   line_no = 1}
         ],
   % ?debugFmt("~nin basic_monadic_plus_test_~nfrom ~ts~nGot ~p~nExp ~p~n", [Str, Got, Exp]),
-	?_assertEqual(Exp, Got).
+  ?_assertEqual(Exp, Got).
 
 basic_two_statement_one_line_test_() ->
   Str = "+ 3.3 4.4 ⋄ - 55 66",

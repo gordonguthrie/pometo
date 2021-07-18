@@ -64,12 +64,14 @@ Codes = [
 %  "B ← 2\n" ++
 %  "(B+÷)10"
 
-  "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
-  "D + C"
+%  "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
+%  "D + C"
+
+  "⍳ 1 1 1 0"
 
        ],
-	[run1(X) || X <- Codes],
-	exit(0).
+  [run1(X) || X <- Codes],
+  exit(0).
 
 run(Code) ->
   run1(Code).

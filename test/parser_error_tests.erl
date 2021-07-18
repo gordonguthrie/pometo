@@ -13,8 +13,8 @@ basic_parser_failure_test_() ->
     [Err] = pometo:parse_TEST(Str),
     Got = pometo_runtime_format:format_errors([Err#error{expr = Str}]),
     Exp = "\n\nError\n" ++
-		  "MyVar ←← 1 2 3\n" ++
-		  "-------^\n" ++
+      "MyVar ←← 1 2 3\n" ++
+      "-------^\n" ++
       "SYNTAX ERROR [syntax error before: ← ] on line 1 at character 8",
     % ?debugFmt("~nin basic_parser_failure_test_~nfrom ~p~nGot ~ts~nExp ~ts~n", [Str, Got, Exp]),
     ?_assertEqual(Exp, Got).

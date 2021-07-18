@@ -174,6 +174,6 @@ Erlang code.
 %
 % These exports are how they do them
 -export([descend_arg/3,
-				 make_monadic_train/2]).
+                 make_monadic_train/2]).
 
 -include("parser_include.hrl").
