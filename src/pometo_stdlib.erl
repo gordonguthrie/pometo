@@ -127,7 +127,6 @@ add_offsets2([#printcell{row        = R,
       [Vertical3, Horizontal, NewH | Acc];
     last ->
       Horizontal = NewH#printcell{y_offset = YOffset + 1, width = 1, text = [?TOPRIGHT], needs_roof = false},
-      ?debugFmt("Horizontal is ~p~n", [Horizontal]),
       [Vertical3, Horizontal, NewH | Acc];
     false ->
       [NewH | Acc]
