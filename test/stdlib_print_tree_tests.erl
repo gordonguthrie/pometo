@@ -209,7 +209,7 @@ simple_tree_print_test_() ->
         "        ├-----------┐   \n" ++
         "        |           |   \n" ++
         "        1           22  \n",
-  ?debugFmt("in simple_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
+  % ?debugFmt("in simple_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simplest_nested_tree_print_test_() ->
