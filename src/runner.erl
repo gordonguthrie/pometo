@@ -10,23 +10,68 @@
 
 run() ->
 Codes = [
-%  "A ← - + ÷\n" ++
-%  "B ← 333 444\n" ++
-%  "C ← 555\n" ++
-%  "D ← 666\n" ++
-%  "777 888 + C D - B A 9999 1010"
-%  Expected = "10997.9667 2119.560396"
-%  "A ← 1 2"
-   "A ← - + ÷\n" 
-   "⎕debug A"
-        ],
-	[run1(X) || X <- Codes],
-	exit(0).
+<<<<<<< HEAD
+=======
+
+% parser notes 14
+%    "A ← 2\n" ++
+%    "B ← ÷\n" ++
+%    "C ← -\n" ++
+%    "A B C 4"
+
+% 16
+%    "F ← -+÷\n" ++
+%    "-+÷F 10"
+
+% 17
+%    "A ← - + ÷\n" ++
+%    "B ← 333 444\n" ++
+%    "C ← 555\n" ++
+%    "D ← 666\n" ++
+%    "777 888 + C D - B A 9999 1010"
+
+% trains 3
+%  "3-+÷10"
+
+% parser notes 11
+%    "A ← -\n" ++
+%    "B ← 3 4\n" ++
+%    "A B A 4 5"
+
+% parser notes 12
+%    "A ← 1\n" ++
+%    "B ← 2\n" ++
+%    "C ← 3\n" ++
+%    "A B C 4 5 6"
+
+%    "A ← 2\n" ++
+%    "B ← ÷\n" ++
+%    "C ← -\n" ++
+%    "A B C 4"
+
+% parser notes 16
+%  "F ← -+÷\n" ++
+%  "-+÷F 10"
+
+% trains 6
+
+%  "3 + 4 - 5 + 6\n"
+%  "B ← 2\n" ++
+%  "(B+÷)10"
+
+%  "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
+%  "D + C"
+
+  "⍳ 1 1 1 0"
+
+       ],
+  [run1(X) || X <- Codes],
+  exit(0).
 
 run(Code) ->
-  run1(Code),
+  run1(Code).
   % run2(Code),
-  run3(Code).
+  % run3(Code).
 
 % normal running
 run1(Code) ->
@@ -54,8 +99,8 @@ run3(Code) ->
   io:format("compile_load_and_run_lazy_TEST returns~n~ts~n", [Resp]),
   Resp1 = pometo:compile_load_and_run_indexed_TEST(Code, "compile_indexed_runner"),
   io:format("compile_load_and_run_indexed_TEST returns~n~ts~n", [Resp1]),
-  Resp2 = pometo:compile_load_and_run_force_index_TEST(Code, "compile_force_index_runner"),
-  io:format("compile_load_and_run_force_index_TEST returns~n~ts~n", [Resp2]),
-  Resp3 = pometo:compile_load_and_run_force_unindex_TEST(Code, "compile_force_unindex_runner"),
-  io:format("compile_load_and_run_force_unindex_TEST returns~n~ts~n", [Resp3]),
+  % Resp2 = pometo:compile_load_and_run_force_index_TEST(Code, "compile_force_index_runner"),
+  % io:format("compile_load_and_run_force_index_TEST returns~n~ts~n", [Resp2]),
+  % Resp3 = pometo:compile_load_and_run_force_unindex_TEST(Code, "compile_force_unindex_runner"),
+  % io:format("compile_load_and_run_force_unindex_TEST returns~n~ts~n", [Resp3]),
   ok.

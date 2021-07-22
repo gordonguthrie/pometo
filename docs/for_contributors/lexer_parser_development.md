@@ -1,7 +1,6 @@
 ## Lexer/Parser Development
 
 
-
 The lexer is `leex` and the parser is `yecc` - these are Erlang implementations of the old `C` `lex` and `yacc` programmes.
 
 Documentation, such as it is, is online:
@@ -11,9 +10,45 @@ Documentation, such as it is, is online:
 
 Debugging and developing with parsers is somewhat of a black art.
 
-Here are a couple of tips.
+The parser is instrumented and will dump out all the function calls that operate on the AST at runtime. This is triggered by a check on the Environment variable `DBGPARSER`.
 
-To try and work out the invocation order of the parse use the function `log/2` in `parse_include.hrl`. It is a pass through function that takes 2 arguments - a term in the parser and a string label. It prints out the term - marked with the label - and returns the term unchanged.
+For instance running the `runner` module for development via the batch file:
+
+```
+DBGPARSER=true ./run.sh
+```
+
+will dump out parser information like so:
+
+```
+*************************
+in parser include function handle_value/2 (func head: 2)
+argument: sign: positive
+argument: ast: {'$ast¯',{'$shape¯',false,0,none,number,1,28},7,1,28}
+*************************
+
+*************************
+in parser include function append_to_vector/2 (func head: 2)
+argument: lhs: {'$ast¯',{'$shape¯',false,0,none,number,1,26},6,1,26}
+argument: rhs: {'$ast¯',{'$shape¯',false,0,none,number,1,28},7,1,28}
+*************************
+
+*************************
+in parser include function finalise_vector/1 (func head: 3)
+argument: ast: {'$ast¯',{'$shape¯',false,[2],none,unfinalised_vector,1,26},
+                        [{'$ast¯',{'$shape¯',false,0,none,number,1,26},6,1,26},
+                         {'$ast¯',{'$shape¯',false,0,none,number,1,28},
+                                  7,1,28}],
+                        1,26}
+*************************
+
+(...)
+
+```
+
+The parser itself operates directly on expressions so when attempting to debug the grammer (ie operator precedence etc, etc) you will need to work out the invocation order of parse expressions.
+
+To help you do this there is function called `log/2` in `parse_include.hrl`. It is a pass through function that takes 2 arguments - a term in the parser and a string label. It prints out the term - marked with the label - and returns the term unchanged.
 
 Use it like this:
 

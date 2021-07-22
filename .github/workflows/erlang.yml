@@ -1,0 +1,30 @@
+name: Erlang CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    container:
+      image: erlang:22.0.7
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
+      id: cache
+      with:
+        path: /pometo/_build/test/logs
+        key: commontest
+    - name: Compile
+      run: rebar3 compile
+    - name: GenerateTests
+      run: rebar3 pometo_docs_to_ct_tests
+    - name: Run tests
+      run: rebar3 do eunit, ct

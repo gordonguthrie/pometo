@@ -78,10 +78,10 @@ Exprs -> Let                   : ['$1'].
 Exprs -> Train                 : ['$1'].
 Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
 
-%Expr -> Expr ConsecutiveFns Expr : log(make_dyadic('$2', '$1', '$3'), "make dyadic expr").
-%Expr ->      ConsecutiveFns Expr : log(make_monadic('$1', '$2'), "make monadic expr").
-%Expr -> Expr ConsecutiveFns Args : log(make_dyadic('$2', '$1', '$3'), "make dyadic expr").
-%Expr ->      ConsecutiveFns Args : log(make_monadic('$1', '$2'), "make monadic expr").
+%Expr -> Expr ConsecutiveFns Expr : make_dyadic('$2', '$1', '$3').
+%Expr ->      ConsecutiveFns Expr : make_monadic('$1', '$2').
+%Expr -> Expr ConsecutiveFns Args : make_dyadic('$2', '$1', '$3').
+%Expr ->      ConsecutiveFns Args : make_monadic('$1', '$2').
 Expr -> Dyadic      : '$1'.
 Expr -> Monadic     : '$1'.
 Expr -> Associative : final_check_on_associative('$1').
@@ -174,6 +174,6 @@ Erlang code.
 %
 % These exports are how they do them
 -export([descend_arg/3,
-				 make_monadic_train/2]).
+                 make_monadic_train/2]).
 
 -include("parser_include.hrl").

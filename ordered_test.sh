@@ -27,6 +27,15 @@ rebar3 eunit --module=compiler_tests               --verbose
 rebar3 eunit --module=compiler_error_tests         --verbose
 rebar3 eunit --module=compiler_complex_no_tests    --verbose
 
+# printing tree is a pain up the arse and while there are a big set of generated
+# tests for it, it is handy to have partial testing of bits of the process
+rebar3 eunit --module=stdlib_print_tree_tests --verbose
+
+# the debug function prints details of internal representations and
+# thus returns different details if forced in indexing, etc, etc is switched on
+# so it is implmented manualls
+rebar3 eunit --module=stdlib_debug_tests --verbose
+
 # finally if the tests have been generated run the smoke tests
 # These are actual functional tests of the end system
 # selected to rattle test stuff so they tend to be small and simple
