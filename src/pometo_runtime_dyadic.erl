@@ -22,9 +22,9 @@
 dyadic_RUNTIME([Func, [LHS, RHS]]) ->
   NewLHS = pometo_runtime:maybe_collapse_identity_arrays(LHS),
   NewRHS = pometo_runtime:maybe_collapse_identity_arrays(RHS),
-  io:format("in dyadic_RUNTIME Func is ~p~n", [Func]),
-  io:format("in dyadic_RUNTIME NewLHS is ~p~n", [NewLHS]),
-  io:format("in dyadic_RUNTIME NewRHS is ~p~n", [NewRHS]),
+  % io:format("in dyadic_RUNTIME Func is ~p~n", [Func]),
+  % io:format("in dyadic_RUNTIME NewLHS is ~p~n", [NewLHS]),
+  % io:format("in dyadic_RUNTIME NewRHS is ~p~n", [NewRHS]),
   dyadic_RUNTIM2([Func, [NewLHS, NewRHS]]).
 
 dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
