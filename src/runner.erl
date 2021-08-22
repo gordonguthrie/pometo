@@ -10,8 +10,6 @@
 
 run() ->
 Codes = [
-<<<<<<< HEAD
-=======
 
 % parser notes 14
 %    "A ← 2\n" ++
@@ -62,16 +60,29 @@ Codes = [
 %  "A ← 4 5 6 ⋄ B ← 6 7 ¯8 ⍝ including comments\n" ++
 %  "D + C"
 
-  "⍳ 1 1 1 0"
+  % "A ← - + ÷\nB ← 333 444\nC ← 555\nD ← 666\n777 888 + C D - B A 9999 1010"
+  % "A ← - + ÷\n⎕debug_fn A"
+  % "A ← 1.1 2.2\nB ← 3.3\n⎕print_trees A B"
+  % "A ← 1 2 3\nB ← 4\nC ← (5 6 7)\n⎕print_trees A B C"
+  % "A ← 1 2 3\nA 1"
+  % "A ← 1 2 3\n⎕print_trees A 2 3"
+  "A ← 1 2 3\nB ← 4\nC ← (4 5 6 )\n⎕print_trees A B C"
+  % "B ← 22.2\n(B+÷)10.11" %ggggringo this is a make Agh Fork - need a website to understand
+  % "A ← 3\nB ← A+÷\n5 B 10" % ringo
+  % "A ← 1\n⎕print_trees A"
+  % "⎕print_trees 1 2 (1 2) 3 4 (5 (6 7)) 8"
+  % "A ← - + ÷\n⎕debug A"
+  % "⎕print_trees 1"
+  % "⎕print_trees (1 (2 (3 4))) 5"
 
        ],
-  [run1(X) || X <- Codes],
+  [run(X) || X <- Codes],
   exit(0).
 
 run(Code) ->
-  run1(Code).
+  run1(Code),
   % run2(Code),
-  % run3(Code).
+  run3(Code).
 
 % normal running
 run1(Code) ->
@@ -97,10 +108,10 @@ run2(Code) ->
 run3(Code) ->
   Resp = pometo:compile_load_and_run_lazy_TEST(Code, "compile_lazy_runner"),
   io:format("compile_load_and_run_lazy_TEST returns~n~ts~n", [Resp]),
-  Resp1 = pometo:compile_load_and_run_indexed_TEST(Code, "compile_indexed_runner"),
-  io:format("compile_load_and_run_indexed_TEST returns~n~ts~n", [Resp1]),
-  % Resp2 = pometo:compile_load_and_run_force_index_TEST(Code, "compile_force_index_runner"),
-  % io:format("compile_load_and_run_force_index_TEST returns~n~ts~n", [Resp2]),
-  % Resp3 = pometo:compile_load_and_run_force_unindex_TEST(Code, "compile_force_unindex_runner"),
-  % io:format("compile_load_and_run_force_unindex_TEST returns~n~ts~n", [Resp3]),
+  %Resp1 = pometo:compile_load_and_run_indexed_TEST(Code, "compile_indexed_runner"),
+  %io:format("compile_load_and_run_indexed_TEST returns~n~ts~n", [Resp1]),
+  %Resp2 = pometo:compile_load_and_run_force_index_TEST(Code, "compile_force_index_runner"),
+  %io:format("compile_load_and_run_force_index_TEST returns~n~ts~n", [Resp2]),
+  %Resp3 = pometo:compile_load_and_run_force_unindex_TEST(Code, "compile_force_unindex_runner"),
+  %io:format("compile_load_and_run_force_unindex_TEST returns~n~ts~n", [Resp3]),
   ok.
