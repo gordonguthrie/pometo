@@ -85,8 +85,6 @@ compile(Functions, ModuleName, Str) when is_list(Functions) andalso
         PrivateFns ++
         [{eof, LineNo5}],
 
-  % io:format("AST is ~p~n", [AST]),
-
   case erl_lint:module(AST) of
     {ok, []} ->
       % uncomment for debugging
