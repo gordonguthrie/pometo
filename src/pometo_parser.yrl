@@ -86,8 +86,8 @@ Expr -> Dyadic      : '$1'.
 Expr -> Monadic     : '$1'.
 Expr -> Associative : final_check_on_associative('$1').
 Expr -> Vecs        : '$1'.
-Expr -> stdlib Vecs : make_stdlib('$1', '$2').
-Expr -> stdlib Var  : make_stdlib('$1', '$2').
+Expr -> stdlib Args        : make_stdlib('$1', '$2').
+Expr -> stdlib Associative : make_stdlib('$1', '$2').
 
 Dyadic  -> Args ConsecutiveFns Args : make_dyadic('$2', '$1', '$3').
 Monadic ->      ConsecutiveFns Args : make_monadic('$1', '$2').
@@ -95,7 +95,7 @@ Monadic ->      ConsecutiveFns Args : make_monadic('$1', '$2').
 Associative ->      ConsecutiveFns : make_right_associative('$1').
 Associative -> Args ConsecutiveFns : make_right_associative('$1', '$2').
 
-MaybeVector -> Var    Vector : make_maybe_vector('$1',                  finalise_vector('$2')).
+MaybeVector -> Var    Vector : make_maybe_vector('$1', finalise_vector('$2')).
 MaybeVector -> Vector Var    : make_maybe_vector(finalise_vector('$1'), '$2').
 
 Args -> Vecs : '$1'.
@@ -143,7 +143,7 @@ Let -> Var let_op Fn   : make_let_fn('$1', '$3').
 
 Vecs -> Vector      : finalise_vector('$1').
 
-Scalar -> open_bracket Vector close_bracket      : maybe_enclose_vector('$1', finalise_vector('$2')).
+Scalar -> open_bracket Vector      close_bracket : maybe_enclose_vector('$1', finalise_vector('$2')).
 Scalar -> open_bracket MaybeVector close_bracket : make_right_associative('$2').
 Scalar -> unary_negate Value                     : handle_value(negative, '$2').
 Scalar -> Value                                  : handle_value(positive, '$1').
