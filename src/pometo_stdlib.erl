@@ -8,6 +8,7 @@
      force_indexing/1,
      force_unindexing/1,
      debug_fn/1,
+     print_debug_fn/1,
      print_trees/1
     ]).
 
@@ -16,7 +17,7 @@
          get_tree_TEST/1,
          structure_to_cells_TEST/2,
          printsize_TEST/1,
-         add_offsets_TEST/2
+         add_lines_TEST/2
         ]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -43,19 +44,25 @@
 get_tree_TEST(X)              -> get_tree(X, false).
 structure_to_cells_TEST(X, Y) -> structure_to_cells(X, Y).
 printsize_TEST(X)             -> printsize(X).
-add_offsets_TEST(X, Y)        -> add_offsets(X, Y).
+add_lines_TEST(X, Y)          -> add_lines(X, Y).
 
 print_trees(List) when is_list(List) ->
   [print_trees(X) || X <- List];
+% capture the runtime application function and print its contents
+print_trees(#'$ast¯'{do   = [{apply_fn,{pometo_runtime,run_right_associative}}],
+                     args = [Arg]}) ->
+  print_trees(Arg);
 print_trees(#'$ast¯'{line_no = LNo, char_no = CNo} = AST) ->
+  io:format("in print trees AST is ~p~n", [AST]),
   Structure = get_tree(AST, false),
   InitialStruct = Structure#printable_tree{row = 1, col = 1},
   % its a pain but structure_to_cells returns an unreversed list
   % it makes our life easier in constructing the offsets if
   % the list is the right way around...
-  Cells = lists:reverse(structure_to_cells(InitialStruct, [])),
+  {_Width, Struct} = structure_to_cells(InitialStruct, []),
+  Cells = lists:reverse(Struct),
   {Cols, NoRows} = printsize(Cells),
-  OffsetCells = add_offsets(lists:sort(Cells), Cols),
+  OffsetCells = add_lines(lists:sort(Cells), Cols),
   Blank = make_blank(Cols, NoRows),
   PrintOutput = fit_to_blank(OffsetCells, NoRows, Blank),
   #comment{msg     = PrintOutput,
@@ -88,26 +95,60 @@ update_row(Row, X, W, Txt) ->
   {_Discard, Trailing} = lists:split(W, Right),
   Prefix ++ Txt ++ Trailing.
 
-add_offsets(Cells, Cols) ->
-  Offsetted = add_offsets2(Cells, Cols, 1, 1, 1, 1, []),
+add_lines(Cells, Cols) ->
+  Offsetted = add_lines2(Cells, Cols, 1, 1, 1, 1, []),
   Offsetted.
 
 -define(LEFTTSHAPE, 9500).
 -define(TSHAPE,     9516).
 -define(TOPRIGHT,   9488).
 
-add_offsets2([], _, _, _, _, _, Acc) ->
+add_lines2([], _, _, _, _, _, Acc) ->
   lists:reverse(Acc);
 % we have skipped a column but we need to bump the width
 % and throw the cell back on the frame
-add_offsets2([#printcell{row = R,
-                         col = C} = H | T], Cols, R, C1, XOffset, YOffset, Acc) when C1 /= C ->
+% with a matching blank from (and a roof)
+add_lines2([#printcell{row = R,
+                       col = C,
+                       needs_roof = Roof} = H | T], Cols, R, C1, XOffset, YOffset, Acc) when C1    /= C          andalso
+                                                                                             (Roof == subsequent orelse
+                                                                                              Roof == last)      ->
+  Width = maps:get(C1, Cols),
+  Line = lists:flatten(lists:duplicate(Width, "-")),
+  Horizontal = #printcell{row = R, col = C1, x_offset = XOffset, y_offset = YOffset + 1, width = Width, text = Line, needs_roof = false},
+  NewXOffset = XOffset + Width,
+  add_lines2([H | T], Cols, R, C1 + 1, NewXOffset, YOffset, [Horizontal | Acc]);
+add_lines2([#printcell{row = R,
+                       col = C,
+                       needs_roof = Roof} = H | T], Cols, R, C1, XOffset, YOffset, Acc) when C1    /= C        andalso
+                                                                                              Roof == isolate  ->
   Width = maps:get(C1, Cols),
   NewXOffset = XOffset + Width,
-  add_offsets2([H | T], Cols, R, C1 + 1, NewXOffset, YOffset, Acc);
-add_offsets2([#printcell{row        = R,
-                         col        = C,
-                         needs_roof = NeedsRoof} = H | T], Cols, R, C, XOffset, YOffset, Acc) ->
+  add_lines2([H | T], Cols, R, C1 + 1, NewXOffset, YOffset, Acc);
+add_lines2([#printcell{row = R,
+                       col = C,
+                       needs_roof = Roof} = H | T], Cols, R, C1, XOffset, YOffset, Acc) when C1   /= C       andalso
+                                                                                             Roof == false ->
+  Width = maps:get(C1, Cols),
+  NewXOffset = XOffset + Width,
+  Vertical1  = H#printcell{x_offset = NewXOffset, y_offset = YOffset,     width = 1, text = "|", needs_roof = false},
+  Vertical2  = H#printcell{x_offset = NewXOffset, y_offset = YOffset + 1, width = 1, text = "|", needs_roof = false},
+  Vertical3  = H#printcell{x_offset = NewXOffset, y_offset = YOffset + 2, width = 1, text = "|", needs_roof = false},
+  NewAcc = [Vertical1, Vertical2, Vertical3 | Acc],
+  add_lines2([H | T], Cols, R, C1 + 1, NewXOffset, YOffset, NewAcc);
+% we have skipped a column but we need to bump the width
+% and throw the cell back on the frame
+% with a matching blank from (without a roof)
+add_lines2([#printcell{row = R,
+                       col = C,
+                       needs_roof = Roof} = H | T], Cols, R, C1, XOffset, YOffset, Acc) when C1   /= C       andalso
+                                                                                             Roof == initial ->
+  Width = maps:get(C1, Cols),
+  NewXOffset = XOffset + Width,
+  add_lines2([H | T], Cols, R, C1 + 1, NewXOffset, YOffset, Acc);
+add_lines2([#printcell{row        = R,
+                       col        = C,
+                       needs_roof = NeedsRoof} = H | T], Cols, R, C, XOffset, YOffset, Acc) ->
   Width = maps:get(C, Cols),
   NewXOffset = XOffset + Width,
   NewH = H#printcell{x_offset = XOffset,
@@ -116,8 +157,9 @@ add_offsets2([#printcell{row        = R,
     false -> {"|", 1};
     _     -> {lists:flatten(lists:duplicate(Width - 1, "-")), Width}
   end,
-  Vertical1  = NewH#printcell{y_offset = YOffset,     width = 1, text = "|",   needs_roof = false},
-  Vertical3  = NewH#printcell{y_offset = YOffset + 2, width = 1, text = "|",   needs_roof = false},
+  Vertical1  = NewH#printcell{y_offset = YOffset,     width = 1, text = "|", needs_roof = false},
+  Vertical2  = NewH#printcell{y_offset = YOffset + 1, width = 1, text = "|", needs_roof = false},
+  Vertical3  = NewH#printcell{y_offset = YOffset + 2, width = 1, text = "|", needs_roof = false},
   NewAcc = case NeedsRoof of
     initial ->
       Horizontal = NewH#printcell{y_offset = YOffset + 1, width = NewWidth, text = [?LEFTTSHAPE | HText], needs_roof = false},
@@ -128,19 +170,21 @@ add_offsets2([#printcell{row        = R,
     last ->
       Horizontal = NewH#printcell{y_offset = YOffset + 1, width = 1, text = [?TOPRIGHT], needs_roof = false},
       [Vertical3, Horizontal, NewH | Acc];
+    isolate ->
+      [Vertical3, Vertical2, Vertical1, NewH | Acc];
     false ->
       [NewH | Acc]
   end,
-  add_offsets2(T, Cols, R, C + 1, NewXOffset, YOffset, NewAcc);
+  add_lines2(T, Cols, R, C + 1, NewXOffset, YOffset, NewAcc);
 % we have ended a row, so:
 % * reset the column (ie X) offset to 1
 % * set the column to 1
 % * bump the current column number
 % and throw back into the sea
-add_offsets2([H | T], Cols, R, _C, _XOffset, YOffset, Acc) ->
+add_lines2([H | T], Cols, R, _C, _XOffset, YOffset, Acc) ->
   NewYOffset = YOffset + 1 + ?VPADDING,
   % we have added an extra line for the last element, chuck it away
-  add_offsets2([H | T], Cols, R + 1, 1, 1, NewYOffset, Acc).
+  add_lines2([H | T], Cols, R + 1, 1, 1, NewYOffset, Acc).
 
 make_blank(Cols, NoRows) ->
   Cols2 = maps:to_list(Cols),
@@ -182,6 +226,31 @@ get_max(Key, Value, Map) ->
              end
   end.
 
+%% the problem is that we don't know which column to put the cells in until we have
+%% expanded the underlying tree.
+%%
+%% Consider a tree like this where the leafs are marked by their cells:
+%%
+%% {0, 1}
+%% |
+%% {1,1}
+%% |
+%% --------------
+%% |            |
+%% {2,1}        {2, 3}
+%% ---------     --------
+%% |       |     |      |
+%% {3, 1} {3, 2} {3, 3} {3, 4}
+%%
+%% We will print this into a grid:
+%% -------------------------------------
+%% | {1, 1} |        |        |        |
+%% -------------------------------------
+%% | {2, 1} |        | {2, 3} |        |
+%% -------------------------------------
+%% | {3, 1} | {3, 2} | {3, 3} | {3, 4} |
+%% -------------------------------------
+
 structure_to_cells(#printable_tree{root       = Root,
                                    leaves     = Leaves,
                                    row        = Rw,
@@ -194,16 +263,20 @@ structure_to_cells(#printable_tree{root       = Root,
                     text       = Root,
                     needs_roof = NeedsRoof},
   NewAcc = [Cell | Acc],
-  size_row(Leaves, Rw + 1, Cl, NewAcc);
+  RowSize = case Leaves of
+              [] -> 1;
+              L  -> length(L)
+            end,
+  {RowSize, size_row(Leaves, Rw + 1, Cl, NewAcc)};
 structure_to_cells(_Leaf, Acc) ->
-  Acc.
+  {0, Acc}.
 
 size_row([], _Rw, _Cl, Acc) ->
   Acc;
 size_row([#printable_tree{} = H | T], Rw, Cl, Acc) ->
   NewH = H#printable_tree{row = Rw, col = Cl},
-  NewAcc = structure_to_cells(NewH, Acc),
-  size_row(T, Rw, Cl + 1, NewAcc).
+  {RowWidth, NewAcc} = structure_to_cells(NewH, Acc),
+  size_row(T, Rw, Cl + RowWidth, NewAcc).
 
 get_tree(L, NeedsRoof) when is_list(L) ->
   [get_tree(X, NeedsRoof) || X <- L];
@@ -216,7 +289,7 @@ get_tree(#'$ast¯'{do   = Do,
       X                 -> [X]
   end,
   NewNeedsRoof = case length(NewArgs) of
-    1 -> false;
+    1 -> isolate;
     _ -> subsequent
   end,
   RawLeaves = get_tree(NewArgs, NewNeedsRoof),
@@ -274,13 +347,17 @@ debug(#'$ast¯'{do      = #'$shape¯'{type = Type},
                                           Type == maybe_func ->
   Line1  = io_lib:format("In ⎕debug~n", []),
   Line2  = io_lib:format("This function array will be resolved at runtime\n", []),
-  Rest = debug_fn(AST),
+  Rest = print_debug_fn(AST),
   Msg = Line1 ++ make_breaker() ++ 
         Line2 ++ make_breaker() ++
         Rest,
   #comment{msg     = Msg,
            at_line = LNo,
            at_char = CNo};
+% capture the runtime application function and debug its contents
+debug(#'$ast¯'{do   = [{apply_fn,{pometo_runtime,run_right_associative}}],
+               args = [Arg]}) ->
+  debug(Arg);
 debug(#'$ast¯'{line_no = LNo,
                char_no = CNo} = AST) ->
   Line1 = io_lib:format("In ⎕debug~n", []),
@@ -291,9 +368,16 @@ debug(#'$ast¯'{line_no = LNo,
            at_line = LNo,
            at_char = CNo}.
 
-debug_fn(#'$ast¯'{do      = #'$shape¯'{type = Type},
-                   args    = Args} = AST) when Type == func       orelse
-                                               Type == maybe_func ->
+debug_fn([#'$ast¯'{line_no = LNo,
+                   char_no = CNo} = AST]) ->
+  Msg = print_debug_fn(AST),
+  #comment{msg     = Msg,
+           at_line = LNo,
+           at_char = CNo}.
+
+print_debug_fn(#'$ast¯'{do   = #'$shape¯'{type = Type},
+                        args = Args} = AST) when Type == func       orelse
+                                                 Type == maybe_func ->
   Right  = try_make_right_associative(AST),
   RightS = build_execution_diagram(Right),
   A = #'$ast¯'{do   = #'$shape¯'{dimensions = 0},
@@ -370,7 +454,7 @@ print_end()        -> print("~n~n>>>>END>>>>>>>> ~n~n",   [],      ?PRINTTYPE).
 make_breaker() -> lists:duplicate(79, "*") ++ "\n".
 
 print(String, Vals, io_format) -> io:format(String, Vals);
-print(String, Vals, debugFmg)  -> ?debugFmt(String, Vals).
+print(String, Vals, debugFmg)  -> io:format(String, Vals).
 
 build_execution_diagram(#'$ast¯'{do   = #'$func¯'{do = Do},
                                  args = [Arg1, Arg2]}) ->

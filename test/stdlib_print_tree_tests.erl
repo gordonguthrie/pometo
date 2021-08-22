@@ -35,6 +35,7 @@ simplest_tree_print_cells_test_() ->
          #printcell{row = 2, col = 1, width = 1,  text = "1",          needs_roof = initial},
          #printcell{row = 2, col = 2, width = 1,  text = "2",          needs_roof = last}
          ],
+  % ?debugFmt("in simplest_tree_print_cells_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simple_tree_print_cells_test_() ->
@@ -47,6 +48,7 @@ simple_tree_print_cells_test_() ->
          #printcell{row = 3, col = 2, width = 1,  text = "1",          needs_roof = initial},
          #printcell{row = 3, col = 3, width = 2,  text = "22",         needs_roof = last}
          ],
+  % ?debugFmt("in simple_tree_print_cells_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simplest_nested_tree_test_() ->
@@ -59,10 +61,11 @@ simplest_nested_tree_test_() ->
           {printcell,3,2,1, 0,0,initial, "2"},
           {printcell,3,3,1, 0,0,last,    "3"}
         ],
+  % ?debugFmt("in simplest_nested_tree_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simple_nested_tree_test_() ->
-  Code = "1 (2 3)  4",
+  Code = "1 (2 3) 4",
   Got = make_cells(Code),
   Exp = [
           {printcell,1,1,10,0,0,false,     "shape: [3]"},
@@ -70,8 +73,9 @@ simple_nested_tree_test_() ->
           {printcell,2,2,10,0,0,subsequent,"shape: [2]"},
           {printcell,3,2,1, 0,0,initial,   "2"},
           {printcell,3,3,1, 0,0,last,      "3"},
-          {printcell,2,3,1, 0,0,last,      "4"}
+          {printcell,2,4,1, 0,0,last,      "4"}
         ],
+  % ?debugFmt("in simple_nested_tree_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 nested_tree_test_() ->
@@ -84,14 +88,14 @@ nested_tree_test_() ->
           {printcell,2,3,10,0,0,subsequent,"shape: [2]"},
           {printcell,3,3,1, 0,0,initial,   "1"},
           {printcell,3,4,1, 0,0,last,      "2"},
-          {printcell,2,4,1, 0,0,subsequent,"3"},
-          {printcell,2,5,1, 0,0,subsequent,"4"},
-          {printcell,2,6,10,0,0,subsequent,"shape: [2]"},
-          {printcell,3,6,1, 0,0,initial,   "5"},
-          {printcell,3,7,10,0,0,last,      "shape: [2]"},
-          {printcell,4,7,1, 0,0,initial,   "6"},
-          {printcell,4,8,1, 0,0,last,      "7"},
-          {printcell,2,7,1, 0,0,last,      "8"}
+          {printcell,2,5,1, 0,0,subsequent,"3"},
+          {printcell,2,6,1, 0,0,subsequent,"4"},
+          {printcell,2,7,10,0,0,subsequent,"shape: [2]"},
+          {printcell,3,7,1, 0,0,initial,   "5"},
+          {printcell,3,8,10,0,0,last,      "shape: [2]"},
+          {printcell,4,8,1, 0,0,initial,   "6"},
+          {printcell,4,9,1, 0,0,last,      "7"},
+          {printcell,2,9,1, 0,0,last,      "8"}
         ],
   ?_assertEqual(Exp, Got).
 
@@ -232,35 +236,73 @@ simple_nested_tree_print_test_() ->
   Code = "1 (2 3) 4",
   #comment{msg = Got} = print(Code),
   %     "123456789012345678901234567890"
-  Exp = "shape: [3]                 \n" ++
-        "|                          \n" ++
-        "├-----------┬-----------┐  \n" ++
-        "|           |           |  \n" ++
-        "1           shape: [2]  4  \n" ++
-        "            |              \n" ++
-        "            ├-----------┐  \n" ++
-        "            |           |  \n" ++
-        "            2           3  \n",
-  % ?debugFmt("in simple_nested_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
+  Exp = "shape: [3]                    \n" ++
+        "|                             \n" ++
+        "├-----------┬--------------┐  \n" ++
+        "|           |              |  \n" ++
+        "1           shape: [2]     4  \n" ++
+        "            |                 \n" ++
+        "            ├-----------┐     \n" ++
+        "            |           |     \n" ++
+        "            2           3     \n",
+  % ?debugFmt("in simple_nested_tree_print_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 nested_tree_print_test_() ->
   Code = "1 2 (1 2) 3 4 (5 (6 7)) 8",
   #comment{msg = Got} = print(Code),
-  Exp = "shape: [7]                                                  \n" ++
-        "|                                                           \n" ++
-        "├-----------┬--┬-----------┬--┬--┬-----------┐              \n" ++
-        "|           |  |           |  |  |           |              \n" ++
-        "1           2  shape: [2]  3  4  shape: [2]  8              \n" ++
-        "               |                 |                          \n" ++
-        "               ├-----------┐     ├-----------┐              \n" ++
-        "               |           |     |           |              \n" ++
-        "               1           2     5           shape: [2]     \n" ++
-        "                                             |              \n" ++
-        "                                             ├-----------┐  \n" ++
-        "                                             |           |  \n" ++
-        "                                             6           7  \n",
-  % ?debugFmt("in nested_tree_print_test_~nExp: ~p~nGot: ~p~n", [Exp, Got]),
+  Exp = "shape: [7]                                                     \n" ++
+        "|                                                              \n" ++
+        "├-----------┬--┬--------------┬--┬--┬-----------------------┐  \n" ++
+        "|           |  |              |  |  |                       |  \n" ++
+        "1           2  shape: [2]     3  4  shape: [2]              8  \n" ++
+        "               |                    |                          \n" ++
+        "               ├-----------┐        ├-----------┐              \n" ++
+        "               |           |        |           |              \n" ++
+        "               1           2        5           shape: [2]     \n" ++
+        "                                                |              \n" ++
+        "                                                ├-----------┐  \n" ++
+        "                                                |           |  \n" ++
+        "                                                6           7  \n",
+  % ?debugFmt("in nested_tree_print_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?_assertEqual(Exp, Got).
+
+let_tree_print_test_() ->
+  Code = "A  ← 1",
+  #comment{msg = Got} = print(Code),
+  Exp = "let_op            \n" ++
+        "|                 \n" ++
+        "├-------┐         \n" ++
+        "|       |         \n" ++
+        "'A_0'   shape: 0  \n" ++
+        "        |         \n" ++
+        "        |         \n" ++
+        "        |         \n" ++
+        "        1         \n",
+  % ?debugFmt("in nested_tree_print_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?_assertEqual(Exp, Got).
+
+double_roof_test_() ->
+  Code = "(1 (2 (3 4))) 5",
+  #comment{msg = Got} = print(Code),
+  Exp = "shape: [2]                             \n" ++
+        "|                                      \n" ++
+        "├-----------------------┐              \n" ++
+        "|                       |              \n" ++
+        "shape: [2]              5              \n" ++
+        "|                                      \n" ++
+        "├-----------┐                          \n" ++
+        "|           |                          \n" ++
+        "1           shape: [2]                 \n" ++
+        "            |                          \n" ++
+        "            ├-----------┐              \n" ++
+        "            |           |              \n" ++
+        "            2           shape: [2]     \n" ++
+        "                        |              \n" ++
+        "                        ├-----------┐  \n" ++
+        "                        |           |  \n" ++
+        "                        3           4  \n",
+  % ?debugFmt("in double_roof_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 %%%
@@ -274,7 +316,8 @@ make_cells(Code) ->
   % its a pain but structure_to_cells returns an unreversed list
   % it makes our life easier in constructing the offsets if
   % the list is the right way around...
-  lists:reverse(pometo_stdlib:structure_to_cells_TEST(InitialStruct, [])).
+  {_, Cells} = pometo_stdlib:structure_to_cells_TEST(InitialStruct, []),
+  lists:reverse(Cells).
 
 make_sizes(Code) ->
   Cells = make_cells(Code),
@@ -283,7 +326,7 @@ make_sizes(Code) ->
 make_offsets(Code) ->
   Cells = make_cells(Code),
   {Cols, _NoRows} = pometo_stdlib:printsize_TEST(Cells),
-  pometo_stdlib:add_offsets_TEST(Cells, Cols).
+  pometo_stdlib:add_lines_TEST(Cells, Cols).
 
 print(Code) ->
   [AST] = pometo:parse_TEST(Code),

@@ -28,7 +28,7 @@ As a monadic train this is:
 ((- ⍵) + (÷ ⍵))
 As dyadic train this is:
 ((⍺ - ⍵) + (⍺ ÷ ⍵))
-Where ⍺ is the LHS argument and ⍵ the RHS - on line 2 at character 8
+Where ⍺ is the LHS argument and ⍵ the RHS - on line 2 at character 11
 
 ```
 

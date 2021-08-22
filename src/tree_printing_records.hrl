@@ -11,5 +11,5 @@
                     width              :: integer(),
                     x_offset = 0       :: integer(),
                     y_offset = 0       :: integer(),
-                    needs_roof = false :: initial | subsequent | last | false,
+                    needs_roof = false :: isolate | initial | subsequent | last | false,
                     text               :: string()}).

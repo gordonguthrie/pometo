@@ -66,7 +66,7 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
                                 args    = Args}                            = RHS)
   when (Type1 == number      orelse
         Type1 == boolean     orelse
-        Type1 == var         orelse
+        Type1 == variable    orelse
         Type1 == runtime)    andalso
        (Type2 == func        orelse
         Type2 == maybe_func) ->
@@ -97,7 +97,8 @@ make_right_associative(#'$ast¯'{do = #'$func¯'{}} = AST) ->
   AST;
 make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type},
                                 char_no = CNo} = Funcs) when Type == func       orelse
-                                                             Type == maybe_func ->
+                                                             Type == maybe_func orelse
+                                                             Type == variable   ->
   report_on_dbg(make_right_associative, 2, [{funcs, Funcs}]),
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
                  args    = [Funcs],
@@ -145,7 +146,7 @@ make_monadic_train(Fns, AST) ->
   Ret.
 
 make_dyadic_train(Fns, LHS, RHS) ->
-  report_on_dbg(make_monadic_train, 1, [{fns, Fns}, {lhs, LHS}, {rhs, RHS}]),
+  report_on_dbg(make_dyadic_train, 1, [{fns, Fns}, {lhs, LHS}, {rhs, RHS}]),
   #'$ast¯'{char_no = CNo} = Fns,
   #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_dyadic_train}}],
            args    = [Fns, LHS, RHS],
@@ -450,7 +451,7 @@ maybe_enclose_vector({open_bracket, CharNo, _, _} = Expr,
 %%%
 
 descend_arg(#'$ast¯'{do   = #'$func¯'{} = Func,
-                     args = []}   = AST, Type, Operands) ->
+                     args = []}   = AST, Type, Operands) when is_list(Operands) ->
   AST#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = Operands};
 descend_arg(#'$ast¯'{do   = #'$func¯'{},
@@ -464,7 +465,7 @@ descend_arg(#'$ast¯'{do   = #'$func¯'{},
                      args = Arg} = AST, Type, Operands) ->
   NewArg = descend_arg(Arg, Type, Operands),
   AST#'$ast¯'{args = NewArg};
-descend_arg(#'$ast¯'{} = AST, _Type,  _Operands) ->
+descend_arg(#'$ast¯'{} = AST, _Type, _Operands) ->
   AST.
 
 make_varname(Var) -> lists:flatten(Var ++ "_" ++ scope_dictionary:get_current_scope()).
@@ -506,8 +507,11 @@ get_character_from_body(String) ->
     {ok,    Tokens, _} = erl_scan:string(Body),
     {ok,    Parsed}    = erl_parse:parse_exprs(Tokens),
     {value, Tuple, _}  = erl_eval:exprs(Parsed, []),
-    Char = element(4, Tuple),
+    Char = get_char_from_tuple(Tuple),
     Char.
+
+get_char_from_tuple({int, _, Int, _})    -> Int;
+get_char_from_tuple({_,   _, _,   Char}) -> Char.
 
 extract_rank([], Acc) -> lists:reverse(Acc);
 extract_rank([#'$ast¯'{do   = #'$shape¯'{dimensions = 0},

@@ -9,23 +9,40 @@
 It prints to the shell using `io:format`, and to `eunit` using `?debugFmt` and also returns a comment (primarily for use in `Rappel`) which is printed out. The nature and format of the comment is undefined, or rather at the `Pometo` runtime developers convenience and is subject to change. It prints what it prints. Feel free to customise it for your development needs.
 
 ```pometo
+A ← 1
+⎕print_trees A
+```
+
+gives
+
+```pometo_results
+shape: 0  
+|         
+|         
+|         
+1         
+ on line 2 at character 14
+
+```
+
+```pometo
 ⎕print_trees 1 2 (1 2) 3 4 (5 (6 7)) 8
 ```
 
 ```pometo_results
-shape: [7]                                                  
-|                                                           
-├-----------┬--┬-----------┬--┬--┬-----------┐              
-|           |  |           |  |  |           |              
-1           2  shape: [2]  3  4  shape: [2]  8              
-               |                 |                          
-               ├-----------┐     ├-----------┐              
-               |           |     |           |              
-               1           2     5           shape: [2]     
-                                             |              
-                                             ├-----------┐  
-                                             |           |  
-                                             6           7  
+shape: [7]                                                     
+|                                                              
+├-----------┬--┬--------------┬--┬--┬-----------------------┐  
+|           |  |              |  |  |                       |  
+1           2  shape: [2]     3  4  shape: [2]              8  
+               |                    |                          
+               ├-----------┐        ├-----------┐              
+               |           |        |           |              
+               1           2        5           shape: [2]     
+                                                |              
+                                                ├-----------┐  
+                                                |           |  
+                                                6           7  
  on line 1 at character 14
 
 ```
@@ -33,19 +50,19 @@ shape: [7]
 Obviously lazy ASTs print differently:
 
 ```pometo_lazy
-shape: unsized_vector                                                  
-|                                                                      
-├----------------------┬--┬-----------┬--┬--┬-----------┐              
-|                      |  |           |  |  |           |              
-1                      2  shape: [2]  3  4  shape: [2]  8              
-                          |                 |                          
-                          ├-----------┐     ├-----------┐              
-                          |           |     |           |              
-                          1           2     5           shape: [2]     
-                                                        |              
-                                                        ├-----------┐  
-                                                        |           |  
-                                                        6           7  
+shape: unsized_vector                                                     
+|                                                                         
+├----------------------┬--┬--------------┬--┬--┬-----------------------┐  
+|                      |  |              |  |  |                       |  
+1                      2  shape: [2]     3  4  shape: [2]              8  
+                          |                    |                          
+                          ├-----------┐        ├-----------┐              
+                          |           |        |           |              
+                          1           2        5           shape: [2]     
+                                                           |              
+                                                           ├-----------┐  
+                                                           |           |  
+                                                           6           7  
  on line 1 at character 14
 
 ```
@@ -58,7 +75,17 @@ C ← (4 5 6 )
 ```
 
 ```pometo_results
-blaghgag
+shape: [3]                                    
+|                                             
+├-----------------┬---------┐                 
+|                 |         |                 
+shape: [3]        shape: 0  shape: [3]        
+|                 |         |                 
+├-----------┬--┐  |         ├-----------┬--┐  
+|           |  |  |         |           |  |  
+1           2  3  4         4           5  6  
+ on line 4 at character 14
+
 ```
 
 ```pometo
@@ -71,4 +98,38 @@ B ← A - + ÷
 gfhfghfgh
 ```
 
-***Note For Developers***: this page is is only partially marked up for tests. The debug functions show the internal state of the data and programme at a point in times which can have variations for indexed, etc, etc. There are manual and not generated tests for the function.
+```pometo
+A ← 1 2
+B ← 3
+⎕print_trees A B
+```
+
+```pometo_results
+shape: [2]        
+|                 
+├--------------┐  
+|              |  
+shape: [2]     3  
+|                 
+├-----------┐     
+|           |     
+1           2     
+ on line 3 at character 14
+
+```
+
+Obviously lazy ASTs print differently:
+
+```pometo_lazy
+shape: [2]                   
+|                            
+├-------------------------┐  
+|                         |  
+shape: unsized_vector     3  
+|                            
+├----------------------┐     
+|                      |     
+1                      2     
+ on line 3 at character 14
+
+```

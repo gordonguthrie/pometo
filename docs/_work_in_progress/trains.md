@@ -185,12 +185,11 @@ The execution sequence is:
 
 ## Dyadic fgh fork
 
-
 `dyadic fgh fork`s are easy:
 
 ```pometo
 A ← -
-B A+÷
+B ← A+÷
 5 B 10
 ```
 
@@ -217,7 +216,7 @@ We can create a `dyadic Agh fork` by reassigning `A`.
 
 ```pometo
 A ← 3
-B A+÷
+B ← A+÷
 5 B 10
 ```
 
