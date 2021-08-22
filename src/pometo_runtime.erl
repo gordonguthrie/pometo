@@ -89,6 +89,7 @@ run_and_renumber(X, _LNo, _CNo)              -> X.
 dyadic([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling diadic with~n- ~p~n", [[Fn, [Arg1, Arg2]]]),
                               NewArg1 = run_ast2(Arg1),
                               NewArg2 = run_ast2(Arg2),
+                              % io:format("NewArg1 is ~p~nNewArg2 is ~p~n", [NewArg1, NewArg2]),
                               pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
 
 monadic([Fn, [Arg]]) -> % io:format("in pometo_runtime calling monadic with~n- ~p~n", [[Fn, [Arg]]]),
@@ -162,7 +163,7 @@ run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                                   args = [Arg]}                    = _LHS,
                          #'$ast¯'{do   = #'$shape¯'{}}             = W]) ->
   #'$ast¯'{do   = #'$func¯'{} = Func,
-           args = Args}               = Arg,
+           args = Args}       = Arg,
   NewArgs = Args ++ [W],
   Type = case length(NewArgs) of
     1 -> monadic;
@@ -310,7 +311,7 @@ make_vector2([#'$ast¯'{do   = ?shp(0),
                        args = Arg} | T],
               #'$ast¯'{do   = ?shp([N]) = Shp,
                        args = Args} = Acc) ->
-  NewAcc = Acc#'$ast¯'{do = Shp?shp([N + 1]),
+  NewAcc = Acc#'$ast¯'{do   = Shp?shp([N + 1]),
                        args = Args ++ [Arg]},
   make_vector2(T, NewAcc);
 make_vector2([#'$ast¯'{do   = ?shp([_N]) = Shape} = H | #'$ast¯'{do = ?shp([_M])} =T],
@@ -408,7 +409,8 @@ consolidate([], N, #'$ast¯'{args = Args} = Partial, Acc) ->
   {N - 1, lists:reverse([NewP | Acc])};
 consolidate([#'$ast¯'{do = ?shp(Dim)} = H | T], N, none, Acc) when Dim /= 0 ->
   consolidate(T, N + 1, none, [H | Acc]);
-consolidate([H | T], N, none, Acc) ->
+consolidate([H | T], N, Shape, Acc) when Shape == ?shp([0]) orelse
+                                         Shape == none    ->
   NewArg = maybe_extract_from_scalar(H),
   Partial = #'$ast¯'{do   = ?shp([1]),
                      args = [NewArg]},
@@ -485,11 +487,11 @@ make_trains2([H | T], Type, Operands, Partial, Acc) ->
 process_partial(H, _Operands, _Type, []) ->
   H;
 process_partial(H, Operands,  _Type, [#'$ast¯'{do   = #'$func¯'{} = Func,
-                                              args = []} = AST]) ->
+                                               args = []} = AST]) ->
   AST#'$ast¯'{do   = Func#'$func¯'{type = dyadic},
               args = [H, Operands]};
 process_partial(H, Operands, Type, Partial) ->
-        make_Agh_fork(H, Partial, Type, Operands).
+  make_Agh_fork(H, Partial, Type, Operands).
 
 make_Agh_fork(#'$ast¯'{do = #'$shape¯'{}} = AST, Funs, Type, Operands) ->
   Len = length(Funs),
@@ -561,7 +563,6 @@ make_train2([RHS, LHS], Type, Operands) ->
   NewRHS = pometo_parser:descend_arg(RHS, Type, Operands),
   LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = [NewRHS]}.
-
 
 
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = D1}} = AST1,
@@ -783,7 +784,7 @@ maybe_make_vector(List)  -> Len = length(List),
 %%
 
 run_ast(AST, Str) ->
-  % io:format("in run_ast AST is ~p~n", [AST]),
+  % pometo_stdlib:print_trees([AST]),
   try run_ast2(AST)
   catch
     throw:E -> {error, #error{} = Err} = E,
@@ -827,9 +828,9 @@ run_ast2(#'$ast¯'{do   = 'let_op',
                      args = A},
   runtime_let([NewL]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
-                  args = [A1, A2]} = _AST)              when Type == dyadic        orelse
-                                                             Type == dyadic_ranked orelse
-                                                             Type == ambivalent    ->
+                  args = [A1, A2]} = _AST)             when Type == dyadic        orelse
+                                                            Type == dyadic_ranked orelse
+                                                            Type == ambivalent    ->
   % io:format("in run_ast2 (5) AST is ~p~n", [AST]),
   dyadic([Func, [run_ast2(A1), run_ast2(A2)]]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
