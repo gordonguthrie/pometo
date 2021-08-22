@@ -24,7 +24,7 @@ B ← 1 ⍴ 2
 A + B
 ```
 
-Sames results, right?
+Same results, right?
 
 ```pometo_results
 3
