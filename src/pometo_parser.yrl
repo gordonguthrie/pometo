@@ -87,6 +87,7 @@ Expr -> Monadic     : '$1'.
 Expr -> Associative : final_check_on_associative('$1').
 Expr -> Vecs        : '$1'.
 Expr -> stdlib Args        : make_stdlib('$1', '$2').
+Expr -> stdlib MaybeVector : make_stdlib('$1', '$2').
 Expr -> stdlib Associative : make_stdlib('$1', '$2').
 
 Dyadic  -> Args ConsecutiveFns Args : make_dyadic('$2', '$1', '$3').

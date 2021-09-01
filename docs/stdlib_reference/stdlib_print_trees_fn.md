@@ -16,11 +16,7 @@ A ← 1
 gives
 
 ```pometo_results
-shape: 0  
-|         
-|         
-|         
-1         
+1  
  on line 2 at character 14
 
 ```
@@ -75,15 +71,31 @@ C ← (4 5 6 )
 ```
 
 ```pometo_results
-shape: [3]                                    
-|                                             
-├-----------------┬---------┐                 
-|                 |         |                 
-shape: [3]        shape: 0  shape: [3]        
-|                 |         |                 
-├-----------┬--┐  |         ├-----------┬--┐  
-|           |  |  |         |           |  |  
-1           2  3  4         4           5  6  
+shape: [3]                             
+|                                      
+├-----------------┬--┐                 
+|                 |  |                 
+shape: [3]        4  shape: [3]        
+|                    |                 
+├-----------┬--┐     ├-----------┬--┐  
+|           |  |     |           |  |  
+1           2  3     4           5  6  
+ on line 4 at character 14
+
+```
+
+Plus a lazy AST too:
+
+```pometo_lazy
+shape: [3]                                        
+|                                                 
+├----------------------------┬--┐                 
+|                            |  |                 
+shape: unsized_vector        4  shape: [3]        
+|                               |                 
+├----------------------┬--┐     ├-----------┬--┐  
+|                      |  |     |           |  |  
+1                      2  3     4           5  6  
  on line 4 at character 14
 
 ```
@@ -95,7 +107,13 @@ B ← A - + ÷
 ```
 
 ```pometo_results
-gfhfghfgh
+shape: [4]                       
+|                                
+├-----------┬------┬------┐      
+|           |      |      |      
+1           [\"-\"]  [\"+\"]  [\"÷\"]  
+ on line 3 at character 14
+
 ```
 
 ```pometo

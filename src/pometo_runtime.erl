@@ -81,8 +81,7 @@
 %% Exported for use in compiled modules
 %%
 
-run_and_renumber(#'$ast¯'{} = AST, LNo, CNo) -> % io:format("AST was ~p~n- New LNo is ~p New CNo is ~p~n", [AST, LNo, CNo]),
-                                                AST#'$ast¯'{line_no = LNo,
+run_and_renumber(#'$ast¯'{} = AST, LNo, CNo) -> AST#'$ast¯'{line_no = LNo,
                                                             char_no = CNo};
 run_and_renumber(X, _LNo, _CNo)              -> X.
 
@@ -314,7 +313,7 @@ make_vector2([#'$ast¯'{do   = ?shp(0),
   NewAcc = Acc#'$ast¯'{do   = Shp?shp([N + 1]),
                        args = Args ++ [Arg]},
   make_vector2(T, NewAcc);
-make_vector2([#'$ast¯'{do   = ?shp([_N]) = Shape} = H | #'$ast¯'{do = ?shp([_M])} =T],
+make_vector2([#'$ast¯'{do   = ?shp([_N]) = Shape} = H | #'$ast¯'{do = ?shp([_M])} = T],
               #'$ast¯'{do   = ?shp([N]) = Shp,
                        args = Args} = Acc)
   when is_record(Shape, '$shape¯') ->
@@ -589,7 +588,7 @@ run_right_associative([#'$ast¯'{do   = #'$shape¯'{type = Type} = Shp,
                  run_ast2(NewAST)
       end;
     _ ->
-      Funcs % XXXXX
+      Funcs
   end;
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
                                                   type       = Type1},

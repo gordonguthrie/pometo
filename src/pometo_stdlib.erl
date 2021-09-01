@@ -53,7 +53,6 @@ print_trees(#'$ast¯'{do   = [{apply_fn,{pometo_runtime,run_right_associative}}]
                      args = [Arg]}) ->
   print_trees(Arg);
 print_trees(#'$ast¯'{line_no = LNo, char_no = CNo} = AST) ->
-  io:format("in print trees AST is ~p~n", [AST]),
   Structure = get_tree(AST, false),
   InitialStruct = Structure#printable_tree{row = 1, col = 1},
   % its a pain but structure_to_cells returns an unreversed list
@@ -280,8 +279,12 @@ size_row([#printable_tree{} = H | T], Rw, Cl, Acc) ->
 
 get_tree(L, NeedsRoof) when is_list(L) ->
   [get_tree(X, NeedsRoof) || X <- L];
+% if its a scalar strip it out for printing
+get_tree(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                  args = Arg}, NeedsRoof) ->
+  get_tree(Arg, NeedsRoof);
 get_tree(#'$ast¯'{do   = Do,
-                  args = Args}, NeedsRoof) ->
+                  args = Args} = AST, NeedsRoof) ->
   NewArgs = case Args of
       L when is_list(L) -> L;
       M when is_map(M)  -> {_Discard, Keep} = lists:unzip(lists:sort(maps:to_list(M))),
@@ -306,6 +309,8 @@ get_tree(X, NeedsRoof) ->
   #printable_tree{root       = Root,
                   needs_roof = NeedsRoof}.
 
+fix_up_roof([], _) ->
+  [];
 fix_up_roof([H], subsequent) ->
   [H#printable_tree{needs_roof = false}];
 fix_up_roof(List, subsequent) ->
@@ -394,7 +399,10 @@ print_debug_fn(#'$ast¯'{do   = #'$shape¯'{type = Type},
          MonadicS                        ++ "\n" ++
          "As dyadic train this is:"      ++ "\n" ++
          DyadicS                         ++ "\n" ++
-         "Where ⍺ is the LHS argument and ⍵ the RHS -".
+         "Where ⍺ is the LHS argument and ⍵ the RHS -";
+print_debug_fn(#'$ast¯'{do   = [{apply_fn, {pometo_runtime, run_right_associative}}],
+                        args = [Arg]}) ->
+  print_debug_fn(Arg).
 
 debug2(#'$ast¯'{do      = Do,
                 args    = Args,

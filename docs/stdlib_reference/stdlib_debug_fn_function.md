@@ -18,10 +18,6 @@ A ← - + ÷
 Giving
 
 ```pometo_results
-In ⎕debug_fn
-*******************************************************************************
-This function array will be resolved at runtime
-*******************************************************************************
 As right associative this is:
 ([- + ÷])
 As a monadic train this is:
