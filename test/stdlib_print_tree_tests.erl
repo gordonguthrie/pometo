@@ -270,15 +270,11 @@ nested_tree_print_test_() ->
 let_tree_print_test_() ->
   Code = "A  ← 1",
   #comment{msg = Got} = print(Code),
-  Exp = "let_op            \n" ++
-        "|                 \n" ++
-        "├-------┐         \n" ++
-        "|       |         \n" ++
-        "'A_0'   shape: 0  \n" ++
-        "        |         \n" ++
-        "        |         \n" ++
-        "        |         \n" ++
-        "        1         \n",
+  Exp = "let_op     \n" ++
+        "|          \n" ++
+        "├-------┐  \n" ++
+        "|       |  \n" ++
+        "'A_0'   1  \n",
   % ?debugFmt("in nested_tree_print_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 

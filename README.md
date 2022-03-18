@@ -22,6 +22,12 @@ Read more about the rational and thinking in this article:
 
 https://medium.com/@gordonguthrie/the-beam-needs-an-apl-y-language-6c5c998ba6d
 
+# Read The Documentation
+
+The documentation is hosted on a Github pages site:
+
+https://gordonguthrie.github.io/pometo/
+
 # Design Considerations
 
 The normal developer of `Erlang`, `Elixir` and `LFE` applications should now know they are calling `Pometo` without reading the source code.
