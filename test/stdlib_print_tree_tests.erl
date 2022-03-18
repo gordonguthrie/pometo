@@ -268,7 +268,7 @@ nested_tree_print_test_() ->
   ?_assertEqual(Exp, Got).
 
 let_tree_print_test_() ->
-  Code = "A  ← 1",
+  Code = "A ← 1",
   #comment{msg = Got} = print(Code),
   Exp = "let_op     \n" ++
         "|          \n" ++
@@ -301,6 +301,37 @@ double_roof_test_() ->
   % ?debugFmt("in double_roof_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
+simple_function_test_() ->
+  Code = "- 1 3 5",
+  #comment{msg = Got} = print(Code),
+  Exp = "[\"-\"]             \n" ++
+        "|                 \n" ++
+        "|                 \n" ++
+        "|                 \n" ++
+        "shape: [3]        \n" ++
+        "|                 \n" ++
+        "├-----------┬--┐  \n" ++
+        "|           |  |  \n" ++
+        "1           3  5  \n",
+  ?debugFmt("in simple_function_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?_assertEqual(Exp, Got).
+
+simple_function_II_test_() ->
+  Code = "2 3 - 1 3 ",
+  #comment{msg = Got} = print(Code),
+  Exp = "[\"-\"]                         \n" ++
+        "|                             \n" ++
+        "├--------------┐              \n" ++
+        "|              |              \n" ++
+        "shape: [2]     shape: [2]     \n" ++
+        "|              |              \n" ++
+        "├-----------┐  ├-----------┐  \n" ++
+        "|           |  |           |  \n" ++
+        "2           3  1           3  \n",
+  ?debugFmt("in simple_function_II_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?_assertEqual(Exp, Got).
+
+ 
 %%%
 %%% Helper functions
 %%%
