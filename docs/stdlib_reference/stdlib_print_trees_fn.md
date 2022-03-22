@@ -8,6 +8,18 @@
 
 It prints to the shell using `io:format`, and to `eunit` using `?debugFmt` and also returns a comment (primarily for use in `Rappel`) which is printed out. The nature and format of the comment is undefined, or rather at the `Pometo` runtime developers convenience and is subject to change. It prints what it prints. Feel free to customise it for your development needs.
 
+If you are helping develop the compiler or interpreter you can use the underlying primitive functions when debugging:
+
+```
+  Tree = pometo_stdlib:print_trees('$ast¯'{} = AST),
+  PrintableOutput = pometo_runtime_format:format(Tree),
+  io:format("PrintableOutput is ~ts~n", [PrintableOutput]),
+```
+
+## Printing trees in Rappel
+
+Here are some examples:
+
 ```pometo
 A ← 1
 ⎕print_trees A
@@ -26,19 +38,19 @@ gives
 ```
 
 ```pometo_results
-shape: [7]                                                     
-|                                                              
-├-----------┬--┬--------------┬--┬--┬-----------------------┐  
-|           |  |              |  |  |                       |  
-1           2  shape: [2]     3  4  shape: [2]              8  
-               |                    |                          
-               ├-----------┐        ├-----------┐              
-               |           |        |           |              
-               1           2        5           shape: [2]     
-                                                |              
-                                                ├-----------┐  
-                                                |           |  
-                                                6           7  
+shape: [7]                                                        
+|                                                                 
+├-----------┬--┬--------------┬--┬--┬--------------------------┐  
+|           |  |              |  |  |                          |  
+1           2  shape: [2]     3  4  shape: [2]                 8  
+               |                    |                             
+               ├-----------┐        ├-----------┐                 
+               |           |        |           |                 
+               1           2        5           shape: [2]        
+                                                |                 
+                                                ├-----------┐     
+                                                |           |     
+                                                6           7     
  on line 1 at character 14
 
 ```
@@ -46,19 +58,19 @@ shape: [7]
 Obviously lazy ASTs print differently:
 
 ```pometo_lazy
-shape: unsized_vector                                                     
-|                                                                         
-├----------------------┬--┬--------------┬--┬--┬-----------------------┐  
-|                      |  |              |  |  |                       |  
-1                      2  shape: [2]     3  4  shape: [2]              8  
-                          |                    |                          
-                          ├-----------┐        ├-----------┐              
-                          |           |        |           |              
-                          1           2        5           shape: [2]     
-                                                           |              
-                                                           ├-----------┐  
-                                                           |           |  
-                                                           6           7  
+shape: unsized_vector                                                        
+|                                                                            
+├----------------------┬--┬--------------┬--┬--┬--------------------------┐  
+|                      |  |              |  |  |                          |  
+1                      2  shape: [2]     3  4  shape: [2]                 8  
+                          |                    |                             
+                          ├-----------┐        ├-----------┐                 
+                          |           |        |           |                 
+                          1           2        5           shape: [2]        
+                                                           |                 
+                                                           ├-----------┐     
+                                                           |           |     
+                                                           6           7     
  on line 1 at character 14
 
 ```
