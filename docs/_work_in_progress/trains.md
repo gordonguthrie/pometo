@@ -10,7 +10,7 @@ Functions can be applied consequtively. Consider:
 -+÷10
 ```
 
-It is `-(,(÷10))`
+It is `-(+(÷10))`
 
 This means (executing right to left):
 
@@ -36,14 +36,14 @@ results in:
 ¯9.9
 ```
 
-It resolves to `(-10),(÷10)`
+It resolves to `(-10)+(÷10)`
 
 The execution sequence is:
 
 | Function     | Sign | Type    | LHS Argument | RHS Argument  | Result        |
 |--------------|------|---------|--------------|---------------|---------------|
 |reciprocal    | `÷`  | monadic |              | `scalar` 10   | `scalar`  0.1 |
-|negation      | `-`  | monadic |              | `scalar` 10   | `scalar` ¯0.1 |
+|negation      | `-`  | monadic |              | `scalar` 10   | `scalar` ¯10  |
 |plus          | `+`  | dyadic  | `scalar` ¯10 | `scalar`  0.1 | `scalar` ¯9.9 |
 
 
@@ -59,13 +59,13 @@ The technical term for this is a monadic fork.
 So we see this translates to:
 
 ```apl
-(- 10),(÷ 10)
+(- 10)+(÷ 10)
 ```
 
 The non-train execution was:
 
 ```apl
-(-(,(÷ 10))
+(-(+(÷ 10))
 ```
 
 If we have a string of functions bracketed by two vectors they will be applied monadically until the left most one:
@@ -109,10 +109,9 @@ Trains resolve 6 ways. The key here is:
 ⍺(  g h)⍵ ←→         g (⍺ h ⍵)   ⍝ dyadic atop
 ```
 
-
 ## Monadic fgh fork
 
-The creation of trains happens at runtime not compile time. We can see this by looking at variable substitution. As you would expect when a Variable is bound to a function (or an expression that computes to a function) this has the same result as putting `-` directly in the train.
+The creation of trains happens at runtime not compile time. We can see this by looking at variable substitution. As you would expect when a variable is bound to a function (or an expression that computes to a function) this has the same result as putting `-` directly in the train.
 
 ```pometo
 A ← -
@@ -156,8 +155,8 @@ The execution sequence is:
 
 | Function     | Sign | Type    | LHS Argument | RHS Argument | Result       |
 |--------------|------|---------|--------------|--------------|--------------|
-|reciprocal    | `÷`  | monadic |              | `scalar` 10  | `scalar` 0.1 |
-|plus          | `+`  | dyadic  | `scalar` 2.0 | `scalar` 0.1 | `scalar` 2.1 |
+| reciprocal   | `÷`  | monadic |              | `scalar` 10  | `scalar` 0.1 |
+| plus         | `+`  | dyadic  | `scalar` 2.0 | `scalar` 0.1 | `scalar` 2.1 |
 
 We see that at runtime in this case the concatenation `+` operator is resolved to be dyadic based on the type of the variable.
 
@@ -179,8 +178,8 @@ The execution sequence is:
 
 | Function     | Sign | Type    | RHS Argument | Result        |
 |--------------|------|---------|--------------|---------------|
-|reciprocal    | `÷`  | monadic | `scalar` 10  | `scalar` 0.1  |
-|minus         | `-`  | dyadic  | `scalar` 0.1 | `scalar` ¯0.1 |
+| reciprocal   | `÷`  | monadic | `scalar` 10  | `scalar`  0.1 |
+| negation     | `-`  | dyadic  | `scalar` 0.1 | `scalar` ¯0.1 |
 
 
 ## Dyadic fgh fork
@@ -205,8 +204,8 @@ Lets break that execution sequence down:
 
 | Function     | Sign | Type   | LHS Argument | RHS Argument | Result        |
 |--------------|------|--------|--------------|--------------|---------------|
-|reciprocal    | `÷`  | dyadic | 'scalar'  5  | `scalar` 10  | `scalar`  0.5 |
-|subtraction   | `-`  | dyadic | `scalar`  5  | `scalar` 10  | `scalar` ¯5   |
+|reciprocal    | `÷`  | dyadic | `scalar`  5  | `scalar` 10  | `scalar`  0.5 |
+|negation      | `-`  | dyadic | `scalar`  5  | `scalar` 10  | `scalar` ¯5   |
 |concatenation | `,`  | dyadic | `scalar` ¯5  | `scalar` 0.5 | `scalar` ¯4.5 |
 
 
@@ -223,8 +222,15 @@ B ← A+÷
 Which gives:
 
 ```pometo_results
-¯3.5
+3.5
 ```
+
+The evaluation order is:
+
+| Function     | Sign | Type   | LHS Argument | RHS Argument | Result        |
+|--------------|------|--------|--------------|--------------|---------------|
+| reciprocal   | `÷`  | dyadic | `scalar` 5   | `scalar` 10  | `scalar` 0.5  |
+| plus         | `+`  | monadic| `scalar` 3   | `scalar` 0.5 | `scalar` 3.5  |
 
 ## Dyadic atop
 
@@ -234,8 +240,16 @@ A ← -÷
 ```
 
 ```pometo_results
-4.9
+¯0.5
 ```
+
+The evaluation order is:
+
+| Function     | Sign | Type   | LHS Argument | RHS Argument | Result        |
+|--------------|------|--------|--------------|--------------|---------------|
+| reciprocal   | `÷`  | dyadic | `scalar` 5   | `scalar` 10  | `scalar`  0.5 |
+| subtraction  | `-`  | monadic|              | `scalar` 0.5 | `scalar` ¯0.5 |
+
 
 ## Trains Of Trains
 
@@ -262,12 +276,19 @@ This is the equivalent of:
 ÷ ((- 2 4) × (⍴ 2 4))
 ```
 
-(if you try and work these steps out manually remember the
-
 which gives:
 ```pometo_results
 ¯0.25 ¯0.125
 ```
+
+The evaluation order is:
+
+| Function      |Sign| Type   | LHS Argument | RHS Argument | Result               |
+|---------------|----|--------|--------------|--------------|----------------------|
+| rho           | `⍴`| monadic|              |`vector`  2  4| `scalar`  2          |
+| subtraction   | `-`| monadic|              |`vector`  2  4| `vector` ¯2    ¯4    |
+| multiplication| `×`| dyadic |`vector` ¯2 ¯4|`scalar`  2   | `vector` ¯4    ¯8    |
+| reciprocal    | `÷`| monadic|              |`vector` ¯4 ¯8| `vector` ¯0.25 ¯0.125|
 
 ## Dyadic Atop Train Of Trains
 
@@ -288,12 +309,20 @@ This calculation could be exanded with brackets to read:
 ```pometo
 ÷ ((1 4 - 3 2) + (1 4 × 3 2))
 ```
-
 giving the same result:
 
 ```pometo_results
 1 0.1
 ```
+
+The evaluation order is:
+
+| Function      |Sign| Type   |LHS Argument| RHS Argument | Result          |
+|---------------|----|--------|------------|--------------|-----------------|
+| multiplication| `×`| dyadic |`vector` 1 4|`vector`  3  2| `vector`  3  8  |
+| subtraction   | `-`| dyadic |`vector` 1 4|`vector`  3  2| `vector` ¯2  2  |
+| plus          | `+`| dyadic |`vector` 3 8|`vector` ¯2  2| `vector`  1 10  |
+| reciprocal    | `÷`| monadic|            |`vector`  1 10| `vector`  1  0.1|
 
 ## Monadic fgh Fork Train Of Trains
 
@@ -334,6 +363,17 @@ which gives:
 2 4
 ```
 
+The evaluation order is:
+
+| Function      |Sign| Type   |LHS Argument| RHS Argument| Result        |
+|---------------|----|--------|------------|-------------|---------------|
+| reciprocal    | `÷`| dyadic |`vector` 2 4|`vector`  1 2| `vector`  2 2 |
+| subtraction   | `-`| dyadic |`vector` 2 4|`vector`  1 2| `vector`  1 2 |
+| multiplication| `×`| dyadic |`vector` 1 2|`vector`  2 2| `vector`  2 4 |
+| reciprocal    | `÷`| dyadic |`vector` 2 4|`vector`  1 2| `vector`  2 2 |
+| rho           | `⍴`| dyadic |`vector` 2 2|`vector`  2 4| `matrix`  2 4 |
+|               |    |        |            |             |           2 4 |
+
 We can of course create `Agh forks` as well.
 
 ## Monadic Agh Fork Train Of Trains
@@ -357,6 +397,15 @@ which gives:
 0.5 1.5
 ```
 
+The execution tree is:
+
+| Function      |Sign| Type   |LHS Argument | RHS Argument    | Result           |
+|---------------|----|--------|-------------|-----------------|------------------|
+| reciprocal    | `÷`| monadic|             |`vector` 2 4     | `vector` 0.5 0.25|
+| multiplication| `×`| monadic|             |`vector` 2 4     | `vector` 1   1   |
+| rho           | `⍴`| dyadic |`vector` 1 1 |`vector` 0.5 0.25| `scalar` 0.5     |
+| subtraction   | `-`| dyadic |`vector` 1 2 |`scalar` 0.5     | `vector` 0.5 1.5 |
+
 ## Dyadic Agh Fork Train Of Trains
 
 Easy expansion for this case:
@@ -377,6 +426,15 @@ which gives:
 ```pometo_results
 1.75 1.875
 ```
+
+The execution tree is:
+
+| Function      |Sign| Type   |LHS Argument    | RHS Argument      | Result            |
+|---------------|----|--------|----------------|-------------------|-------------------|
+| reciprocal    | `÷`| dyadic |`vector` 0.5 0.5|`vector` 2   4     |`vector` 0.25 0.125|
+| multiplication| `×`| dyadic |`vector` 0.5 0.5|`vector` 2   4     |`vector` 1    2    |
+| rho           | `⍴`| dyadic |`vector` 1 2    |`vector` 0.25 0.125|`vector` 0.25 0.125|
+| subtraction   | `-`| dyadic |`scalar` 2      |`vector` 0.25 0.125|`vector` 2.75 1.875|
 
 ## Gotcha's
 
@@ -404,3 +462,15 @@ results in:
 ```pometo_results
 ¯7.875
 ```
+
+It is equivalent to:
+
+(- 8) + (÷ 8)
+
+The execution tree is:
+
+| Function    |Sign| Type   |LHS Argument    |RHS Argument| Result        |
+|-------------|----|--------|----------------|------------|---------------|
+| reciprocal  | `÷`| monadic|                |`scalar`  8 |`scalar`  0.125|
+| subtraction | `-`| monadic|                |`scalar`  8 |`scalar` ¯8    |
+| plus        | `+`| dyadic |`scalar`  0.125 |`scalar` ¯8 |`scalar` ¯7.875|
