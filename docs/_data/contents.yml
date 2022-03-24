@@ -33,6 +33,8 @@ toc:
     subfolderitems:
       - page: The ⎕debug Function
         url:  stdlib_reference/stdlib_debug_function.html
+      - page: The ⎕print_trees Function
+        url:  stdlib_reference/stdlib_print_trees_function.html
       - page: The ⎕make_indexed Function
         url:  stdlib_reference/stdlib_make_indexed_function.html
       - page: The ⎕make_lazy Function
