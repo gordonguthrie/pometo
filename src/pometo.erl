@@ -134,7 +134,7 @@ compile_load_and_run2(Str, ModuleName, Type) ->
                                   pometo        -> Exprs
                                end,
                                compile_and_run3([{{run, 0, []}, Exprs2}], ModuleName, Str);
-      {Errors,      _Exprs} -> string:trim(lists:flatten(Errors), leading, "\n")
+    {Errors,      _Exprs}  -> string:trim(lists:flatten(Errors), leading, "\n")
   end.
 
 transform([], _, Acc) ->
@@ -380,7 +380,7 @@ substitute_arg(#'$var¯'{name    = Var,
     true  -> Binding = maps:get(Var, Bindings),
              Subst   = maps:get(results, Binding),
              {_, Errs2, [NewSubst]} = substitute_arg(Subst, {Bindings, Errors, []}),
-             NewA = chose_replacement(NewSubst),
+             NewA = choose_replacement(NewSubst),
              {ShouldMakeNewDo, MaybeVal} = case NewA of
                  #'$ast¯'{do   = defer_evaluation,
                           args = InnerArgs}         -> [D] = InnerArgs,
@@ -413,28 +413,29 @@ substitute_arg(V, {Bindings, Errors, Results}) ->
   {Bindings, Errors, [V | Results]}.
 
 %% if the replacement is another variable return is
-chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-                           args = #'$var¯'{}} = AST) ->
+choose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                            args = #'$var¯'{}} = AST) ->
   AST;
 %% if the replacement is a scalar, substitute the value
-chose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
-                           args = Args}) ->
+choose_replacement(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
+                            args = Args}) ->
   Args;
 %% if the replacement is a function, substitute the value
-chose_replacement(#'$func¯'{line_no = LNo,
-                            char_no = CNo} = Func) ->
+choose_replacement(#'$func¯'{line_no = LNo,
+                             char_no = CNo} = Func) ->
   #'$ast¯'{do      = Func,
            line_no = LNo,
            char_no = CNo};
 %% if the replacement is defer_evaluation then don't evaluate it
-chose_replacement(#'$ast¯'{do = defer_evaluation} = AST) ->
+choose_replacement(#'$ast¯'{do = defer_evaluation} = AST) ->
   AST;
 %% if the replacement is a vector return that
-chose_replacement(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
+choose_replacement(#'$ast¯'{do = #'$shape¯'{}} = AST) ->
   AST;
 %% if the replacement is an expression run it and return the value
-chose_replacement(AST) ->
-  chose_replacement(pometo_runtime:run_ast(AST, "")).
+choose_replacement(AST) ->
+  Evaluated = pometo_runtime:run_ast(AST, ""),
+  choose_replacement(Evaluated).
 
 make_duplicate_errs([], _Expr, Errs) ->
   lists:reverse(Errs);

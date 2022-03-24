@@ -22,6 +22,8 @@ Please manually check that the documentation builds before you commit your chang
 
 To build the docs locally start the docker file and `cd /pometo/docs` and run the bash script `./run_jekyll.sh`. This will build the docs and serve them on `0.0.0.0:5000`. They can be accessed on your host machine at `http://localhost:5000`.
 
+(If you have problems with `./run_jekyll.sh` telling you it can't find gemfiles, etc, etc, consider deleting the `Gemfile.lock` file and forcing a docker rebuild with `docker-compose build --no-cache`.)
+
 You should write your documentation top down - the easy basic and normal cases at the top, errors, edge cases, exceptions futher down.
 
 The tests can be generated in two formats - Eunit tests and Common tests.

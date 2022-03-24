@@ -15,7 +15,7 @@
 %% export for testing only, not part of the API
 -export([
          get_tree_TEST/1,
-         structure_to_cells_TEST/2,
+         structure_to_cells_TEST/5,
          printsize_TEST/1,
          add_lines_TEST/2
         ]).
@@ -42,7 +42,7 @@
 %%% Testing exports
 
 get_tree_TEST(X)              -> get_tree(X, false).
-structure_to_cells_TEST(X, Y) -> structure_to_cells(X, Y).
+structure_to_cells_TEST(X, Y, Z, A, B) -> structure_to_cells(X, Y, Z, A, B).
 printsize_TEST(X)             -> printsize(X).
 add_lines_TEST(X, Y)          -> add_lines(X, Y).
 
@@ -54,12 +54,13 @@ print_trees(#'$ast¯'{do   = [{apply_fn,{pometo_runtime,run_right_associative}}]
   print_trees(Arg);
 print_trees(#'$ast¯'{line_no = LNo, char_no = CNo} = AST) ->
   Structure = get_tree(AST, false),
-  InitialStruct = Structure#printable_tree{row = 1, col = 1},
-  % its a pain but structure_to_cells returns an unreversed list
+  InitialStruct = [Structure#printable_tree{}],
+  % its a pain but structure_to_cells returns an oddly sorted list
   % it makes our life easier in constructing the offsets if
   % the list is the right way around...
-  {_Width, Struct} = structure_to_cells(InitialStruct, []),
-  Cells = lists:reverse(Struct),
+  {_Width, Struct} = structure_to_cells(InitialStruct, 1, 1, 1, []),
+  % lists sort relies on the tuple being row/cell in the record
+  Cells = lists:sort(Struct),
   {Cols, NoRows} = printsize(Cells),
   OffsetCells = add_lines(lists:sort(Cells), Cols),
   Blank = make_blank(Cols, NoRows),
@@ -250,32 +251,22 @@ get_max(Key, Value, Map) ->
 %% | {3, 1} | {3, 2} | {3, 3} | {3, 4} |
 %% -------------------------------------
 
-structure_to_cells(#printable_tree{root       = Root,
-                                   leaves     = Leaves,
-                                   row        = Rw,
-                                   col        = Cl,
-                                   needs_roof = NeedsRoof}, Acc) ->
+structure_to_cells([], _Row, Col, _N, Acc) ->
+  {Col, Acc};
+structure_to_cells([#printable_tree{root       = Root,
+                                    leaves     = Leaves,
+                                    needs_roof = NeedsRoof} | T], Row, Col, N, Acc) ->
   Width = length(Root),
-  Cell = #printcell{row        = Rw,
-                    col        = Cl,
+  Cell = #printcell{row        = Row,
+                    col        = Col,
                     width      = Width,
                     text       = Root,
                     needs_roof = NeedsRoof},
-  NewAcc = [Cell | Acc],
-  RowSize = case Leaves of
-              [] -> 1;
-              L  -> length(L)
-            end,
-  {RowSize, size_row(Leaves, Rw + 1, Cl, NewAcc)};
-structure_to_cells(_Leaf, Acc) ->
-  {0, Acc}.
-
-size_row([], _Rw, _Cl, Acc) ->
-  Acc;
-size_row([#printable_tree{} = H | T], Rw, Cl, Acc) ->
-  NewH = H#printable_tree{row = Rw, col = Cl},
-  {RowWidth, NewAcc} = structure_to_cells(NewH, Acc),
-  size_row(T, Rw, Cl + RowWidth, NewAcc).
+  case Leaves of
+  [] -> structure_to_cells(T, Row, Col + 1, N, [Cell | Acc]);
+  _  -> {NewCol, NewAcc} = structure_to_cells(Leaves, Row + 1, Col, N + 1, Acc),
+        structure_to_cells(T, Row, NewCol, N, [Cell | NewAcc])
+  end.
 
 get_tree(L, NeedsRoof) when is_list(L) ->
   [get_tree(X, NeedsRoof) || X <- L];
@@ -461,8 +452,8 @@ print_end()        -> print("~n~n>>>>END>>>>>>>> ~n~n",   [],      ?PRINTTYPE).
 
 make_breaker() -> lists:duplicate(79, "*") ++ "\n".
 
-print(String, Vals, io_format) -> io:format(String, Vals);
-print(String, Vals, debugFmg)  -> io:format(String, Vals).
+print(String, Vals, io_format) -> ?debugFmt(String, Vals);
+print(String, Vals, debugFmg)  -> ?debugFmt(String, Vals).
 
 build_execution_diagram(#'$ast¯'{do   = #'$func¯'{do = Do},
                                  args = [Arg1, Arg2]}) ->

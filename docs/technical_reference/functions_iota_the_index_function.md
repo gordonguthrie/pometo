@@ -86,6 +86,17 @@ If applied to a boolean scalar `⍳` will return a degenerate multidimensional s
 
 ```
 
+```code
+  ____
+ |  _ \
+ | |_) | _____      ____ _ _ __ ___
+ |  _ < / _ \ \ /\ / / _` | '__/ _ \
+ | |_) |  __/\ V  V / (_| | | |  __/
+ |____/ \___| \_/\_/ \__,_|_|  \___|
+```
+
+If you try and print out a structure contrainig a degenerate multidimensional scalar of type array it will blow up. See the `Stdlib Print Trees Function` documentation.
+
 It is degenerate because it keeps its dimensionality (but the presence of a single `0` causes it to collapse:
 
 ```pometo
