@@ -16,6 +16,28 @@ If you are helping develop the compiler or interpreter you can use the underlyin
   io:format("PrintableOutput is ~ts~n", [PrintableOutput]),
 ```
 
+## Beware
+
+```code
+  ____
+ |  _ \
+ | |_) | _____      ____ _ _ __ ___
+ |  _ < / _ \ \ /\ / / _` | '__/ _ \
+ | |_) |  __/\ V  V / (_| | | |  __/
+ |____/ \___| \_/\_/ \__,_|_|  \___|
+```
+
+If you try and print out a structure containing a degenerate multidimensional scalar of type array it will blow up. See the `Stdlib Print Trees Function` documentation.
+
+See the documentation on `iota (⍳) the index function` on how to create such degenerate forms.
+
+There are a number of possible reasons for this:
+
+1 its a bug, the print tree function is defective
+2 degenerate forms should be printable but the current structure of the Abstract Syntax Tree is defective
+3 the developer is an idiot
+4 some combination of points 1, 2 and 3
+
 ## Printing trees in Rappel
 
 Here are some examples:
