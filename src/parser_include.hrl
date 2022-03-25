@@ -137,8 +137,8 @@ add_to_fn_array(#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
               args = Args ++ [RHS]}.
 
 make_monadic_train(Fns, AST) ->
-  #'$ast¯'{char_no = CNo} = Fns,
   report_on_dbg(make_monadic_train, 1, [{fns, Fns}, {ast, AST}]),
+  #'$ast¯'{char_no = CNo} = Fns,
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_monadic_train}}],
                  args    = [Fns, AST],
                  char_no = CNo,
