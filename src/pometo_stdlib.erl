@@ -275,7 +275,7 @@ get_tree(#'$ast¯'{do   = #'$shape¯'{dimensions = 0},
                   args = Arg}, NeedsRoof) ->
   get_tree(Arg, NeedsRoof);
 get_tree(#'$ast¯'{do   = Do,
-                  args = Args} = AST, NeedsRoof) ->
+                  args = Args} = _AST, NeedsRoof) ->
   NewArgs = case Args of
       L when is_list(L) -> L;
       M when is_map(M)  -> {_Discard, Keep} = lists:unzip(lists:sort(maps:to_list(M))),
