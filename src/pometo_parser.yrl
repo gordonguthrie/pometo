@@ -55,7 +55,7 @@ Endsymbol  '$end'.
 
 Right    10 Rank.
 Right    11 ConsecutiveFns.
-Right    12 Vecs.
+Right    12 Vecs. % the problem
 Right    20 Vector.
 Right    30 Expr.
 Right    40 Args.
@@ -78,14 +78,10 @@ Exprs -> Let                   : ['$1'].
 Exprs -> Train                 : ['$1'].
 Exprs -> Exprs seperator Exprs : '$1' ++ '$3'.
 
-%Expr -> Expr ConsecutiveFns Expr : make_dyadic('$2', '$1', '$3').
-%Expr ->      ConsecutiveFns Expr : make_monadic('$1', '$2').
-%Expr -> Expr ConsecutiveFns Args : make_dyadic('$2', '$1', '$3').
-%Expr ->      ConsecutiveFns Args : make_monadic('$1', '$2').
-Expr -> Dyadic      : '$1'.
-Expr -> Monadic     : '$1'.
-Expr -> Associative : final_check_on_associative('$1').
-Expr -> Vecs        : '$1'.
+Expr -> Dyadic             : '$1'.
+Expr -> Monadic            : '$1'.
+Expr -> Associative        : final_check_on_associative('$1').
+Expr -> Vecs               : '$1'.
 Expr -> stdlib Args        : make_stdlib('$1', '$2').
 Expr -> stdlib MaybeVector : make_stdlib('$1', '$2').
 Expr -> stdlib Associative : make_stdlib('$1', '$2').
@@ -142,7 +138,7 @@ Let -> Var let_op Expr : make_let('$1', '$3').
 Let -> Var let_op Fns  : make_let_fn('$1', '$3').
 Let -> Var let_op Fn   : make_let_fn('$1', '$3').
 
-Vecs -> Vector      : finalise_vector('$1').
+Vecs -> Vector : finalise_vector('$1').
 
 Scalar -> open_bracket Vector      close_bracket : maybe_enclose_vector('$1', finalise_vector('$2')).
 Scalar -> open_bracket MaybeVector close_bracket : make_right_associative('$2').
@@ -175,6 +171,6 @@ Erlang code.
 %
 % These exports are how they do them
 -export([descend_arg/3,
-                 make_monadic_train/2]).
+         make_monadic_train/2]).
 
 -include("parser_include.hrl").
