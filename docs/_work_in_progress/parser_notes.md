@@ -150,6 +150,14 @@ The third case `+ - × ÷ + -` we know it is might be a train because it is assi
 
 Now move the variable to the start of the
 
+```
+ __          ___           _  ___
+ \ \        / / |         | ||__ \
+  \ \  /\  / /| |__   __ _| |_  ) |
+   \ \/  \/ / | '_ \ / _` | __|/ /
+    \  /\  /  | | | | (_| | |_|_|
+     \/  \/   |_| |_|\__,_|\__(_)
+```
 
 ## Trains, Right Associate Funcs, Runtime Evaluation
 
@@ -328,14 +336,24 @@ We need to be sure the parser can cope with fairly weird combos of vectors and t
 
 ```pometo
 A ← - + ÷
-B ← 333 444
-C ← 555
-D ← 666
-777 888 + C D - B A 9999 1010
+B ← 2 9
+C ← 4
+D ← 5
+6 7 + C D - B A 8 3
 ```
+
+A is intepreted as a (⍺ f ⍵) g (⍺ h ⍵) - dyadic fork (or dyadic fgh fork)
+
+| Fn    | Sign | Type    | LHS Argument   | RHS Argument       | Result             |
+|-------|------|---------|----------------|--------------------|--------------------|
+|divide | `÷`  | dyadic  | `array` [ 2 9] | `array` [ 8     3] | `array` [ 0.25  3] |
+|minus  | `-`  | dyadic  | `array` [ 2 9] | `array` [ 8     3] | `array` [¯6     6] |
+|plus   | `+`  | dyadic  | `array` [¯6 6] | `array` [ 0.25  3] | `array` [¯5.75  9] |
+|minus  | `-`  | dyadic  | `array` [ 4 5] | `array` [¯5.75  9] | `array` [ 9.75 ¯4] |
+|plus   | `+`  | dyadic  | `array` [ 6 7] | `array` [ 9.75 ¯4] | `array` [ 15.75 3] |
 
 Giving
 
 ```pometo_results
-10997.9667 2119.560396
+15.75 3
 ```
