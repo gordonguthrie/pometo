@@ -55,7 +55,6 @@ Rules.
 ⍀  : {token, {hybrid, TokenChars, TokenLen, "⍀"}}.
 
 %% Implemented Functions that don't take rank
-
 \+ : {token, {ambivalent, TokenChars, TokenLen, "+"}}.
 -  : {token, {ambivalent, TokenChars, TokenLen, "-"}}.
 ×  : {token, {ambivalent, TokenChars, TokenLen, "×"}}.
