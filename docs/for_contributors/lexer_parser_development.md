@@ -46,6 +46,10 @@ argument: ast: {'$ast¯',{'$shape¯',false,[2],none,unfinalised_vector,1,26},
 
 ```
 
+By default the parser dumper uses `io:format` but the environment variable `INEUNIT` can be used to dump parse trees in `eunit` tests, for example:
+
+`DBGPARSER=true INEUNIT=true rebar3 eunit --module=parser_tests --verbose`
+
 The parser itself operates directly on expressions so when attempting to debug the grammer (ie operator precedence etc, etc) you will need to work out the invocation order of parse expressions.
 
 To help you do this there is function called `log/2` in `parse_include.hrl`. It is a pass through function that takes 2 arguments - a term in the parser and a string label. It prints out the term - marked with the label - and returns the term unchanged.
@@ -56,12 +60,14 @@ Use it like this:
 Vecs -> Vector      : log('$1', "making Vector a Vecs").
 ```
 
-and you will get an output in the console like this:
+and if the environment variable `DBGPARSER` is set you will get an output in the console like this:
 
 ```erlang
 /pometo/src/parser_include.hrl:355:<0.9.0>: in making Vector a Vecs for {'$ast¯',{'$shape¯',false,0,none,number,3,3},
                                      10,3,3}
 ```
+
+`log` by default uses `io:format` but can be changed to use the macro `?debugFmt` when running `eunit` with the `ENV` variable `INEUNIT` just like the debug parser.
 
 It tells you that at the time the rule `Vecs -> Vector` was invoked the value of `$1` (ie the non-Terminal `Vector`) is the erlang record `#'$ast¯'{}`.
 

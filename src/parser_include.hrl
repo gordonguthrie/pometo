@@ -16,18 +16,42 @@
 %%% logging functions
 %%%
 
+% remember if the ENV variables are set to any old thing the values returned will be a string
 report_on_dbg(Function, Headnumber, Args) ->
   case os:getenv("DBGPARSER", false) of
     false -> ok;
-    _     -> io:format("*************************~n"),
-             io:format("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
-             [io:format("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
-             io:format("*************************~n~n")
+    _     -> case os:getenv("INEUNIT", false) of
+                false -> report_on_dbg(ioformat, Function, Headnumber, Args);
+                _     -> report_on_dbg(debugfmt, Function, Headnumber, Args)
+             end
   end.
 
+report_on_dbg(debugfmt, Function, Headnumber, Args) ->
+  ?debugFmt("*************************~n", []),
+  ?debugFmt("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
+  [?debugFmt("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
+  ?debugFmt("*************************~n~n", []);
+report_on_dbg(ioformat, Function, Headnumber, Args) ->
+  io:format("*************************~n"),
+  io:format("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
+  [io:format("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
+  io:format("*************************~n~n").
+
+% remember if the ENV variables are set to any old thing the values returned will be a string
 log(X, Label) ->
-  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
-  X.
+    case os:getenv("DBGPARSER", false) of
+    false -> ok;
+    _     -> case os:getenv("INEUNIT", false) of
+                false -> log(ioformat, X, Label);
+                _     -> log(debugfmt, X, Label)
+             end
+    end,
+    X.
+
+log(debugfmt, X, Label) ->
+  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]);
+log(ioformat, X, Label) ->
+  io:format("in " ++ Label ++ " for ~p~n", [X]).
 
 %%%
 %%% Functions used by the parser
