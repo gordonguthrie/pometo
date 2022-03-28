@@ -103,7 +103,7 @@ Train ->      open_bracket TrainFns close_bracket Args : make_monadic_train('$2'
 Train ->      open_bracket TrainFns close_bracket      : log('$2', "Train -> open_bracket Fns close_bracket").
 
 TrainFns -> Fns Fn     : make_fn_array('$1', '$2').
-TrainFns -> Fns Var   : make_fn_array('$1', '$2').
+TrainFns -> Fns Var    : make_fn_array('$1', '$2').
 TrainFns -> Fns Vector : make_fn_array('$1', '$2').
 TrainFns -> Fns        : log('$1', "TrainFns -> Fns").
 TrainFns -> Fn         : log('$1', "TrainFns -> Fn").
