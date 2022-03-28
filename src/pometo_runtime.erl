@@ -528,12 +528,10 @@ type_array2([#'$ast¯'{do = #'$shape¯'{}} | Rest], Acc) -> type_array2(Rest, Ac
 % the LHS is allowed to be a value if the remain functions are an even number
 % otherwise it is a syntax error because you can't don't have enough to make an Agh
 make_train([H | T] = List, Type, Operands) ->
-  ?debugFmt("in make train (1)~n", []),
   case H of
     #'$ast¯'{do      = #'$shape¯'{},
              line_no = LNo,
              char_no = CNo} ->
-      ?debugFmt("in make train (1a)~n", []),
       Len = length(T),
       case is_even(Len) of
         true  -> make_train2(lists:reverse(List), Type, Operands);
@@ -541,7 +539,6 @@ make_train([H | T] = List, Type, Operands) ->
                  throw({error, Error})
       end;
     _ ->
-        ?debugFmt("in make train (1b)~n", []),
         make_train2(lists:reverse(List), Type, Operands)
   end.
 
