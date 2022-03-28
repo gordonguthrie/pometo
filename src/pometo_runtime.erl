@@ -151,6 +151,7 @@ are_args_valid(#'$ast¯'{do   = defer_evaluation,
 are_args_valid(_X) ->
  ok.
 
+%% not sure why its maybe monadic because it might be dyadic
 run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                                                     type = func},
                                   args = [Arg]}                    = _LHS,
@@ -191,6 +192,7 @@ run_maybe_monadic_train([#'$ast¯'{}        = LHS,
     #'$ast¯'{do = #'$func¯'{}}  -> run_ast2(ExpandedAST)
   end.
 
+%% this is deffo a dyadic train maybe?
 run_maybe_dyadic_train([#'$ast¯'{do   = #'$shape¯'{type = func},
                                  args = Args}                    = _LHS,
                          #'$ast¯'{do  = #'$shape¯'{}}            = A,
@@ -526,10 +528,12 @@ type_array2([#'$ast¯'{do = #'$shape¯'{}} | Rest], Acc) -> type_array2(Rest, Ac
 % the LHS is allowed to be a value if the remain functions are an even number
 % otherwise it is a syntax error because you can't don't have enough to make an Agh
 make_train([H | T] = List, Type, Operands) ->
+  ?debugFmt("in make train (1)~n", []),
   case H of
     #'$ast¯'{do      = #'$shape¯'{},
              line_no = LNo,
              char_no = CNo} ->
+      ?debugFmt("in make train (1a)~n", []),
       Len = length(T),
       case is_even(Len) of
         true  -> make_train2(lists:reverse(List), Type, Operands);
@@ -537,7 +541,8 @@ make_train([H | T] = List, Type, Operands) ->
                  throw({error, Error})
       end;
     _ ->
-      make_train2(lists:reverse(List), Type, Operands)
+        ?debugFmt("in make train (1b)~n", []),
+        make_train2(lists:reverse(List), Type, Operands)
   end.
 
 make_train2([Final], _Type,  _Operands) ->
@@ -557,7 +562,7 @@ make_train2([RHS, LHS], Type, Operands) ->
   LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = [NewRHS]}.
 
-
+%% this function is wierd because it doesn't appear to be running right associatives only
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = D1}} = AST1,
                        #'$ast¯'{do   = #'$shape¯'{dimensions = D2}} = AST2])
   when D1 == unsized_vector orelse
