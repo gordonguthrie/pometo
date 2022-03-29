@@ -1,0 +1,6 @@
+%% encoding: UTF-8
+{application,pometo}.
+{modules,[pometo,pometo_compiler,pometo_errors,pometo_lexer,pometo_parser,
+          pometo_runtime,pometo_runtime_dyadic,pometo_runtime_format,
+          pometo_runtime_monadic,pometo_runtime_rank,pometo_stdlib,
+          pometo_test_helper,runner,scope_dictionary]}.

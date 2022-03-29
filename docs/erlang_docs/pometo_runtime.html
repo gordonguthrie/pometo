@@ -1,0 +1,422 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module pometo_runtime</title>
+<link rel="stylesheet" type="text/css" href="../assets/css/style.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module pometo_runtime</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>The Pometo runtime.
+<p>Copyright © 2021 Gordon Guthrie &lt;gordon@hypernumbers.com&gt;</p>
+
+
+<h2><a name="description">Description</a></h2><p>The Pometo runtime.   
+The runtime is responsible for actually running Pometo code.   
+The compiler and interpreter generate an Abstract Syntax Tree which describes the flow   
+of operations on supplied data and that AST is executed in the runtime. (A function is called   
+which takes the AST as an argument).</p>
+  
+   A series of other functions are exposed for TESTING ONLY and marked with
+   the postfix <code>_TEST</code>.
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#run_and_renumber-3">run_and_renumber/3</a></td><td><code>run_and_renumber</code> renumbers an AST element (doesn't run it tho).</td></tr>
+<tr><td valign="top"><a href="#dyadic-1">dyadic/1</a></td><td><code>dyadic</code> evaluates the LHS and RHS arguments of a dyadic function
+  and invokes the function on the resulting values
+  FOR USE IN COMPILED MODULES ONLY.</td></tr>
+<tr><td valign="top"><a href="#monadic-1">monadic/1</a></td><td><code>monadic</code> evaluates the RHS argument of a monadic function
+  and invokes the function on the resulting value
+  FOR USE IN COMPILED MODULES ONLY.</td></tr>
+<tr><td valign="top"><a href="#dyadic_ranked-1">dyadic_ranked/1</a></td><td><code>dyadic_ranked</code> evaluates the LHS and RHS arguments of a ranked dyadic function
+  and invokes the function on the resulting values.</td></tr>
+<tr><td valign="top"><a href="#monadic_ranked-1">monadic_ranked/1</a></td><td><code>monadic_ranked</code> evaluates the RHS argument of a ranked monadic function
+  and invokes the function on the resulting value.</td></tr>
+<tr><td valign="top"><a href="#ambivalent-1">ambivalent/1</a></td><td><code>ambivalent</code> infers an ambivalent function is monadic or dyadic from context
+  and evaluates either the RHS argument of it or both the LHS and RHS ones as appropriate
+  and invokes the function either monadically or dyadically on the results.</td></tr>
+<tr><td valign="top"><a href="#apply_fn-1">apply_fn/1</a></td><td><code>ambivalent</code> takes two arguments [{ModuleName, FunctionName}] and a list of Arguements
+  and then invokes them.</td></tr>
+<tr><td valign="top"><a href="#resolve_monadic_fork-1">resolve_monadic_fork/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#runtime_let-1">runtime_let/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#run_maybe_monadic_train-1">run_maybe_monadic_train/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#run_maybe_dyadic_train-1">run_maybe_dyadic_train/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_vector_TEST-2">make_vector_TEST/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_vector_TEST-1">make_vector_TEST/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_train-3">make_train/3</a></td><td></td></tr>
+<tr><td valign="top"><a href="#run_right_associative-1">run_right_associative/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_runtime_right_associative-1">make_runtime_right_associative/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#run_ast-2">run_ast/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#are_all_positive_integers-1">are_all_positive_integers/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#product-1">product/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#index-1">index/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_eager-1">make_eager/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#unindex-1">unindex/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#force_index-2">force_index/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_indexed-1">make_indexed/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_unindexed-1">make_unindexed/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#args_reverse-1">args_reverse/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_no_of_elements_from_dims-1">get_no_of_elements_from_dims/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_no_of_elements_from_args-1">get_no_of_elements_from_args/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_dimensions-1">make_dimensions/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#args_to_list-1">args_to_list/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#snip_args-2">snip_args/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#extend-5">extend/5</a></td><td></td></tr>
+<tr><td valign="top"><a href="#maybe_cast_scalar_to_vector-1">maybe_cast_scalar_to_vector/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#choose_accumulator-2">choose_accumulator/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#set_return_type-2">set_return_type/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#maybe_reverse-1">maybe_reverse/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_nth-2">get_nth/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#resolve_rank-2">resolve_rank/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#foldl-3">foldl/3</a></td><td></td></tr>
+<tr><td valign="top"><a href="#is_terminated-1">is_terminated/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_enumerable-1">make_enumerable/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_first-1">get_first/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_axes-1">make_axes/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_count-1">make_count/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#increment_count-2">increment_count/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#make_index_from_count-2">make_index_from_count/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#eliminate_rank-2">eliminate_rank/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#resize_axes-2">resize_axes/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#offset_count-3">offset_count/3</a></td><td></td></tr>
+<tr><td valign="top"><a href="#axes_to_dims-1">axes_to_dims/1</a></td><td></td></tr>
+<tr><td valign="top"><a href="#delete_dim_from_count-2">delete_dim_from_count/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#maybe_collapse_identity_arrays-1">maybe_collapse_identity_arrays/1</a></td><td></td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="run_and_renumber-3">run_and_renumber/3</a></h3>
+<div class="spec">
+<p><tt>run_and_renumber(AST, LNo, CNo) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>run_and_renumber</code> renumbers an AST element (doesn't run it tho).
+  FOR USE IN COMPILED MODULES ONLY.</p>
+<p><b><font color="red">To do</font></b><ul><li><font color="red">rename.</font></li></ul></p>
+
+<h3 class="function"><a name="dyadic-1">dyadic/1</a></h3>
+<div class="spec">
+<p><tt>dyadic(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>dyadic</code> evaluates the LHS and RHS arguments of a dyadic function
+  and invokes the function on the resulting values
+  FOR USE IN COMPILED MODULES ONLY.</p>
+
+<h3 class="function"><a name="monadic-1">monadic/1</a></h3>
+<div class="spec">
+<p><tt>monadic(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>monadic</code> evaluates the RHS argument of a monadic function
+  and invokes the function on the resulting value
+  FOR USE IN COMPILED MODULES ONLY.</p>
+
+<h3 class="function"><a name="dyadic_ranked-1">dyadic_ranked/1</a></h3>
+<div class="spec">
+<p><tt>dyadic_ranked(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>dyadic_ranked</code> evaluates the LHS and RHS arguments of a ranked dyadic function
+  and invokes the function on the resulting values.
+  FOR USE IN COMPILED MODULES ONLY.</p>
+
+<h3 class="function"><a name="monadic_ranked-1">monadic_ranked/1</a></h3>
+<div class="spec">
+<p><tt>monadic_ranked(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>monadic_ranked</code> evaluates the RHS argument of a ranked monadic function
+  and invokes the function on the resulting value.
+  FOR USE IN COMPILED MODULES ONLY.</p>
+
+<h3 class="function"><a name="ambivalent-1">ambivalent/1</a></h3>
+<div class="spec">
+<p><tt>ambivalent(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>ambivalent</code> infers an ambivalent function is monadic or dyadic from context
+  and evaluates either the RHS argument of it or both the LHS and RHS ones as appropriate
+  and invokes the function either monadically or dyadically on the results.
+  FOR USE IN COMPILED MODULES ONLY.</p>
+
+<h3 class="function"><a name="apply_fn-1">apply_fn/1</a></h3>
+<div class="spec">
+<p><tt>apply_fn(X1) -&gt; any()</tt></p>
+<p> </p>
+</div><p><code>ambivalent</code> takes two arguments [{ModuleName, FunctionName}] and a list of Arguements
+  and then invokes them. This is not subject to injection risk as the compiler will only allow user generated
+  module names in a restricted pometo namespace.</p>
+
+<h3 class="function"><a name="resolve_monadic_fork-1">resolve_monadic_fork/1</a></h3>
+<div class="spec">
+<p><tt>resolve_monadic_fork(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="runtime_let-1">runtime_let/1</a></h3>
+<div class="spec">
+<p><tt>runtime_let(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="run_maybe_monadic_train-1">run_maybe_monadic_train/1</a></h3>
+<div class="spec">
+<p><tt>run_maybe_monadic_train(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="run_maybe_dyadic_train-1">run_maybe_dyadic_train/1</a></h3>
+<div class="spec">
+<p><tt>run_maybe_dyadic_train(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_vector_TEST-2">make_vector_TEST/2</a></h3>
+<div class="spec">
+<p><tt>make_vector_TEST(AST1, AST2) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_vector_TEST-1">make_vector_TEST/1</a></h3>
+<div class="spec">
+<p><tt>make_vector_TEST(List) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_train-3">make_train/3</a></h3>
+<div class="spec">
+<p><tt>make_train(T, Type, Operands) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="run_right_associative-1">run_right_associative/1</a></h3>
+<div class="spec">
+<p><tt>run_right_associative(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_runtime_right_associative-1">make_runtime_right_associative/1</a></h3>
+<div class="spec">
+<p><tt>make_runtime_right_associative(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="run_ast-2">run_ast/2</a></h3>
+<div class="spec">
+<p><tt>run_ast(AST, Str) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="are_all_positive_integers-1">are_all_positive_integers/1</a></h3>
+<div class="spec">
+<p><tt>are_all_positive_integers(T) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="product-1">product/1</a></h3>
+<div class="spec">
+<p><tt>product(T) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="index-1">index/1</a></h3>
+<div class="spec">
+<p><tt>index(Args) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_eager-1">make_eager/1</a></h3>
+<div class="spec">
+<p><tt>make_eager(AST) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="unindex-1">unindex/1</a></h3>
+<div class="spec">
+<p><tt>unindex(Args) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="force_index-2">force_index/2</a></h3>
+<div class="spec">
+<p><tt>force_index(AST, Forcing) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_indexed-1">make_indexed/1</a></h3>
+<div class="spec">
+<p><tt>make_indexed(AST) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_unindexed-1">make_unindexed/1</a></h3>
+<div class="spec">
+<p><tt>make_unindexed(AST) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="args_reverse-1">args_reverse/1</a></h3>
+<div class="spec">
+<p><tt>args_reverse(List) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="get_no_of_elements_from_dims-1">get_no_of_elements_from_dims/1</a></h3>
+<div class="spec">
+<p><tt>get_no_of_elements_from_dims(T) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="get_no_of_elements_from_args-1">get_no_of_elements_from_args/1</a></h3>
+<div class="spec">
+<p><tt>get_no_of_elements_from_args(T) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_dimensions-1">make_dimensions/1</a></h3>
+<div class="spec">
+<p><tt>make_dimensions(L) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="args_to_list-1">args_to_list/1</a></h3>
+<div class="spec">
+<p><tt>args_to_list(List) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="snip_args-2">snip_args/2</a></h3>
+<div class="spec">
+<p><tt>snip_args(List, N) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="extend-5">extend/5</a></h3>
+<div class="spec">
+<p><tt>extend(List, Start, N, TopUp, Rem) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="maybe_cast_scalar_to_vector-1">maybe_cast_scalar_to_vector/1</a></h3>
+<div class="spec">
+<p><tt>maybe_cast_scalar_to_vector(AST) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="choose_accumulator-2">choose_accumulator/2</a></h3>
+<div class="spec">
+<p><tt>choose_accumulator(AST1, AST2) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="set_return_type-2">set_return_type/2</a></h3>
+<div class="spec">
+<p><tt>set_return_type(AST, Map) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="maybe_reverse-1">maybe_reverse/1</a></h3>
+<div class="spec">
+<p><tt>maybe_reverse(Map) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="get_nth-2">get_nth/2</a></h3>
+<div class="spec">
+<p><tt>get_nth(X1, N) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="resolve_rank-2">resolve_rank/2</a></h3>
+<div class="spec">
+<p><tt>resolve_rank(NewD2, Rank) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="foldl-3">foldl/3</a></h3>
+<div class="spec">
+<p><tt>foldl(ApplyFn, Rest, Len) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="is_terminated-1">is_terminated/1</a></h3>
+<div class="spec">
+<p><tt>is_terminated(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_enumerable-1">make_enumerable/1</a></h3>
+<div class="spec">
+<p><tt>make_enumerable(Map) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="get_first-1">get_first/1</a></h3>
+<div class="spec">
+<p><tt>get_first(X1) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_axes-1">make_axes/1</a></h3>
+<div class="spec">
+<p><tt>make_axes(List) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_count-1">make_count/1</a></h3>
+<div class="spec">
+<p><tt>make_count(N) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="increment_count-2">increment_count/2</a></h3>
+<div class="spec">
+<p><tt>increment_count(X1, Axes) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="make_index_from_count-2">make_index_from_count/2</a></h3>
+<div class="spec">
+<p><tt>make_index_from_count(X1, Axes) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="eliminate_rank-2">eliminate_rank/2</a></h3>
+<div class="spec">
+<p><tt>eliminate_rank(Rank, D) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="resize_axes-2">resize_axes/2</a></h3>
+<div class="spec">
+<p><tt>resize_axes(T, Axes) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="offset_count-3">offset_count/3</a></h3>
+<div class="spec">
+<p><tt>offset_count(Offset, Rank, X3) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="axes_to_dims-1">axes_to_dims/1</a></h3>
+<div class="spec">
+<p><tt>axes_to_dims(Map) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="delete_dim_from_count-2">delete_dim_from_count/2</a></h3>
+<div class="spec">
+<p><tt>delete_dim_from_count(Rank, X2) -&gt; any()</tt></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="maybe_collapse_identity_arrays-1">maybe_collapse_identity_arrays/1</a></h3>
+<div class="spec">
+<p><tt>maybe_collapse_identity_arrays(AST) -&gt; any()</tt></p>
+<p> </p>
+</div>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc</i></p>
+</body>
+</html>
