@@ -11,12 +11,12 @@ RUN apt-get install -y emacs
 RUN apt-get install -y wget
 RUN apt-get install -y nodejs
 RUN apt-get install -y npm
-RUN apt-get install -y postgresql postgresql-contrib
+# RUN apt-get install -y postgresql postgresql-contrib
 RUN apt-get install -y sudo
 RUN apt-get install -y lsof
 RUN apt-get install -y net-tools
 RUN apt-get install -y x11-apps
-RUN apt-get install -y pgadmin3
+# RUN apt-get install -y pgadmin3
 RUN apt-get install -y tree
 
 # install Jekyll to test documentation
