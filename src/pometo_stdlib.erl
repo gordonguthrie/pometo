@@ -313,13 +313,19 @@ fix_up_roof(List, _) ->
   List.
 
 printout(#'$func¯'{do = Do}) ->
-  lists:flatten(io_lib:format("~p", [Do]));
+  possible_unicode_printout(Do);
 printout([{apply_fn, {Module, Function}}]) ->
   lists:flatten(io_lib:format("apply ~p:~p", [Module, Function]));
 printout(#'$shape¯'{dimensions = Dims}) ->
   lists:flatten(io_lib:format("shape: ~p", [Dims]));
 printout(A) when is_atom(A) ->
   lists:flatten(io_lib:format("~p", [A])).
+
+possible_unicode_printout(Element) ->
+  case catch (lists:flatten(io_lib:format("~ts", [Element]))) of
+    {'EXIT', {badarg, _}} -> lists:flatten(io_lib:format("~p", [Element]));
+    X                     -> X
+  end.
 
 debug(Lable, Contents) ->
   print_start(Lable),
