@@ -63,6 +63,8 @@ toc:
         url:  for_contributors/open_source_maintainer_onboarding.html
       - page: Getting Started As A Developer Of The Pometo Runtime And Language
         url:  for_contributors/getting_started_as_a_developer_of_the_pometo_runtime_and_language.html
+        page: Documentation Of The Erlang Code
+        url:  for_contributors/documentation_of_the_erlang_code.html
       - page: The Language Roadmap
         url:  for_contributors/the_language_roadmap.html
       - page: Our Development Environment

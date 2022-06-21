@@ -48,14 +48,12 @@ Rules.
 %% Hybrids can be either functions or operators depending on context
 %% * all Hybrids take rank
 %% * all Hybrids are monadic operators but dyadic functions
-
 /  : {token, {hybrid, TokenChars, TokenLen, "/"}}.
 \\ : {token, {hybrid, TokenChars, TokenLen, "\\"}}.
 ⌿  : {token, {hybrid, TokenChars, TokenLen, "⌿"}}.
 ⍀  : {token, {hybrid, TokenChars, TokenLen, "⍀"}}.
 
 %% Implemented Functions that don't take rank
-
 \+ : {token, {ambivalent, TokenChars, TokenLen, "+"}}.
 -  : {token, {ambivalent, TokenChars, TokenLen, "-"}}.
 ×  : {token, {ambivalent, TokenChars, TokenLen, "×"}}.

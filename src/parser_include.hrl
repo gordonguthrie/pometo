@@ -16,23 +16,52 @@
 %%% logging functions
 %%%
 
+% remember if the ENV variables are set to any old thing the values returned will be a string
 report_on_dbg(Function, Headnumber, Args) ->
   case os:getenv("DBGPARSER", false) of
     false -> ok;
-    _     -> io:format("*************************~n"),
-             io:format("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
-             [io:format("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
-             io:format("*************************~n~n")
+    _     -> case os:getenv("INEUNIT", false) of
+                false -> report_on_dbg(ioformat, Function, Headnumber, Args);
+                _     -> report_on_dbg(debugfmt, Function, Headnumber, Args)
+             end
   end.
 
+report_on_dbg(debugfmt, Function, Headnumber, Args) ->
+  ?debugFmt("*************************~n", []),
+  ?debugFmt("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
+  [?debugFmt("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
+  ?debugFmt("*************************~n~n", []);
+report_on_dbg(ioformat, Function, Headnumber, Args) ->
+  io:format("*************************~n"),
+  io:format("in parser include function ~p/~p (func head: ~p)~n", [Function, length(Args), Headnumber]),
+  [io:format("argument: ~p: ~p~n", [Name, Val])|| {Name, Val} <- Args],
+  io:format("*************************~n~n").
+
+% remember if the ENV variables are set to any old thing the values returned will be a string
 log(X, Label) ->
-  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]),
-  X.
+    case os:getenv("DBGPARSER", false) of
+    false -> ok;
+    _     -> case os:getenv("INEUNIT", false) of
+                false -> log(ioformat, X, Label);
+                _     -> log(debugfmt, X, Label)
+             end
+    end,
+    X.
+
+log(debugfmt, X, Label) ->
+  ?debugFmt("in " ++ Label ++ " for ~p~n", [X]);
+log(ioformat, X, Label) ->
+  io:format("in " ++ Label ++ " for ~p~n", [X]).
 
 %%%
 %%% Functions used by the parser
 %%%
 
+%% This function is called last on Associative data structures and checks
+%% that the function actually is associative
+%%
+%% TODO: is this check redundant?
+%%
 final_check_on_associative(#'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_right_associative}}],
                                     args    = [#'$ast¯'{do   = #'$shape¯'{type = maybe_func},
                                                         args = Args}],
@@ -48,6 +77,9 @@ final_check_on_associative(#'$ast¯'{} = AST) ->
   report_on_dbg(final_check_on_associative, 2, [{ast, AST}]),
   AST.
 
+%% this function makes a maybe vector when there is a Var mixed in with
+%% vector elements
+%% we don't know what it is until we get the Var resolved
 make_maybe_vector(#'$ast¯'{char_no = CNo} = LHS,
                   #'$ast¯'{}              = RHS) ->
   report_on_dbg(make_maybe_vector, 1, [{lhs, LHS}, {rhs, RHS}]),
@@ -60,6 +92,12 @@ make_maybe_vector(#'$ast¯'{char_no = CNo} = LHS,
                  line_no = scope_dictionary:get_line_no()},
   Ret.
 
+%% this function is called when there are either a set of function calls
+%% or there is a vector LHS and a set of function calls
+%% its a bit wierd that way
+%%
+%% the right associative is set as a runtime
+%% but it doesn't return right associatives only but all sorts
 make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type1},
                                 char_no = CNo}                             = LHS,
                        #'$ast¯'{do      = #'$shape¯'{type = Type2} = Shp2,
@@ -106,6 +144,7 @@ make_right_associative(#'$ast¯'{do      = #'$shape¯'{type = Type},
                  line_no = scope_dictionary:get_line_no()},
   Ret.
 
+%% makes an array out of fns (including things that might not be fns)
 make_fn_array(#'$ast¯'{do      = Do1,
                        char_no = CNo} = LHS,
               #'$ast¯'{do      = Do2} = RHS) ->
@@ -122,6 +161,7 @@ make_fn_array(#'$ast¯'{do      = Do1,
            char_no = CNo,
            line_no = scope_dictionary:get_line_no()}.
 
+%% adds a new elemenet to an existing fn array
 add_to_fn_array(#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
                                            type       = Type} = Shp,
                          args = Args} = LHS,
@@ -136,15 +176,17 @@ add_to_fn_array(#'$ast¯'{do   = #'$shape¯'{dimensions = [N],
                                    type       = NewType},
               args = Args ++ [RHS]}.
 
+%% creates a maybe monadic train
 make_monadic_train(Fns, AST) ->
-  #'$ast¯'{char_no = CNo} = Fns,
   report_on_dbg(make_monadic_train, 1, [{fns, Fns}, {ast, AST}]),
+  #'$ast¯'{char_no = CNo} = Fns,
   Ret = #'$ast¯'{do      = [{apply_fn, {pometo_runtime, run_maybe_monadic_train}}],
                  args    = [Fns, AST],
                  char_no = CNo,
                  line_no = scope_dictionary:get_line_no()},
   Ret.
 
+%% creates a maybe dyadic train
 make_dyadic_train(Fns, LHS, RHS) ->
   report_on_dbg(make_dyadic_train, 1, [{fns, Fns}, {lhs, LHS}, {rhs, RHS}]),
   #'$ast¯'{char_no = CNo} = Fns,
@@ -153,6 +195,7 @@ make_dyadic_train(Fns, LHS, RHS) ->
            char_no = CNo,
            line_no = scope_dictionary:get_line_no()}.
 
+%% converts an operator into a basic function
 op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do} = Func,
                   args    = []}                    = AST1,
          #'$ast¯'{do      = #'$func¯'{do   = [Op],
@@ -171,6 +214,7 @@ op_to_fn(#'$ast¯'{do      = #'$func¯'{do = Do} = Func,
                                   rank           = Rank,
                                   shape_changing = IsChanging}}.
 
+%% builds a normal AST but also injects rank into it
 add_rank({Type, CharNo, _, Val} = Expr,
          #'$ast¯'{do   = #'$shape¯'{dimensions = D},
                   args = Rank}  = AST) when is_list(D) ->
@@ -191,6 +235,7 @@ add_rank({Type, CharNo, _, Val} = Expr,
   NewRank = extract_rank(Rank, ?EMPTY_ACCUMULATOR),
   make_fn_ast2(Val, Type, NewRank, [], CharNo).
 
+%% general AST builder
 make_fn_ast({Type, CharNo, _, Val} = Expr) ->
   report_on_dbg(make_fn_ast, 1, [{expr, Expr}]),
   make_fn_ast2(Val, Type, default_rank(Val), [], CharNo).
@@ -207,6 +252,10 @@ make_fn_ast2(Fn, Type, Rank, Args, CharNo) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
+%% this function is called on a known dyadic construction to make
+%% the dyadic call
+%%
+%% it can be a simple dyadic call or a set of dyadic trains
 make_dyadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                      args = Args}                  = FuncAST,
             #'$ast¯'{}                             = LeftAST,
@@ -241,6 +290,12 @@ make_dyadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, LHS, RHS) ->
   report_on_dbg(make_dyadic, 4, [{funcAST, FuncAST}, {lhs, LHS}, {rhs, RHS}]),
   make_dyadic_train(FuncAST, LHS, RHS).
 
+%% this function makes a monadic invocation
+%% it can be one of:
+%% * a normal monadic call
+%% * set of right associative monadic applications
+%%   - which maybe collapsed if appropriate
+%% * monadic trains
 make_monadic(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                       args = Args}                       = FuncAST,
              #'$ast¯'{}                                  = RHS) when Type == monadic        orelse
@@ -272,6 +327,8 @@ make_monadic(#'$ast¯'{do = #'$shape¯'{type = variable}} = FuncAST, RHS) ->
   Ret = make_monadic_train(FuncAST, RHS),
   Ret.
 
+%% This function detects when a standard library function has been called
+%% and makes a function call to it
 make_stdlib({stdlib, CharNo, _, {Mod, Fn}} = Expr, #'$ast¯'{} = AST) ->
   report_on_dbg(make_stdlib, 1, [{expr, Expr}, {ast, AST}]),
   #'$ast¯'{do      = [{apply_fn, {Mod, Fn}}],
@@ -279,7 +336,8 @@ make_stdlib({stdlib, CharNo, _, {Mod, Fn}} = Expr, #'$ast¯'{} = AST) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
-
+%% this function just closes a vector off
+%% prior to finalisation the args are just scalars now they are made proper
 finalise_vector(#'$ast¯'{do   = #'$shape¯'{type = Type}} = AST) when Type == func orelse
                                                                      Type == maybe_func ->
   report_on_dbg(finalise_vector, 1, [{ast, AST}]),
@@ -297,6 +355,7 @@ finalise_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
   AST#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [D1], type = NewType},
               args = NewArgs}.
 
+%% builds a generic vector (which might be a vector or a rank)
 append_to_vector(#'$ast¯'{do   = #'$shape¯'{dimensions = [D1],
                                             type       = unfinalised_vector} = Shp,
                           args = Args1}                                             = LHS,
@@ -332,6 +391,7 @@ append_to_vector(#'$ast¯'{char_no = CNo}                                       
                  line_no = scope_dictionary:get_line_no()},
   Ret.
 
+%% takes a number (complex or otherwise) and makes a scalar of it
 make_scalar({Type, CharNo, _, {R, I}} = Expr, complex) when Type == complex_number       orelse
                                                             Type == maybe_complex_number ->
   report_on_dbg(make_scalar, 1, [{expr, Expr}, {complex, complex}]),
@@ -362,6 +422,7 @@ make_scalar({_Token, CharNo, _, Val} = Expr, Type) when Type == number   orelse
            char_no    = CharNo,
            line_no    = scope_dictionary:get_line_no()}.
 
+%% applies a sign to a thing
 handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{dimensions = 0,
                                                  type       = complex} = Shp,
                             args = #'$ast¯'{do   = complex,
@@ -389,6 +450,7 @@ handle_value(Sign, #'$ast¯'{do      = #'$shape¯'{type       = Type,
               args    = SignedVal,
               line_no = scope_dictionary:get_line_no()}.
 
+%% builds a generic variable name
 make_var({var, CharNo, _, Var} = Expr) ->
   report_on_dbg(make_var, 1, [{expr, Expr}]),
   Shp = basic_shape(CharNo, variable, scalar),
@@ -399,6 +461,7 @@ make_var({var, CharNo, _, Var} = Expr) ->
            char_no = CharNo,
            line_no = scope_dictionary:get_line_no()}.
 
+%% special AST builder for let forms that point to functions/maybe functions
 make_let_fn(#'$ast¯'{args = #'$var¯'{}} = AST, #'$ast¯'{do = #'$shape¯'{type = Type}} = RHS)
   when Type == func           orelse
        Type == maybe_func     ->
@@ -418,6 +481,7 @@ make_let_fn(AST, RHS) ->
   report_on_dbg(make_let_fn, 3, [{ast, AST}, {rhs, RHS}]),
   make_let(AST, RHS).
 
+%% general AST builder for let forms
 make_let(#'$ast¯'{args = #'$var¯'{} = V}, #'$ast¯'{} = Expr) ->
   report_on_dbg(make_let, 1, [{expr, Expr}]),
   #'$var¯'{name     = Var,

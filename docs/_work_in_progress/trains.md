@@ -145,7 +145,7 @@ B ← 2
 (B+÷)10
 ```
 
-This becomes `(2(+÷10))`:
+This becomes `2 + (÷10)`:
 
 ```pometo_results
 2.1

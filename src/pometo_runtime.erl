@@ -73,8 +73,9 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--include("parser_records.hrl").
+-include("comments.hrl").
 -include("errors.hrl").
+-include("parser_records.hrl").
 -include("runtime_include.hrl").
 
 %%
@@ -85,35 +86,28 @@ run_and_renumber(#'$ast¯'{} = AST, LNo, CNo) -> AST#'$ast¯'{line_no = LNo,
                                                             char_no = CNo};
 run_and_renumber(X, _LNo, _CNo)              -> X.
 
-dyadic([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling diadic with~n- ~p~n", [[Fn, [Arg1, Arg2]]]),
-                              NewArg1 = run_ast2(Arg1),
+dyadic([Fn, [Arg1, Arg2]]) -> NewArg1 = run_ast2(Arg1),
                               NewArg2 = run_ast2(Arg2),
-                              % io:format("NewArg1 is ~p~nNewArg2 is ~p~n", [NewArg1, NewArg2]),
-                              pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
+                              Ret = pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]),
+                              Ret.
 
-monadic([Fn, [Arg]]) -> % io:format("in pometo_runtime calling monadic with~n- ~p~n", [[Fn, [Arg]]]),
-                        NewArg = run_ast2(Arg),
+monadic([Fn, [Arg]]) -> NewArg = run_ast2(Arg),
                         pometo_runtime_monadic:monadic_RUNTIME([Fn, [NewArg]]).
 
-dyadic_ranked([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling diadic (ranked) with~n- ~p~n", [[Fn, [Arg1, Arg2]]]),
-                                     NewArg1 = run_ast2(Arg1),
+dyadic_ranked([Fn, [Arg1, Arg2]]) -> NewArg1 = run_ast2(Arg1),
                                      NewArg2 = run_ast2(Arg2),
                                      pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
 
-monadic_ranked([Fn, [Arg]]) -> % io:format("in pometo_runtime calling monadic (ranked) with~n- ~p~n", [[Fn, [Arg]]]),
-                               NewArg = run_ast2(Arg) ,
+monadic_ranked([Fn, [Arg]]) -> NewArg = run_ast2(Arg) ,
                                pometo_runtime_monadic:monadic_RUNTIME([Fn, [NewArg]]).
 
-ambivalent([Fn, [Arg]])        -> % io:format("in pometo_runtime calling ambivalent to monadic with~n- ~p~n- ~p~n", [Fn, Arg]),
-                                  NewArg = run_ast2(Arg),
+ambivalent([Fn, [Arg]])        -> NewArg = run_ast2(Arg),
                                   pometo_runtime_monadic:monadic_RUNTIME([Fn, [NewArg]]);
-ambivalent([Fn, [Arg1, Arg2]]) -> % io:format("in pometo_runtime calling ambivalent to dyadic with~n- ~p~n- ~p~n- ~p~n", [Fn, Arg1, Arg2]),
-                                  NewArg1 = run_ast2(Arg1),
+ambivalent([Fn, [Arg1, Arg2]]) -> NewArg1 = run_ast2(Arg1),
                                   NewArg2 = run_ast2(Arg2),
                                   pometo_runtime_dyadic:dyadic_RUNTIME([Fn, [NewArg1, NewArg2]]).
 
-apply_fn([[{Mod, Fun}], Args]) -> % io:format("Applying {~p : ~p} with args~n- ~p~n", [Mod, Fun, Args]),
-                                  Mod:Fun(Args).
+apply_fn([[{Mod, Fun}], Args]) -> Mod:Fun(Args).
 
 % This is an Afg monadic fork
 resolve_monadic_fork([#'$ast¯'{do   = let_op,
@@ -157,6 +151,7 @@ are_args_valid(#'$ast¯'{do   = defer_evaluation,
 are_args_valid(_X) ->
  ok.
 
+%% not sure why its maybe monadic because it might be dyadic
 run_maybe_monadic_train([#'$ast¯'{do   = #'$shape¯'{dimensions = [1],
                                                     type = func},
                                   args = [Arg]}                    = _LHS,
@@ -197,6 +192,7 @@ run_maybe_monadic_train([#'$ast¯'{}        = LHS,
     #'$ast¯'{do = #'$func¯'{}}  -> run_ast2(ExpandedAST)
   end.
 
+%% this is deffo a dyadic train maybe?
 run_maybe_dyadic_train([#'$ast¯'{do   = #'$shape¯'{type = func},
                                  args = Args}                    = _LHS,
                          #'$ast¯'{do  = #'$shape¯'{}}            = A,
@@ -543,7 +539,7 @@ make_train([H | T] = List, Type, Operands) ->
                  throw({error, Error})
       end;
     _ ->
-      make_train2(lists:reverse(List), Type, Operands)
+        make_train2(lists:reverse(List), Type, Operands)
   end.
 
 make_train2([Final], _Type,  _Operands) ->
@@ -563,7 +559,7 @@ make_train2([RHS, LHS], Type, Operands) ->
   LHS#'$ast¯'{do   = Func#'$func¯'{type = Type},
               args = [NewRHS]}.
 
-
+%% this function is wierd because it doesn't appear to be running right associatives only
 run_right_associative([#'$ast¯'{do   = #'$shape¯'{dimensions = D1}} = AST1,
                        #'$ast¯'{do   = #'$shape¯'{dimensions = D2}} = AST2])
   when D1 == unsized_vector orelse
@@ -783,7 +779,6 @@ maybe_make_vector(List)  -> Len = length(List),
 %%
 
 run_ast(AST, Str) ->
-  % pometo_stdlib:print_trees([AST]),
   try run_ast2(AST)
   catch
     throw:E -> {error, #error{} = Err} = E,
@@ -791,30 +786,23 @@ run_ast(AST, Str) ->
   end.
 
 run_ast2(#'$ast¯'{do   = [{apply_fn, {Mod, Fn}}],
-                  args = Args}) when is_list(Args)->
-  % io:format("in run_ast2 (1) Apply (~p:~p)~n- to Args is ~p~n", [Mod, Fn, Args]),
-  apply_fn([[{Mod, Fn}], Args]);
+                  args = Args} = _AST) when is_list(Args)->
+  Ret = apply_fn([[{Mod, Fn}], Args]),
+  Ret;
 run_ast2(#'$ast¯'{do = #'$shape¯'{type = Type}} = AST) when Type /= maybe_func andalso
                                                             Type /= func       ->
-  % io:format("in run_ast2 (2)~n- AST is ~p~n", [AST]),
   AST;
 run_ast2(#'$ast¯'{do      = #'$shape¯'{type = Type} = Shp,
                   args    = Args,
                   char_no = CNo,
                   line_no = LNo} = Funcs) when Type == maybe_func ->
-  % io:format("in run_ast2 (3) Funcs is ~p~n", [Funcs]),
   NewArgs = [run_ast2(X) || X <- Args],
-  % io:format("in run_ast2 (3) NewArgs is ~p~n", [NewArgs]),
   case type_array(NewArgs) of
-    func  -> % io:format("in run_ast2 (3) its a func~n", []),
-             Funcs#'$ast¯'{do   = Shp#'$shape¯'{type = func},
+    func  -> Funcs#'$ast¯'{do   = Shp#'$shape¯'{type = func},
                            args = NewArgs};
-    shape -> % io:format("in run_ast2 (3) its a shape~n", []),
-             Vec = make_vector(NewArgs, CNo, LNo),
-             % io:format("in run_ast2 (3) Vec is ~p~n", [Vec]),
+    shape -> Vec = make_vector(NewArgs, CNo, LNo),
              Vec;
-    mixed -> % io:format("in run_ast2 (3) its a mixed~n", []),
-             {MaybeTrain, [RHS]} = lists:split(length(NewArgs) - 1, Args),
+    mixed -> {MaybeTrain, [RHS]} = lists:split(length(NewArgs) - 1, Args),
              Maybe2 = Funcs#'$ast¯'{do   = Shp#'$shape¯'{dimensions = [length(MaybeTrain)],
                                                          type       = maybe_func},
                                     args = MaybeTrain},
@@ -822,42 +810,36 @@ run_ast2(#'$ast¯'{do      = #'$shape¯'{type = Type} = Shp,
   end;
 run_ast2(#'$ast¯'{do   = 'let_op',
                   args = [_V, A | []]} = AST) ->
-  % io:format("in run_ast2 (4) AST is ~p~n", [AST]),
   NewL = AST#'$ast¯'{do   = runtime_let,
                      args = A},
-  runtime_let([NewL]);
+  Ret = runtime_let([NewL]),
+  Ret;
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                   args = [A1, A2]} = _AST)             when Type == dyadic        orelse
                                                             Type == dyadic_ranked orelse
                                                             Type == ambivalent    ->
-  % io:format("in run_ast2 (5) AST is ~p~n", [AST]),
   dyadic([Func, [run_ast2(A1), run_ast2(A2)]]);
 run_ast2(#'$ast¯'{do   = #'$func¯'{type = Type} = Func,
                   args = [A]})                          when Type == monadic        orelse
                                                              Type == monadic_ranked orelse
                                                              Type == ambivalent     ->
-  % io:format("in run_ast2 (6) Func is ~p ~n- A is ~p~n", [Func, A]),
-  monadic([Func, [run_ast2(A)]]);
+  Evaluated = run_ast2(A),
+  monadic([Func, [Evaluated]]);
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do   = #'$shape¯'{type = variable},
                                    args = #'$var¯'{} = Var}]}) ->
-  % io:format("in run_ast2 (7) Var is ~p~n", [Var]),
   Var;
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do = #'$func¯'{}}]} = AST)  ->
-  % io:format("in run_ast2 (8) AST is ~p~n", [AST]),
   AST;
 run_ast2(#'$ast¯'{do   = defer_evaluation,
                   args = [#'$ast¯'{do   = #'$shape¯'{},
                                    args = Args}]} = _AST) ->
-  % io:format("in run_ast2 (9) AST is ~p~n", [AST]),
   Args;
 run_ast2(#'$ast¯'{do   = resolve_monadic_fork,
                   args = Args}) ->
-  % io:format("in run_ast2 (10) Args is ~p~n", [Args]),
   resolve_monadic_fork(Args);
 run_ast2(A) ->
-  % io:format("in run_ast2 (11) A is ~p~n", [A]),
   A.
 
 are_all_positive_integers([])                                 -> true;
