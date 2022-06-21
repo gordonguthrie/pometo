@@ -13,3 +13,4 @@ docs/_site
 docs/Gemfile.lock
 *.beam
 tmp/*
+pometo.dot
