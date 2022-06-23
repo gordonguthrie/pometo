@@ -72,7 +72,7 @@ The minus function performs normal sign reversal on both parts of a complex no:
 
 ## Dyadic Use On Complex Nos
 
-This is normal complex subraction - both parts are subtracted:
+This is normal complex subtraction - both parts are subtracted:
 
 ```pometo
 1J2 3J¯3 - 4j¯5 ¯1j4
