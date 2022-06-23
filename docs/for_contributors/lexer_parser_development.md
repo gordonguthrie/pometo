@@ -82,5 +82,11 @@ The key things to understand are:
 
 You can scan the reduce/shift decisioning tree and reason about how the parser made the decision it did.
 
+The parser itself can be visualised with the help of a little script that converts it into a file with `.dot` format that can be converted to a graph.
+
+Simpley run the script `make_parser_graph.sh` and it will dump a version of the current `pometo_parser.yrl` file into the file `pometo.dot`. Copy that file into a `.dot` visualisation tool like [GraphViz](https://dreampuf.github.io/GraphvizOnline/) and you will get a picture of how your parser resolves:
+
+![SVG of the parser tree](../images/parser.svg)
+
 ***NOTE***: if this scares the bejeebus out of you, ask for help, happy to explain, its all good - even if quite obscure...
 
