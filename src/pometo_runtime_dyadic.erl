@@ -22,9 +22,6 @@
 dyadic_RUNTIME([Func, [LHS, RHS]]) ->
   NewLHS = pometo_runtime:maybe_collapse_identity_arrays(LHS),
   NewRHS = pometo_runtime:maybe_collapse_identity_arrays(RHS),
-  % io:format("in dyadic_RUNTIME Func is ~p~n", [Func]),
-  % io:format("in dyadic_RUNTIME NewLHS is ~p~n", [NewLHS]),
-  % io:format("in dyadic_RUNTIME NewRHS is ~p~n", [NewRHS]),
   dyadic_RUNTIM2([Func, [NewLHS, NewRHS]]).
 
 dyadic_RUNTIM2([#'$func¯'{do      = [#'$op¯'{op = Op, fns = _Fns}]},
@@ -406,9 +403,14 @@ execute_dyadic(#'$func¯'{do = ["="]}, L, R) -> case L of
 execute_dyadic(#'$func¯'{do = ["+"]}, L, R) -> L + R;
 execute_dyadic(#'$func¯'{do = ["-"]}, L, R) -> L - R;
 execute_dyadic(#'$func¯'{do = ["×"]}, L, R) -> L * R;
-execute_dyadic(#'$func¯'{do = ["÷"]}, L, R) -> L / R;
+execute_dyadic(#'$func¯'{do = ["÷"]}, L, R) -> divide(L, R);
 execute_dyadic(#'$func¯'{do = ["|"]}, 0, R) -> R;
 execute_dyadic(#'$func¯'{do = ["|"]}, L, R) -> R/L.
+
+% Scalar Functions
+% 0÷0 ↔ 1
+divide(L,R) when L == 0, R == 0 -> 1;
+divide(L,R) -> L / R.
 
 duplicate(L, R) ->
   lists:duplicate(L, R).
