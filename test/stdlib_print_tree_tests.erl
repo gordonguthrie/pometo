@@ -305,7 +305,7 @@ double_roof_test_() ->
 simple_function_test_() ->
   Code = "- 1 3 5",
   #comment{msg = Got} = print(Code),
-  Exp = "[\"-\"]             \n" ++
+  Exp = "-                 \n" ++
         "|                 \n" ++
         "|                 \n" ++
         "|                 \n" ++
@@ -314,13 +314,13 @@ simple_function_test_() ->
         "├-----------┬--┐  \n" ++
         "|           |  |  \n" ++
         "1           3  5  \n",
-  % ?debugFmt("in simple_function_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?debugFmt("in simple_function_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simple_function_II_test_() ->
   Code = "2 3 - 1 3 ",
   #comment{msg = Got} = print(Code),
-  Exp = "[\"-\"]                         \n" ++
+  Exp = "-                             \n" ++
         "|                             \n" ++
         "├--------------┐              \n" ++
         "|              |              \n" ++
@@ -329,13 +329,13 @@ simple_function_II_test_() ->
         "├-----------┐  ├-----------┐  \n" ++
         "|           |  |           |  \n" ++
         "2           3  1           3  \n",
-  % ?debugFmt("in simple_function_II_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?debugFmt("in simple_function_II_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simple_function_III_test_() ->
   Code = "2 (3 4) - 1",
   #comment{msg = Got} = print(Code),
-  Exp = "[\"-\"]                         \n" ++
+  Exp = "-                             \n" ++
         "|                             \n" ++
         "├--------------------------┐  \n" ++
         "|                          |  \n" ++
@@ -348,13 +348,13 @@ simple_function_III_test_() ->
         "            ├-----------┐     \n" ++
         "            |           |     \n" ++
         "            3           4     \n",
-  % ?debugFmt("in simple_function_III_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?debugFmt("in simple_function_III_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
 simple_function_IV_test_() ->
   Code = "(2 3) 4 - 1",
   #comment{msg = Got} = print(Code),
-  Exp = "[\"-\"]                \n" ++
+  Exp = "-                    \n" ++
         "|                    \n" ++
         "├-----------------┐  \n" ++
         "|                 |  \n" ++
@@ -367,7 +367,7 @@ simple_function_IV_test_() ->
         "├-----------┐        \n" ++
         "|           |        \n" ++
         "2           3        \n",
-  % ?debugFmt("in simple_function_IV_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
+  ?debugFmt("in simple_function_IV_test_~nExp: ~ts~nGot: ~ts~n", [Exp, Got]),
   ?_assertEqual(Exp, Got).
 
  
