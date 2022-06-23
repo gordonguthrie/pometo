@@ -193,7 +193,7 @@ execute_monadic("-", #'$ast¯'{do   = complex,
                               args = [R, I]} = A) -> A#'$ast¯'{args = [-R, -I]};
 execute_monadic("×", #'$ast¯'{do   = complex,
                               args = [R, I]} = A) -> Mag = math:sqrt(R * R + I * I),
-                              A#'$ast¯'{args = [R/Mag,  I/Mag]};
+                              A#'$ast¯'{args = unit_tensor(R,I,Mag)};
 execute_monadic("÷", #'$ast¯'{do   = complex,
                               args = [R, I]} = A) -> Sq = R * R + I * I,
                               A#'$ast¯'{args = [R/Sq, -I/Sq]};
@@ -208,6 +208,10 @@ execute_monadic("|", V) ->  abs(V).
 signum(V) when V <  0 -> -1;
 signum(V) when V == 0 ->  0;
 signum(V) when V >  0 ->  1.
+
+% ×0J0 ↔ 0J0
+unit_tensor(_R,_I,Mag) when Mag == 0 -> [0,0];
+unit_tensor( R, I,Mag)               -> [R / Mag, I / Mag].
 
 rerank_ravel(Dims, none)  -> [pometo_runtime:get_no_of_elements_from_dims(Dims)];
 rerank_ravel(Dims, Float) when is_float(Float) ->
