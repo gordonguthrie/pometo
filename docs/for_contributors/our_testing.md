@@ -48,6 +48,8 @@ The next markdown code section MUST be marked up as a `pometo_results` code bloc
 3
 ```
 
+### Handling Lazy Errors
+
 If the code you are writing generates run time errors when trying to iterate over vectors you will find that `lazy` vectors and `eager` ones generate slightly different error messages.
 
 For an example see the discussion of `LENGTH ERROR` in [the Errors Reference](../error_reference/errors.md).
@@ -71,6 +73,16 @@ This allows you to give two different results for a given `Pometo` code fragment
 ***NOTE***:
 
 * this is only offered for `runtime` `lazy` errors where they cannot be sensibly normalised and should be used rarely. This test suite was 345 tests in before one needed to be written
+
+### Handling Interpreter Print Trees
+
+Some decisions about evaluation are handled differently in the interpreter than in the compiler. Typically something will be resolved line-by-line in the interpreters but left in an `runtime` data structure for the compiler to handle.
+
+In this case you may get different results using `pometo_stdlib:print_trees` and can use a code block marked `pometo_interpreted` to add different results. (see the smoke tests for an example).
+
+***NOTE***
+
+This is rarely required - and never for tests that return actual results to the users - only for debugging tools that peek into the data structures.
 
 The `pometo_docs_to_tests` `rebar3` plugin will turn this page into an Eunit test file `our_testing_tests.erl` in `test/generated_tests` and it will contain the six variants on a single test, for example: `how_to_write_docs_pages_as_tests_1_compiler_force_unindex_test_/0`.
 
