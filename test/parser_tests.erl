@@ -462,10 +462,10 @@ variable_subsitution_parser_test_() ->
           Let2,
           ASTE
         ],
-  ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nGot is:~n", [Str]),
-  ?debugFmt("~ts~n", [pometo_runtime_format:format(pometo_stdlib:print_trees(Got))]),
-  ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nExp is:~n", [Str]),
-  ?debugFmt("~ts~n", [pometo_runtime_format:format(pometo_stdlib:print_trees(Exp))]),
+  % ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nGot is:~n", [Str]),
+  % ?debugFmt("~ts~n", [pometo_runtime_format:format(pometo_stdlib:print_trees(Got))]),
+  % ?debugFmt("~nin variable_subsitution_parser_test_~nfrom ~ts~nExp is:~n", [Str]),
+  % ?debugFmt("~ts~n", [pometo_runtime_format:format(pometo_stdlib:print_trees(Exp))]),
   ?_assertEqual(Exp, Got).
 
 variable_double_substitution_parser_test_() ->
