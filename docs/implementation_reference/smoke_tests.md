@@ -448,15 +448,15 @@ A ← 1 2 3
 ```
 
 ```pometo_results
-shape: [2]                       
-|                                
-├-----------------┐              
-|                 |              
-shape: [3]        shape: [2]     
-|                 |              
-├-----------┬--┐  ├-----------┐  
-|           |  |  |           |  
-1           2  3  2           3  
+shape: [2]/maybe_func                              
+|                                                  
+├----------------------------┐                     
+|                            |                     
+shape: [3]/number            shape: [2]/number     
+|                            |                     
+├----------------------┬--┐  ├------------------┐  
+|                      |  |  |                  |  
+1                      2  3  2                  3  
  on line 2 at character 14
 
 ```
@@ -464,15 +464,15 @@ shape: [3]        shape: [2]
 plus a lazy AST of course:
 
 ```pometo_lazy
-shape: unsized_vector                       
-|                                           
-├----------------------------┐              
-|                            |              
-shape: unsized_vector        shape: [2]     
-|                            |              
-├----------------------┬--┐  ├-----------┐  
-|                      |  |  |           |  
-1                      2  3  2           3  
+shape: unsized_vector/maybe_func                              
+|                                                             
+├---------------------------------------┐                     
+|                                       |                     
+shape: unsized_vector/number            shape: [2]/number     
+|                                       |                     
+├---------------------------------┬--┐  ├------------------┐  
+|                                 |  |  |                  |  
+1                                 2  3  2                  3  
  on line 2 at character 14
 
 ```
@@ -484,15 +484,15 @@ B ← 4
 ```
 
 ```pometo_results
-shape: [2]           
-|                    
-├-----------------┐  
-|                 |  
-shape: [3]        4  
-|                    
-├-----------┬--┐     
-|           |  |     
-1           2  3     
+shape: [2]/maybe_func           
+|                               
+├----------------------------┐  
+|                            |  
+shape: [3]/number            4  
+|                               
+├----------------------┬--┐     
+|                      |  |     
+1                      2  3     
  on line 3 at character 14
 
 ```
@@ -500,15 +500,15 @@ shape: [3]        4
 plus a lazy AST of course:
 
 ```pometo_lazy
-shape: [2]                      
-|                               
-├----------------------------┐  
-|                            |  
-shape: unsized_vector        4  
-|                               
-├----------------------┬--┐     
-|                      |  |     
-1                      2  3     
+shape: [2]/runtime                     
+|                                      
+├-----------------------------------┐  
+|                                   |  
+shape: unsized_vector/number        4  
+|                                      
+├-----------------------------┬--┐     
+|                             |  |     
+1                             2  3     
  on line 3 at character 14
 
 ```

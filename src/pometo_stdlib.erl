@@ -41,10 +41,10 @@
 
 %%% Testing exports
 
-get_tree_TEST(X)              -> get_tree(X, false).
+get_tree_TEST(X)                       -> get_tree(X, false).
 structure_to_cells_TEST(X, Y, Z, A, B) -> structure_to_cells(X, Y, Z, A, B).
-printsize_TEST(X)             -> printsize(X).
-add_lines_TEST(X, Y)          -> add_lines(X, Y).
+printsize_TEST(X)                      -> printsize(X).
+add_lines_TEST(X, Y)                   -> add_lines(X, Y).
 
 print_trees(List) when is_list(List) ->
   [print_trees(X) || X <- List];
@@ -55,6 +55,7 @@ print_trees(#'$ast¯'{do   = [{apply_fn,{pometo_runtime,run_right_associative}}]
 print_trees(#'$ast¯'{line_no = LNo, char_no = CNo} = AST) ->
   Structure = get_tree(AST, false),
   InitialStruct = [Structure#printable_tree{}],
+  io:format("initial struct is ~p~n", [InitialStruct]),
   % its a pain but structure_to_cells returns an oddly sorted list
   % it makes our life easier in constructing the offsets if
   % the list is the right way around...
@@ -316,8 +317,8 @@ printout(#'$func¯'{do = Do}) ->
   possible_unicode_printout(Do);
 printout([{apply_fn, {Module, Function}}]) ->
   lists:flatten(io_lib:format("apply ~p:~p", [Module, Function]));
-printout(#'$shape¯'{dimensions = Dims}) ->
-  lists:flatten(io_lib:format("shape: ~p", [Dims]));
+printout(#'$shape¯'{dimensions = Dims, type = Type}) ->
+  lists:flatten(io_lib:format("shape: ~p/~p", [Dims, Type]));
 printout(A) when is_atom(A) ->
   lists:flatten(io_lib:format("~p", [A])).
 
