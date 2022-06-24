@@ -483,7 +483,25 @@ B ← 4
 ⎕print_trees A B
 ```
 
+We get three different results - the normal one:
+
 ```pometo_results
+shape: [2]/runtime           
+|                            
+├-------------------------┐  
+|                         |  
+shape: [3]/number         4  
+|                            
+├-------------------┬--┐     
+|                   |  |     
+1                   2  3     
+ on line 3 at character 14
+
+```
+
+the interpreted one:
+
+```pometo_interpreted
 shape: [2]/maybe_func           
 |                               
 ├----------------------------┐  

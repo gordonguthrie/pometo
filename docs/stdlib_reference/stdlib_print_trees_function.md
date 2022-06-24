@@ -105,6 +105,22 @@ C ← (4 5 6 )
 ```
 
 ```pometo_results
+shape: [3]/runtime                                    
+|                                                     
+├-------------------------┬--┐                        
+|                         |  |                        
+shape: [3]/number         4  shape: [3]/number        
+|                            |                        
+├-------------------┬--┐     ├------------------┬--┐  
+|                   |  |     |                  |  |  
+1                   2  3     4                  5  6  
+ on line 4 at character 14
+
+```
+
+This gives a different result in the interpreter:
+
+```pometo_interpreted
 shape: [3]/maybe_func                                    
 |                                                        
 ├----------------------------┬--┐                        
@@ -157,6 +173,22 @@ B ← 3
 ```
 
 ```pometo_results
+shape: [2]/runtime        
+|                         
+├----------------------┐  
+|                      |  
+shape: [2]/number      3  
+|                         
+├-------------------┐     
+|                   |     
+1                   2     
+ on line 3 at character 14
+
+```
+
+This has a different view in the interpreter:
+
+```pometo_interpreted
 shape: [2]/maybe_func        
 |                            
 ├-------------------------┐  
