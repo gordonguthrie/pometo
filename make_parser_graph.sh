@@ -10,6 +10,7 @@ echo "digraph Pometo {" > pometo.dot
 # remove the spaces around '->'
 # strip off the trailing space
 # replace the remaining spaces with '->'
+# eliminate lines that that with the comment character %
 # write to the file
-grep '\->' src/pometo_parser.yrl | sed 's/[:].*//' | sed 's/  */ /g' | sed 's/ -> /->/g' | sed 's/ $//' | sed 's/ /->/g' >> pometo.dot
+grep '\->' src/pometo_parser.yrl | sed 's/[:].*//' | sed 's/  */ /g' | sed 's/ -> /->/g' | sed 's/ $//' | sed 's/ /->/g' | sed 's/^%.*//' >> pometo.dot
 echo "}" >> pometo.dot
